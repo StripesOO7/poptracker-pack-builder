@@ -284,7 +284,7 @@ def create_maps(path: str):
                 maps.write('\u007d')
             else:
                 maps.write('\u007d,')
-        maps.write(']')
+        maps.write('\n]')
 # #
 
 
@@ -1133,8 +1133,8 @@ ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")
     // "versions_url": "https://raw.githubusercontent.com/StripesOO7/alttp-ap-poptracker-pack/versions/versions.json"
 \u007d
 ''')
-    if not os.path.exists(path + "/scripts/logic.lua"):
-        with open(path + "/scripts/logic.lua", "w") as logic_lua:
+    if not os.path.exists(path + "/scripts/logic/logic.lua"):
+        with open(path + "/scripts/logic/logic.lua", "w") as logic_lua:
             logic_lua.write('''
         ''')
     if not os.path.exists(path + "/images"):
