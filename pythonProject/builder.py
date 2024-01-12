@@ -48,8 +48,9 @@ def write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
 
                         if br == "true":
                             continue
-                        else:
-                            mapping.write(f'\t[{ids}] = \u007b"@{name}"\u007d,\n'),
+
+                        mapping.write(f'\t[{ids}] = \u007b"@{name}"\u007d,\n'),
+                        break
         mapping.write("\u007d")
 
 
@@ -802,12 +803,12 @@ function dump_table(o, depth)
     if type(o) == 'table' then
         local tabs = ('\t'):rep(depth)
         local tabs2 = ('\t'):rep(depth + 1)
-        local s = '{\n'
+        local s = '{'
         for k, v in pairs(o) do
             if type(k) ~= 'number' then
                 k = '"' .. k .. '"'
             end
-            s = s .. tabs2 .. '[' .. k .. '] = ' .. dump_table(v, depth + 1) .. ',\n'
+            s = s .. tabs2 .. '[' .. k .. '] = ' .. dump_table(v, depth + 1) .. ','
         end
         return s .. tabs .. '}'
     else
