@@ -7,13 +7,20 @@ from tkinter import filedialog
 import requests
 import itertools
 
+
 lvls = set()
 locations_dict = dict()
 maps_names = []
 logic = dict()
-
+open_chest = "open.png"
+close_chest = "close.png"
 
 def create_mappings(game_data: dict[str, int]):
+    '''
+    writes the 2 mapping files needed for location and item tracking via AP
+    :param game_data:
+    :return:
+    '''
     items_data = game_data['item_name_to_id']
     locations_data = game_data['location_name_to_id']
     write_mapping(path=read_file_path, file_name='item_mapping', data = items_data, type='items')
@@ -30,6 +37,17 @@ def create_mappings(game_data: dict[str, int]):
 
 
 def write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
+    '''
+    writes the corresponding mapping file if AP-ID's to names.
+    searches for the most common delimiters used in locationnames to possibly preselect/-create some regions.
+    Item-types need to be adjusted after that step.
+    Defaults to "toggle"
+    :param path:
+    :param file_name:
+    :param data:
+    :param type:
+    :return:
+    '''
     with open(path + '/scripts/autotracking/' + file_name + '.lua', "w") as mapping:
         mapping.write(f'{file_name.upper()} = \u007b\n')
         match type:
@@ -55,12 +73,19 @@ def write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
 
 
 def create_items(path: str):
+    '''
+    gathers the items vom the item_mapping file and converts them according to their specified item_type into a
+    pop-readable/-loadable json format.
+    Pre-places the itemnames as names for the loaded images. needs to be adjusted if that is not fitting.
+    :param path:
+    :return:
+    '''
     read_input = []
     item_list = []
     with open(path+'/scripts/autotracking/item_mapping.lua') as mapping:
-        while input := mapping.readline():
-            if "]" in input:
-                read_input.append(input.split("="))
+        while inputs := mapping.readline():
+            if "]" in inputs:
+                read_input.append(inputs.split("="))
             else:
                 pass
 
@@ -99,7 +124,7 @@ def create_items(path: str):
                                 "name": "{item_name} returned",
                                 "img": "/images/Items/{item_name}.png",
                                 "img_mods": "overlay|/images/Menu/Check.png",
-                                "codes": "{item_name.replace(' ', '')}_returned"
+                                "codes": "{item_name.replace(' ', '')}_prog"
                             \u007d
                         ],
                         "codes": "{item_name.replace(' ', '')}"
@@ -120,7 +145,7 @@ def create_items(path: str):
                             "name": "{item_name} returned",
                             "img": "/images/Items/{item_name}.png",
                             "img_mods": "overlay|/images/Menu/Check.png",
-                            "codes": "{item_name.replace(' ', '')}_returned"
+                            "codes": "{item_name.replace(' ', '')}_prog_tog"
                         \u007d
                     ],
                     "codes": "{item_name.replace(' ', '')}"
@@ -153,13 +178,25 @@ def create_items(path: str):
 
 
 def write_3_layer_locations(region, file, logic_dict):
+    '''
+    if the logic form the rules-file could get split the location name into 3 sets (region, location, item) this
+    function gets called.
+    the set images for still closed and already opened items are set here, defaults to the poptracker provided
+    open/closed images.
+    Also try's to find matching region/location/items rules in the logicfile and writes them in the corresponding
+    section. if nothing gets found access_rules get skipped and need to be added later. A file of the extracked rules is saved in the packs directory
+    :param region:
+    :param file:
+    :param logic_dict:
+    :return:
+    '''
     with open(read_file_path + fr"\locations\{region}.json", "w") as locations_file:
         locations_file.write('[')
         file.write(f'''
                     \u007b
                         "name": "{region}",
-                        "chest_unopened_img": "/images/Items/{region}.png",
-                        "chest_opened_img": "/images/Items/open_Chest.png",
+                        "chest_unopened_img": "/images/Items/{close_chest}",
+                        "chest_opened_img": "/images/Items/{open_chest}",
                         "overlay_background": "#000000",
                         "access_rules": [" "],
                         "children": [
@@ -168,8 +205,8 @@ def write_3_layer_locations(region, file, logic_dict):
             file.write(f'''
                         \u007b
                             "name": "{location}",
-                            "chest_unopened_img": "/images/Items/{location}.png",
-                            "chest_opened_img": "/images/Items/{location}.png",
+                            "chest_unopened_img": "/images/Items/{close_chest}",
+                            "chest_opened_img": "/images/Items/{open_chest}",
                             "overlay_background": "#000000",
                             "sections": [
                         ''')
@@ -219,14 +256,27 @@ def write_3_layer_locations(region, file, logic_dict):
 
 
 def write_2_layer_locations(region, file, logic_dict):
+    '''
+        if the logic form the rules-file could only split the location name into 2 sets (location,
+        item) this function gets called.
+        the set images for still closed and already opened items are set here, defaults to the poptracker provided
+        open/closed images.
+        Also try's to find matching location/items rules in the logicfile and writes them in the corresponding
+        section. if nothing gets found access_rules get skipped and need to be added later. A file of the extracked
+        rules is saved in the packs directory
+        :param region:
+        :param file:
+        :param logic_dict:
+        :return:
+        '''
     with open(read_file_path + fr"\locations\{region}.json", "w") as locations_file:
         locations_file.write('[')
         for j, location in enumerate(locations_dict[region]):
             file.write(f'''
                             \u007b
                                 "name": "{location}",
-                                "chest_unopened_img": "/images/Items/{location}.png",
-                                "chest_opened_img": "/images/Items/{location}.png",
+                                "chest_unopened_img": "/images/Items/{close_chest}",
+                                "chest_opened_img": "/images/Items/{open_chest}",
                                 "overlay_background": "#000000",
                                 "sections": [
                                     \u007b
@@ -261,14 +311,23 @@ def write_2_layer_locations(region, file, logic_dict):
 
 
 def create_locations(path: str, logic: dict[str, str]):
+    '''
+    creates the singled out location files according to the names found in the locations_mapping file.
+    distinct handling of 2 and 3 segment location splitting.
+    Also asks for 2 images for still closed and already opened chests/items if not already defined in the datapackage file
+    :param path:
+    :param logic:
+    :return:
+    '''
+    global open_chest, close_chest
     read_input = []
     location_list = []
     temp = []
     global lvls, locations_dict, maps_names
     with open(path+'/scripts/autotracking/location_mapping.lua') as mapping:
-        while input := mapping.readline():
-            if "]" in input:
-                read_input.append(input.split("="))
+        while inputs := mapping.readline():
+            if "]" in inputs:
+                read_input.append(inputs.split("="))
             else:
                 pass
     for k, _ in enumerate(read_input):
@@ -303,6 +362,15 @@ def create_locations(path: str, logic: dict[str, str]):
             except:
                 pass
 
+    if other_options[0] in [" ", "\n"]:
+        print(other_options)
+        open_chest = tk.filedialog.askopenfilename().split('/')[-1]
+        close_chest = tk.filedialog.askopenfilename().split('/')[-1]
+        with open(path + '/datapacke_url.txt', 'a') as file:
+            file.write(f"{open_chest}, {close_chest}")
+    else:
+        open_chest = other_options[0]
+        close_chest = other_options[1]
     for i, locations_region in enumerate(locations_dict.keys()):
         # print(city, lvl_locations[city])
         with open(path+fr"\locations\{locations_region}.json", "w") as locations_file:
@@ -321,6 +389,12 @@ def create_locations(path: str, logic: dict[str, str]):
 
 
 def create_maps(path: str):
+    '''
+    creates the maps used in the tabbed section in poptracker.
+    uses only regions with more than 9 sections in it according to the sectioning in the locations_mapping
+    :param path:
+    :return:
+    '''
     # with open("H:\mario-is-missing-AP-tracker\maps\maps.json", 'w') as maps:
     with open(path+"/maps/maps.json", 'w') as maps:
         maps.write('[')
@@ -342,6 +416,11 @@ def create_maps(path: str):
 
 
 def create_tracker_tabs(path: str):
+    '''
+    creates a json scheme that adds the created maps from create_maps() into the loaded tracker file
+    :param path:
+    :return:
+    '''
     # with open("H:\mario-is-missing-AP-tracker\layouts\\tabs.json", 'w') as tabs:
     with open(path+"/layouts/tabs.json", 'w') as tabs:
         tabbed_maps = ["tabbed_maps_horizontal", "tabbed_maps_vertical"]
@@ -384,6 +463,11 @@ def create_tracker_tabs(path: str):
 
 
 def create_broadcast_layout(path: str):
+    '''
+    creates a basic broadcast layout containing the items section of the normal tracker
+    :param path:
+    :return:
+    '''
     # with open("H:\mario-is-missing-AP-tracker\layouts\\broadcast.json", 'w') as broadcast:
     with open(path+"/layouts/broadcast.json", 'w') as broadcast:
         broadcast.write('''
@@ -411,6 +495,12 @@ def create_broadcast_layout(path: str):
 
 
 def create_tracker_basic_layout(path: str):
+    '''
+    creates the full json for a basic tracker pack for poptracker.
+    contains a map/item/settings/pins-section for a horizontal and vertical layout
+    :param path:
+    :return:
+    '''
     with open(path+"/layouts/tracker.json", 'w') as tracker:
         tracker.write('''
         {
@@ -560,6 +650,12 @@ def create_tracker_basic_layout(path: str):
 
 
 def create_item_layout(path: str):
+    '''
+    creates basic item layout containing all items found in item_mapping. splits the items as evenly as possible.
+    creates a horizontal and vertical layout
+    :param path:
+    :return:
+    '''
     item_codes = []
     with open(path+'/items/items.json') as items:
         json_data = json.load(items)
@@ -634,6 +730,14 @@ def create_item_layout(path: str):
 
 
 def generalized_rule_extractor(base_list: [str], delimiter1: str, delimiter2: str):
+    '''
+    try's to open a possibly provided file containing the used logic for the AP-rando.
+    for now, it reads the file and only looks for lambda rules. may change later to get expanded to lists/dicts but
+    that's for another day.
+    try's to split the rules into their intended and correct order. () > and > or
+    after splitting it recombines them via vector/matrix multiplication to create ever possible permutation of rules.
+    writes the extracted rules into a file as backup.
+    '''
     try:
         x = " | ".join(" + ".join(base_list.split(delimiter1)).split(delimiter2)).split(" | ")
     # logic_temp[i][1].replace(' or ', ' | ').replace(' and ', ' + ')
@@ -654,7 +758,7 @@ def generalized_rule_extractor(base_list: [str], delimiter1: str, delimiter2: st
                 x[iter][sub_iter] = code[code.index(search) + 1:code.rindex(search)]
     except:
         x = base_list
-    return list(itertools.product(*x))  ### list cross multiplication to generate every
+    return list(itertools.product(*x))  # list cross multiplication to generate every
 
 
 def slice_at_brackets(list_to_slice: []):
@@ -732,12 +836,11 @@ def extract_logic():
     logic_dict = {}
     file_path = filedialog.askopenfilename()
     if not file_path == '':
-        with open(file_path) as extract_logic:
-            temp = extract_logic.read().split('\n')
+        with open(file_path) as logic_extract:
+            temp = logic_extract.read().split('\n')
             for i in temp:
                 if " lambda " in i.lower():
-                    logic_temp.append(i.split("lambda"))  #"""results in a list containing tuples of [location_string,
-
+                    logic_temp.append(i.split("lambda"))  # """results in a list containing tuples of [location_string,
 
             for i, test in enumerate(logic_temp):
                 # i = 81
@@ -758,8 +861,6 @@ def extract_logic():
                     else:
                         logic_temp[i][1] = generalized_rule_extractor(base_list=logic_temp[i][1], delimiter1=' or',
                                                                       delimiter2=' and ')
-
-
 
                     if '"' in test[0]:
                         search = '"'
@@ -824,8 +925,13 @@ def extract_logic():
     return logic_dict
 
 
-
 def create_base_structure(path: str):
+    '''
+    creates every needed directory and file needed to get a basic poptracker pack working and loading if the needed
+    file is not already present
+    :param path:
+    :return:
+    '''
     if not os.path.exists(path + "/scripts"):
         os.mkdir(path + "/scripts")
         os.mkdir(path + "/scripts/autotracking")
@@ -1216,8 +1322,8 @@ if not os.path.exists(read_file_path + '/datapacke_url.txt'):
     with open(read_file_path + '/datapacke_url.txt', "w") as base_file:
         url = input("datapackage source (url): ") or "https://archipelago.gg/datapackage"
         game = input("Game name from Datapackage: ")
-        base_file.write(f"{url}, {game}")
-datapackage_path, game_name = open(read_file_path + '/datapacke_url.txt').readline().split(', ')
+        base_file.write(f"{url}, {game}, ")
+datapackage_path, game_name, *other_options = open(read_file_path + '/datapacke_url.txt').readline().split(', ')
 
 games_dict = requests.get(datapackage_path).json()['games']
 
