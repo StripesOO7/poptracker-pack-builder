@@ -53,7 +53,7 @@ def write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
         match type:
             case 'items':
                 for name, ids in data.items():
-                    mapping.write(f'\t[{ids}] = \u007b"{name}", "toggle"\u007d,\n'),
+                    mapping.write(f'\t[{ids}] = \u007b"{name.replace(" ", "")}", "toggle"\u007d,\n'),
             case 'locations':
                 delimiter = [' - ', ': ', ') ']
                 for name, ids in data.items():
@@ -369,8 +369,10 @@ def create_locations(path: str, logic: dict[str, str]):
         with open(path + '/datapacke_url.txt', 'a') as file:
             file.write(f"{open_chest}, {close_chest}")
     else:
-        open_chest = other_options[0]
-        close_chest = other_options[1]
+        open_chest = "open.png"
+        close_chest = "close.png"
+        # open_chest = other_options[0]
+        # close_chest = other_options[1]
     for i, locations_region in enumerate(locations_dict.keys()):
         # print(city, lvl_locations[city])
         with open(path+fr"\locations\{locations_region}.json", "w") as locations_file:
@@ -1024,7 +1026,6 @@ function onClear(slot_data)
     -- if Tracker:FindObjectForCode("autofill_settings").Active == true then
     --     autoFill(slot_data)
     -- end
-    -- bossShuffle()
 end
 
 function onItem(index, item_id, item_name, player_number)
@@ -1063,8 +1064,6 @@ function onItem(index, item_id, item_name, player_number)
             print(string.format("onItem: could not find object for code %s", item_code[1]))
         end
     end
-    canFinish()
-    calcHeartpieces()
 end
 
 --called when a location gets cleared
@@ -1109,66 +1108,18 @@ end
 --     mapToggle={[0]=0,[1]=1,[2]=1,[3]=1,[4]=1}
 --     mapToggleReverse={[0]=1,[1]=0,[2]=0,[3]=0,[4]=0}
 --     mapTripleReverse={[0]=2,[1]=1,[2]=0}
---     mapDungeonItem={[0]=false,[1]=true,[2]=true,[3]=true,[4]=true,[6]=true}
 
---     -- mapGlitches={[0]=0,[1]=2,[2]=3,[3]=0,[4]=0}
---     -- progressive={[]=,}
---     mapMode={["open"]=0,["inverted"]=1,["standard"]=2}
---     mapGoals={["crystals"]=0,["ganon"]=1,["bosses"]=2,["pedestal"]=3,["ganonpedestal"]=4,["triforcehunt"]=5,["ganontriforcehunt"]=6,["icerodhunt"]=7,["localtriforcehunt"]=5,["localganontriforcehunt"]=6}
---     mapDark={["none"]=0,["lamp"]=1,["scornes"]=2} -- none=dark room, lamp=vanilla, scornes = firerod
---     mapMedalion={["Bombos"]="bombos",["Ether"]="ether",["Quake"]="quake"}
---     -- retro_caves={[]=}
---     mapBosses={[0]=0,[1]=1,[2]=1,[3]=1,[4]=2}
---     mapEnemizer={[0]=false,[1]=true,[2]=true}
---     -- shop_shuffle={[]=,}
 
 
 --     slotCodes = {
---         -- glitches_required={code="glitches", mapping=mapToggleReverse},
---         key_drop_shuffle={code="key_drop_shuffle", mapping=mapDungeonItem},
---         pot_shuffle={code="key_drop_shuffle", mapping=mapDungeonItem},
---         dark_room_logic={code="dark_mode", mapping=mapDark},
---         bigkey_shuffle={code="big_keys", mapping=mapDungeonItem},
---         smallkey_shuffle={code="small_keys", mapping=mapToggle},
---         map_shuffle={code="map", mapping=mapDungeonItem},
---         compass_shuffle={code="compass", mapping=mapDungeonItem},
---         -- progressive={code="progressive_items", mapping=mapToggle},
---         goal={code="goal", mapping=mapGoals},
---         crystals_needed_for_gt={code="gt_access", mapping=nil},
---         crystals_needed_for_ganon={code="ganon_killable", mapping=nil},
---         mode={code="start_option", mapping=mapMode},
---         -- retro_bow={code="", mapping=mapToggleReverse},
---         retro_caves={code="retro_caves", mapping=mapDungeonItem},
---         swordless={code="swordless", mapping=mapDungeonItem},
---         -- item_pool={code="", mapping=mapToggle},
---         me_medallion={code="", mapping=mapMedalion},
---         tr_medallion={code="", mapping=mapMedalion},
---         boss_shuffle={code="boss_shuffle", mapping=mapBosses},
---         enemy_shuffle={code="enemizer", mapping=mapEnemizer},
---         shop_shuffle={code="shop_sanity", mapping=nil},
---         triforce_pieces_required={code="triforce_pieces_needed", mapping=nil}
---         -- glitch_boots={code="glitches", mapping=nil}
+--         map_name = {code="", mapping=mapToggle...}
 --     }
 --     -- print(dump_table(SLOT_DATA))
 --     -- print(Tracker:FindObjectForCode("autofill_settings").Active)
 --     if Tracker:FindObjectForCode("autofill_settings").Active == true then
 --         for settings_name , settings_value in pairs(SLOT_DATA) do
 --             -- print(k, v)
---             if settings_name == "crystals_needed_for_gt" 
---             or settings_name == "crystals_needed_for_ganon" 
---             or settings_name == "triforce_pieces_required" then
---                 Tracker:FindObjectForCode(slotCodes[settings_name].code).AcquiredCount = settings_value
---             elseif settings_name == "shop_shuffle" then
---                 item = Tracker:FindObjectForCode(slotCodes[settings_name].code)
---                 if settings_value ~= "none" then
---                     item.Active = true
---                 elseif settings_value == "none" then
---                     item.Active = false
---                 end
---             elseif settings_name == "shop_item_slots" then
---                 Tracker:FindObjectForCode("shop_sanity").AcquiredCount = settings_value 
---                 Tracker:FindObjectForCode("shop_sanity").Active = true
---             elseif slotCodes[settings_name] then
+--             if slotCodes[settings_name] then
 --                 item = Tracker:FindObjectForCode(slotCodes[settings_name].code)
 --                 if item.Type == "toggle" then
 --                     item.Active = slotCodes[settings_name].mapping[settings_value]
@@ -1177,12 +1128,6 @@ end
 --                     item.CurrentStage = slotCodes[settings_name].mapping[settings_value]
 --                 end
 --             end
---         end
---         if SLOT_DATA["mm_medalion"] == SLOT_DATA["tr_medalion"] then
---             Tracker:FindObjectForCode(string.lower(SLOT_DATA["mm_medalion"])).CurrentStage = 3
---         else
---             Tracker:FindObjectForCode(string.lower(SLOT_DATA["mm_medalion"])).CurrentStage = 2
---             Tracker:FindObjectForCode(string.lower(SLOT_DATA["tr_medalion"])).CurrentStage = 1
 --         end
 
 --     end
