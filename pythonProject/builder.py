@@ -998,27 +998,45 @@ function onClear(slot_data)
     -- reset items
     for _, item in pairs(ITEM_MAPPING) do
         for _, item_code in pairs(item[1]) do
-            if item_code and item[2] then
-                local item_obj = Tracker:FindObjectForCode(item_code)
-                if item_obj then
-                    if item[2] == "toggle" then
-                        item_obj.Active = false
-                    elseif item[2] == "progressive" then
-                        item_obj.CurrentStage = 0
-                        item_obj.Active = false
-                    elseif item[2] == "consumable" then
-                        if item_obj.MinCount then
-                            item_obj.AcquiredCount = item_obj.MinCount
-                        else
-                            item_obj.AcquiredCount = 0
-                        end
-                    elseif item[2] == "progressive_toggle" then
-                        item_obj.CurrentStage = 0
-                        item_obj.Active = false
+            item_code, item_type = item
+--            if item_code and item[2] then
+            local item_obj = Tracker:FindObjectForCode(item_code)
+--            if item_obj then
+--                if item_type == "toggle" then
+--                    item_obj.Active = false
+--                elseif item_type == "progressive" then
+--                    item_obj.CurrentStage = 0
+--                    item_obj.Active = false
+--                elseif item_type == "consumable" then
+--                    if item_obj.MinCount then
+--                        item_obj.AcquiredCount = item_obj.MinCount
+--                    else
+--                        item_obj.AcquiredCount = 0
+--                    end
+--                elseif item_type == "progressive_toggle" then
+--                    item_obj.CurrentStage = 0
+--                    item_obj.Active = false
+--                end
+--            end
+            if item_obj then
+                if item_obj.Type == "toggle" then
+                    item_obj.Active = false
+                elseif item_obj.Type == "progressive" then
+                    item_obj.CurrentStage = 0
+                    item_obj.Active = false
+                elseif item_obj.Type == "consumable" then
+                    if item_obj.MinCount then
+                        item_obj.AcquiredCount = item_obj.MinCount
+                    else
+                        item_obj.AcquiredCount = 0
                     end
+                elseif item_obj.Type == "progressive_toggle" then
+                    item_obj.CurrentStage = 0
+                    item_obj.Active = false
                 end
             end
         end
+--        end
     end
     PLAYER_ID = Archipelago.PlayerNumber or -1
     TEAM_NUMBER = Archipelago.TeamNumber or 0
@@ -1039,31 +1057,54 @@ function onItem(index, item_id, item_name, player_number)
         --print(string.format("onItem: could not find item mapping for id %s", item_id))
         return
     end
-    for _, item_code in pairs(item[1]) do
+--    for _, item_code in pairs(item[1]) do
         -- print(item[1], item[2])
-        local item_obj = Tracker:FindObjectForCode(item_code)
-        if item_obj then
-            if item_obj.Type == "toggle" then
-                -- print("toggle")
+    item_code = item[1]
+    item_type = item[2]
+    local item_obj = Tracker:FindObjectForCode(item_code)
+--    if item_obj then
+--        if item_type == "toggle" then
+--            -- print("toggle")
+--            item_obj.Active = true
+--        elseif item_type == "progressive" then
+--            -- print("progressive")
+--            item_obj.Active = true
+--        elseif item_type == "consumable" then
+--            -- print("consumable")
+--            item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
+--        elseif item_type == "progressive_toggle" then
+--            -- print("progressive_toggle")
+--            if item_obj.Active then
+--                item_obj.CurrentStage = item_obj.CurrentStage + 1
+--            else
+--                item_obj.Active = true
+--            end
+--        end
+--    else
+--        print(string.format("onItem: could not find object for code %s", item_code[1]))
+--    end
+    if item_obj then
+        if item_obj.Type == "toggle" then
+            -- print("toggle")
+            item_obj.Active = true
+        elseif item_obj.Type == "progressive" then
+            -- print("progressive")
+            item_obj.Active = true
+        elseif item_obj.Type == "consumable" then
+            -- print("consumable")
+            item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
+        elseif item_obj.Type == "progressive_toggle" then
+            -- print("progressive_toggle")
+            if item_obj.Active then
+                item_obj.CurrentStage = item_obj.CurrentStage + 1
+            else
                 item_obj.Active = true
-            elseif item[2] == "progressive" then
-                -- print("progressive")
-                item_obj.Active = true
-            elseif item[2] == "consumable" then
-                -- print("consumable")
-                item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
-            elseif item[2] == "progressive_toggle" then
-                -- print("progressive_toggle")
-                if item_obj.Active then
-                    item_obj.CurrentStage = item_obj.CurrentStage + 1
-                else
-                    item_obj.Active = true
-                end
             end
-        else
-            print(string.format("onItem: could not find object for code %s", item_code[1]))
         end
+    else
+        print(string.format("onItem: could not find object for code %s", item_code[1]))
     end
+--    end
 end
 
 --called when a location gets cleared
@@ -1109,8 +1150,6 @@ end
 --     mapToggleReverse={[0]=1,[1]=0,[2]=0,[3]=0,[4]=0}
 --     mapTripleReverse={[0]=2,[1]=1,[2]=0}
 
-
-
 --     slotCodes = {
 --         map_name = {code="", mapping=mapToggle...}
 --     }
@@ -1129,7 +1168,6 @@ end
 --                 end
 --             end
 --         end
-
 --     end
 -- end
 
