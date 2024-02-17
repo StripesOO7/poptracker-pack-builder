@@ -14,7 +14,6 @@ maps_names = []
 logic = dict()
 open_chest = "open.png"
 close_chest = "close.png"
-
 def create_mappings(game_data: dict[str, int]):
     '''
     writes the 2 mapping files needed for location and item tracking via AP
@@ -207,14 +206,16 @@ def write_locations(loc_dict, region, file, logic_dict):
     # sorted(temp_lists)
     # print(temp_lists)
     # sorted(sub_region)
-    if len(temp_dicts) > 0:
-        file.write(f'''
+    file.write(f'''
                     \u007b
                         "name": "{region}",
                         "chest_unopened_img": "/images/Items/{close_chest}",
                         "chest_opened_img": "/images/Items/{open_chest}",
                         "overlay_background": "#000000",
                         "access_rules": [" "],
+                        ''')
+    if len(temp_dicts) > 0:
+        file.write(f'''
                         "children": [
                     ''')
         for location in temp_dicts:
@@ -247,23 +248,29 @@ def write_locations(loc_dict, region, file, logic_dict):
         #                     ''')
             write_locations(sub_region, location, file, logic_dict)
             # if well:
+        # file.write('''
+        #                 ]
+        #             \u007d,''')
         file.write('''
-                        ],
-                    \u007d,''')
+                                ],''')
         # file.write('''
         #
         #                         ]
         #                     }
         #                 ]''')
     if len(temp_lists) > 0:
+        # file.write(f'''
+        #                     \u007b
+        #                         "name": "{region}",
+        #                         "chest_unopened_img": "/images/Items/{close_chest}",
+        #                         "chest_opened_img": "/images/Items/{open_chest}",
+        #                         "overlay_background": "#000000",
+        #                         "section": [
+        #                     ''')
         file.write(f'''
-                            \u007b
-                                "name": "{region}",
-                                "chest_unopened_img": "/images/Items/{close_chest}",
-                                "chest_opened_img": "/images/Items/{open_chest}",
-                                "overlay_background": "#000000",
-                                "section": [
-                            ''')
+
+                                        "sections": [
+                                    ''')
         for location in temp_lists:
             # print("list", sub_region, region)
             # file.write(f'''
