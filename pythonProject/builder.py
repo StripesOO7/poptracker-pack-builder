@@ -176,7 +176,7 @@ def create_items(path: str):
 # #
 
 
-def write_locations(loc_dict, region, file, logic_dict):
+def write_locations(loc_dict, region, file, logic_dict, overworld):
     '''
     if the logic form the rules-file could get split the location name into 3 sets (region, location, item) this
     function gets called.
@@ -246,7 +246,7 @@ def write_locations(loc_dict, region, file, logic_dict):
         #                         "access_rules": [" "],
         #                         "children": [
         #                     ''')
-            write_locations(sub_region, location, file, logic_dict)
+            write_locations(sub_region, location, file, logic_dict, overworld)
             # if well:
         # file.write('''
         #                 ]
@@ -303,22 +303,31 @@ def write_locations(loc_dict, region, file, logic_dict):
                 # else:
             file.write('''\u007d,
                         ''')
+            overworld.write(f'''
+                                        \u007b
+                                            "name": "{location}",
+                                            "ref": "{region}/{location}"
+                                        \u007d,
+                                    ''')
         file.write(f'''
                             ],
                             "map_locations": [
                                 \u007b
-                                    "map": "Worldmap",
+                                    "map": "Overworld",
                                     "x": {random.randint(10, 2500)},
                                     "y": {random.randint(10, 1500)},
                                     "size": 6
                                 \u007d
                             ]
                             ''')
+
         if 0 == len(loc_dict) - 1:
             # print(test, len(lvl_locations[city]))
             file.write('\u007d')
         else:
             file.write('\u007d,')
+            # overworld.write('\u007d,')
+
     # file.write('''
     #
     #                         ]
@@ -333,112 +342,113 @@ def write_locations(loc_dict, region, file, logic_dict):
     #         }''')
 
 
-def write_section(region, file, logic_dict):
+# def write_section(region, file, logic_dict):
+#
+#     test_1 = locations_dict[region]
+#     print(len(test_1[list(test_1.keys())[0]]))
+#     # if len(test_1[list(test_1.keys())[0]]) > 0:
+#     for j, location in enumerate(locations_dict[region]):
+#         file.write(f'''
+#                     \u007b
+#                         "name": "{location}",
+#                         "chest_unopened_img": "/images/Items/{close_chest}",
+#                         "chest_opened_img": "/images/Items/{open_chest}",
+#                         "overlay_background": "#000000",
+#                         "sections": [
+#                     ''')
+#         for k, check in enumerate(locations_dict[region][location]):
+#             # print(check, check_location)
+#             file.write(f'''
+#                             \u007b
+#                                 "name": "{check}",''')
+#             try:
+#                 if logic_dict[region][location][check]:
+#                     file.write(f'''
+#                                 "access_rules": [ "{logic_dict[region][location][check][0]}" ],''')
+#             except:
+#                 pass
+#             file.write(f'''
+#                                 "item_count": 1
+#                             ''')
+#
+#             # print(k, len(lvl_locations[city][index])-1)
+#             if k == len(locations_dict[region][location]) - 1:
+#                 file.write('''\u007d
+#                             ''')
+#             else:
+#                 file.write('''\u007d,
+#                             ''')
+#         file.write(f'''
+#                             ],
+#                             "map_locations": [
+#                                 \u007b
+#                                     "map": "Worldmap",
+#                                     "x": {random.randint(10, 2500)},
+#                                     "y": {random.randint(10, 1500)},
+#                                     "size": 6
+#                                 \u007d
+#                             ]
+#                             ''')
+#         if j == len(locations_dict[region]) - 1:
+#             # print(test, len(lvl_locations[city]))
+#             file.write('\u007d')
+#         else:
+#             file.write('\u007d,')
 
-    test_1 = locations_dict[region]
-    print(len(test_1[list(test_1.keys())[0]]))
-    # if len(test_1[list(test_1.keys())[0]]) > 0:
-    for j, location in enumerate(locations_dict[region]):
-        file.write(f'''
-                    \u007b
-                        "name": "{location}",
-                        "chest_unopened_img": "/images/Items/{close_chest}",
-                        "chest_opened_img": "/images/Items/{open_chest}",
-                        "overlay_background": "#000000",
-                        "sections": [
-                    ''')
-        for k, check in enumerate(locations_dict[region][location]):
-            # print(check, check_location)
-            file.write(f'''
-                            \u007b
-                                "name": "{check}",''')
-            try:
-                if logic_dict[region][location][check]:
-                    file.write(f'''
-                                "access_rules": [ "{logic_dict[region][location][check][0]}" ],''')
-            except:
-                pass
-            file.write(f'''
-                                "item_count": 1
-                            ''')
 
-            # print(k, len(lvl_locations[city][index])-1)
-            if k == len(locations_dict[region][location]) - 1:
-                file.write('''\u007d
-                            ''')
-            else:
-                file.write('''\u007d,
-                            ''')
-        file.write(f'''
-                            ],
-                            "map_locations": [
-                                \u007b
-                                    "map": "Worldmap",
-                                    "x": {random.randint(10, 2500)},
-                                    "y": {random.randint(10, 1500)},
-                                    "size": 6
-                                \u007d
-                            ]
-                            ''')
-        if j == len(locations_dict[region]) - 1:
-            # print(test, len(lvl_locations[city]))
-            file.write('\u007d')
-        else:
-            file.write('\u007d,')
+# def write_2_layer_locations(region, file, logic_dict):
+#     '''
+#         if the logic form the rules-file could only split the location name into 2 sets (location,
+#         item) this function gets called.
+#         the set images for still closed and already opened items are set here, defaults to the poptracker provided
+#         open/closed images.
+#         Also try's to find matching location/items rules in the logicfile and writes them in the corresponding
+#         section. if nothing gets found access_rules get skipped and need to be added later. A file of the extracked
+#         rules is saved in the packs directory
+#         :param region:
+#         :param file:
+#         :param logic_dict:
+#         :return:
+#         '''
+#     with open(read_file_path + fr"\locations\{region}.json", "w") as locations_file:
+#         locations_file.write('[')
+#         for j, location in enumerate(locations_dict[region]):
+#             file.write(f'''
+#                             \u007b
+#                                 "name": "{location}",
+#                                 "chest_unopened_img": "/images/Items/{close_chest}",
+#                                 "chest_opened_img": "/images/Items/{open_chest}",
+#                                 "overlay_background": "#000000",
+#                                 "sections": [
+#                                     \u007b
+#                                         "name": "{location}",''')
+#             try:
+#                 if logic_dict[region][location]:
+#                     file.write(f'''
+#                                     "access_rules": [ "{logic_dict[region][location][0]}" ],''')
+#             except:
+#                 pass
+#                 file.write(f'''
+#                                         "item_count": 1
+#                                     \u007d
+#                                     ],
+#                                     "map_locations": [
+#                                         \u007b
+#                                             "map": "Worldmap",
+#                                             "x": {random.randint(10, 500)},
+#                                             "y": {random.randint(10, 500)},
+#                                             "size": 6
+#                                         \u007d
+#                                     ]
+#                                     ''')
+#             if j == len(locations_dict[region]) - 1:
+#                 # print(test, len(lvl_locations[city]))
+#                 file.write('\u007d')
+#             else:
+#                 file.write('\u007d,')
+#         file.write('''
+#                     ]''')
 
-
-def write_2_layer_locations(region, file, logic_dict):
-    '''
-        if the logic form the rules-file could only split the location name into 2 sets (location,
-        item) this function gets called.
-        the set images for still closed and already opened items are set here, defaults to the poptracker provided
-        open/closed images.
-        Also try's to find matching location/items rules in the logicfile and writes them in the corresponding
-        section. if nothing gets found access_rules get skipped and need to be added later. A file of the extracked
-        rules is saved in the packs directory
-        :param region:
-        :param file:
-        :param logic_dict:
-        :return:
-        '''
-    with open(read_file_path + fr"\locations\{region}.json", "w") as locations_file:
-        locations_file.write('[')
-        for j, location in enumerate(locations_dict[region]):
-            file.write(f'''
-                            \u007b
-                                "name": "{location}",
-                                "chest_unopened_img": "/images/Items/{close_chest}",
-                                "chest_opened_img": "/images/Items/{open_chest}",
-                                "overlay_background": "#000000",
-                                "sections": [
-                                    \u007b
-                                        "name": "{location}",''')
-            try:
-                if logic_dict[region][location]:
-                    file.write(f'''
-                                    "access_rules": [ "{logic_dict[region][location][0]}" ],''')
-            except:
-                pass
-                file.write(f'''
-                                        "item_count": 1
-                                    \u007d
-                                    ],
-                                    "map_locations": [
-                                        \u007b
-                                            "map": "Worldmap",
-                                            "x": {random.randint(10, 500)},
-                                            "y": {random.randint(10, 500)},
-                                            "size": 6
-                                        \u007d
-                                    ]
-                                    ''')
-            if j == len(locations_dict[region]) - 1:
-                # print(test, len(lvl_locations[city]))
-                file.write('\u007d')
-            else:
-                file.write('\u007d,')
-        file.write('''
-                    ]''')
 # def write_1_layer_locations():
 
 
@@ -506,6 +516,7 @@ def create_locations(path: str, logic: dict[str, str]):
     with open(path+"/scripts/locations.lua", 'w') as locations_file:
         for i in lvls:
             locations_file.write(f'Tracker:AddLocations("locations/{i}.json")\n')
+        locations_file.write(f'Tracker:AddLocations("locations/Overworld.json")\n')
     locations_dict = {e: {} for e in lvls}
 
     logic_dict = extract_logic()
@@ -543,23 +554,60 @@ def create_locations(path: str, logic: dict[str, str]):
         close_chest = "close.png"
         # open_chest = other_options[0]
         # close_chest = other_options[1]
-    for i, locations_region in enumerate(locations_dict.keys()):
-        # print(city, lvl_locations[city])
-        with open(path+fr"\locations\{locations_region}.json", "w") as locations_file:
-            locations_file.write('[')
-            write_locations(locations_dict, locations_region, locations_file, logic_dict)
-            # locations_file.write('''
-            #
-            #         ]
-            #     }
-            # ]''')
-            locations_file.write('''
-                        ]''')
+    with open(path+fr"\locations\Overworld.json", "w") as overworld:
+        overworld.write('[')
+        overworld.write(f'''
+            \u007b
+                "name": "Overworld",
+                "chest_unopened_img": "/images/Items/{close_chest}",
+                "chest_opened_img": "/images/Items/{open_chest}",
+                "overlay_background": "#000000",
+                "access_rules": [" "],
+                "children": [
+                ''')
+        for i, locations_region in enumerate(locations_dict.keys()):
+            # print(city, lvl_locations[city])
+            overworld.write(f'''
+                                \u007b
+                                    "name": "{locations_region}",
+                                    "chest_unopened_img": "/images/Items/{close_chest}",
+                                    "chest_opened_img": "/images/Items/{open_chest}",
+                                    "overlay_background": "#000000",
+                                    "access_rules": [" "],
+                                    "sections": [
+                                    ''')
+            with open(path+fr"\locations\{locations_region}.json", "w") as locations_file:
+                locations_file.write('[')
+                write_locations(locations_dict, locations_region, locations_file, logic_dict, overworld)
+                # locations_file.write('''
+                #
+                #         ]
+                #     }
+                # ]''')
+                locations_file.write('''
+                            ]''')
+                overworld.write(f'''
+                                    ],
+                                    "map_locations": [
+                                        \u007b
+                                            "map": "Overworld",
+                                            "x": {random.randint(10, 2500)},
+                                            "y": {random.randint(10, 1500)},
+                                            "size": 6
+                                        \u007d
+                                    ]
+                                    \u007d,
+                                    ''')
+        overworld.write('''
+                                ]''')
 
-    maps_names = ["Worldmap"]
-    for lvl in lvls:
-        if len(locations_dict[lvl]) > 9:
-            maps_names.append(lvl)
+        maps_names = ["Overworld"]
+        for lvl in lvls:
+            if len(locations_dict[lvl]) > 9:
+                maps_names.append(lvl)
+        overworld.write('''
+                }
+        ]''')
 #
 
 
@@ -580,7 +628,7 @@ def create_maps(path: str):
                 "name": "{map}",
                 "location_size": 6,
                 "location_border_thickness": 1,
-                "img": "images/Maps/{map}.png"
+                "img": "images/maps/{map}.png"
             ''')
             if i == len(maps_names) - 1:
                 maps.write('\u007d')
