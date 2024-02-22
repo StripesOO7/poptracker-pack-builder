@@ -305,7 +305,7 @@ def write_locations(loc_dict, region, file, logic_dict, overworld):
                         ''')
             overworld.write(f'''
                                         \u007b
-                                            "name": "{location}",
+                                            "name": "{region} - {location}",
                                             "ref": "{region}/{location}"
                                         \u007d,
                                     ''')
@@ -459,6 +459,7 @@ def location_dict_builder(location_dict: dict, path: list, location_list: list, 
             for part in path:
                 location_dict = location_dict[part]
             # print(location_list[1:], location_list[1:][0])
+            # print(path)
             location_dict.setdefault(location_list[0], dict())
             # location_dict[location_list[0]].update({location_list[1:][0]: dict()})
             path.append(location_list[0])
