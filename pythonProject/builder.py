@@ -271,7 +271,7 @@ def write_locations(loc_dict, region, file, logic_dict, overworld):
 
                                         "sections": [
                                     ''')
-        for location in temp_lists:
+        for i, location in enumerate(temp_lists):
             # print("list", sub_region, region)
             # file.write(f'''
             #             \u007b
@@ -301,7 +301,11 @@ def write_locations(loc_dict, region, file, logic_dict, overworld):
                 #     file.write('''\u007d
                 #                 ''')
                 # else:
-            file.write('''\u007d,
+            if i+1 == len(temp_lists):
+                file.write('''\u007d
+                        ''')
+            else:
+                file.write('''\u007d,
                         ''')
             overworld.write(f'''
                                         \u007b
@@ -321,13 +325,15 @@ def write_locations(loc_dict, region, file, logic_dict, overworld):
                             ]
                             ''')
 
-        if 0 == len(loc_dict) - 1:
-            # print(test, len(lvl_locations[city]))
-            file.write('\u007d')
-        else:
-            file.write('\u007d,')
+        # if 0 == len(loc_dict) - 1:
+        #     # print(test, len(lvl_locations[city]))
+        #     file.write('\u007d')
+        # else:
+        file.write('\u007d,')
             # overworld.write('\u007d,')
-
+    else:
+        file.write('''\u007d,
+                                ''')
     # file.write('''
     #
     #                         ]
