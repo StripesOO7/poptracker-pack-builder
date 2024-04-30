@@ -514,12 +514,12 @@ def create_locations(path: str, logic: dict[str, str]):
     lvls = set(temp)
     #
 
-    with open(path+"/scripts/locations.lua", 'w') as locations_file:
+    with open(path+"/scripts/locations_import.lua", 'w') as locations_file:
         for i in lvls:
             locations_file.write(f'Tracker:AddLocations("locations/{i}.json")\n')
-            open(path + f"scripts/logic/{i}.lua", "x").close()
+            open(path + f"/scripts/logic/{i}.lua", "x").close()
         locations_file.write(f'Tracker:AddLocations("locations/Overworld.json")\n')
-        open(path + "scripts/logic/location_definition.lua", "x").close()
+        open(path + "/scripts/logic/location_definition.lua", "x").close()
     locations_dict = {e: {} for e in lvls}
 
     logic_dict = extract_logic()
@@ -1404,34 +1404,42 @@ Archipelago:AddLocationHandler("location handler", onLocation)
     if not os.path.exists(path + "/scripts/init.lua"):
         with open(path + "/scripts/init.lua", "w") as init_lua:
             init_lua.write('''
-        local variant = Tracker.ActiveVariantUID
+            local variant = Tracker.ActiveVariantUID
 
 Tracker:AddItems("items/items.json")
 Tracker:AddItems("items/labels.json")
 
+-- Items
+ScriptHost:LoadScript("scripts/items_import.lua")
+
 -- Logic
-ScriptHost:LoadScript("scripts/logic/logic.lua")
+ScriptHost:LoadScript("scripts/logic/logic_helpers.lua")
+ScriptHost:LoadScript("scripts/logic/logic_main.lua")
+ScriptHost:LoadScript("scripts/logic_import.lua")
 
 -- Maps
-if Tracker.ActiveVariantUID == "Items Only" then
+if Tracker.ActiveVariantUID == "maps-u" then
+    Tracker:AddMaps("maps/maps-u.json")  
+else
     Tracker:AddMaps("maps/maps.json")  
+end  
+
+if PopVersion and PopVersion >= "0.23.0" then
+    Tracker:AddLocations("locations/dungeons.json")
 end
 
-Tracker:AddMaps("maps/maps.json")
 -- Layout
-ScriptHost:LoadScript("scripts/layouts.lua")
+ScriptHost:LoadScript("scripts/layouts_import.lua")
 
 -- Locations
-ScriptHost:LoadScript("scripts/locations.lua")
--- Tracker:AddLocations("locations/locations.json")
-
+ScriptHost:LoadScript("scripts/locations_import.lua")
 
 -- AutoTracking for Poptracker
 if PopVersion and PopVersion >= "0.18.0" then
     ScriptHost:LoadScript("scripts/autotracking.lua")
 end''')
-    if not os.path.exists(path + "/scripts/layouts.lua"):
-        with open(path + "/scripts/layouts.lua", "w") as layouts_lua:
+    if not os.path.exists(path + "/scripts/layouts_import.lua"):
+        with open(path + "/scripts/layouts_import.lua", "w") as layouts_lua:
             layouts_lua.write('''
         Tracker:AddLayouts("layouts/events.json")
 Tracker:AddLayouts("layouts/settings.json")
@@ -1499,8 +1507,8 @@ ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")
     // "versions_url": "https://raw.githubusercontent.com/StripesOO7/alttp-ap-poptracker-pack/versions/versions.json"
 \u007d
 ''')
-    if not os.path.exists(path + "/scripts/logic/logic.lua"):
-        with open(path + "/scripts/logic/logic.lua", "w") as logic_lua:
+    if not os.path.exists(path + "/scripts/logic/logic_main.lua"):
+        with open(path + "/scripts/logic/logic_main.lua", "w") as logic_lua:
             logic_lua.write('''
             ScriptHost:AddWatchForCode("keydropshuffle handler", "key_drop_shuffle", keyDropLayoutChange)
 ScriptHost:AddWatchForCode("boss handler", "boss_shuffle", bossShuffle)
@@ -1676,7 +1684,8 @@ end
 
 ScriptHost:AddWatchForCode("stateChanged", "*", stateChanged)
         ''')
-        with open(path + "/scripts/logic/logic_helper.lua") as logic_helper_lua:
+    if not os.path.exists(path + "/scripts/logic/logic_helper.lua"):
+        with open(path + "/scripts/logic/logic_helper.lua", "w") as logic_helper_lua:
             logic_helper_lua.write('''
             function A(result)
     if result then
