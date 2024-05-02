@@ -14,6 +14,8 @@ maps_names = []
 logic = dict()
 open_chest = "open.png"
 close_chest = "close.png"
+
+
 def create_mappings(game_data: dict[str, int]):
     '''
     writes the 2 mapping files needed for location and item tracking via AP
@@ -188,8 +190,10 @@ def write_locations(loc_dict, region, file, logic_dict, overworld):
     :param region:
     :param file:
     :param logic_dict:
+    :param overworld:
     :return:
     '''
+
     # regions = region
     well = False
     sub_region = loc_dict[region]
@@ -271,6 +275,7 @@ def write_locations(loc_dict, region, file, logic_dict, overworld):
 
                                         "sections": [
                                     ''')
+        # with open(read_file_path + fr"\locations\{region}.lua", "w") as location_lua:
         for i, location in enumerate(temp_lists):
             # print("list", sub_region, region)
             # file.write(f'''
@@ -283,6 +288,7 @@ def write_locations(loc_dict, region, file, logic_dict, overworld):
             #             ''')
             # for k, check in enumerate(sub_region):
             # print(check) #, check_location)
+            # location_lua.write(f" local {location}.new()")
             file.write(f'''
                             \u007b
                                 "name": "{location}",''')
@@ -459,13 +465,13 @@ def write_locations(loc_dict, region, file, logic_dict, overworld):
 
 
 def location_dict_builder(location_dict: dict, path: list, location_list: list, logic_dict: dict, building: bool):
-    # print(location_list)
+    print(location_list)
     if building:
         if not len(location_list) == 1:
             for part in path:
                 location_dict = location_dict[part]
             # print(location_list[1:], location_list[1:][0])
-            # print(path)
+            print(path)
             location_dict.setdefault(location_list[0], dict())
             # location_dict[location_list[0]].update({location_list[1:][0]: dict()})
             path.append(location_list[0])
@@ -523,9 +529,9 @@ def create_locations(path: str, logic: dict[str, str]):
     with open(path+"/scripts/locations_import.lua", 'w') as locations_file:
         for i in lvls:
             locations_file.write(f'Tracker:AddLocations("locations/{i}.json")\n')
-            open(path + f"/scripts/logic/{i}.lua", "x").close()
+            open(path + f"/scripts/logic/{i}.lua", "w").close()
         locations_file.write(f'Tracker:AddLocations("locations/Overworld.json")\n')
-        open(path + "/scripts/logic/location_definition.lua", "x").close()
+        open(path + "/scripts/logic/location_definition.lua", "w").close()
     locations_dict = {e: {} for e in lvls}
 
     logic_dict = extract_logic()
