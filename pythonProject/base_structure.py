@@ -4,13 +4,13 @@ from tkinter import filedialog
 import requests
 
 
-def create_base_structure(path: str, game_name, game_dict):
+def create_base_structure(path: str, game_name:str, game_dict:dict):
     '''
     creates every needed directory and file needed to get a basic poptracker pack working and loading if the needed
     file is not already present
-    :param path:
-    :param game_name:
-    :param game_dict:
+    :param str path: Path to the root folder of the Trackerpack
+    :param str game_name: Name of the Game the Tracker is Made for. needs to Match the name in the AP datapackage
+    :param dict game_dict: the json formated part from the AP datapackage for the specified game
     :return:
     '''
     if not os.path.exists(path + "/scripts"):

@@ -4,7 +4,16 @@ from tkinter import filedialog
 from PIL import Image, ImageDraw, ImageFont
 
 
-def _gimp_png(save_path, name, length):
+def _gimp_png(save_path:str, name:str, length:int =28):
+    '''
+    creates an image with the Python Image Library based on a given name.
+    newline characters inside the name determine how many lines the resulting image has.
+    max char-amount per line can be adjusted. defaults to 28
+    :param str save_path: Path to the root Folder of the Trackerpack.
+    :param str name: name of the specific image to be created. contains newline characters to make multi-line images
+    :param int length: roughly equates to the max character amount per line.
+    :return: none
+    '''
     font = ImageFont.truetype(r'C:\Windows\Fonts\micross.ttf', 40)
     multiline_count = name.count('\n')
     print(multiline_count)
@@ -106,12 +115,12 @@ if __name__ == '__main__':
                 for i, _ in enumerate(lines):
                     if i != 0:
                         # print('\n'.join((lines[0], lines[i])))
-                        _gimp_png(save_to_path, '\n'.join((lines[0], lines[i])), 28)
+                        _gimp_png(save_to_path, '\n'.join((lines[0], lines[i])))
 
             else:
                 # pass
                 # print(lines)
-                _gimp_png(save_to_path, lines, 28)
+                _gimp_png(save_to_path, lines)
                 # if len(lines[0]) > max:
             #     max = len(lines[0])
             # gimp_png(line[0]+line[1], 33)

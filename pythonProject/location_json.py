@@ -3,7 +3,12 @@ import random
 import tkinter as tk
 from tkinter import filedialog
 
-def _maps_json(map_name):
+def _maps_json(map_name:str):
+    '''
+    returns a JSON-compatible dict containing the basic option for a single map definition in poptracker
+    :param str map_name: Name of the Region to create a map listing off of.
+    :return dict: returns a JSON-compatible dict containing the basic option for a single map definition in poptracker
+    '''
     map_json_obj = {
         "name": f"{map_name}",
         "location_size": 6,
@@ -12,22 +17,27 @@ def _maps_json(map_name):
     }
     return map_json_obj
 
-def _write_locations(loc_dict, region, location_list:list, logic_dict, overworld:dict, top_most_region, fullpath):
+def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:dict, overworld:dict,
+                     top_most_region:str, fullpath:str):
     '''
-    if the logic form the rules-file could get split the location name into 3 sets (region, location, item) this
-    function gets called.
-    the set images for still closed and already opened items are set here, defaults to the poptracker provided
-    open/closed images.
-    Also try's to find matching region/location/items rules in the logicfile and writes them in the corresponding
-    section. if nothing gets found access_rules get skipped and need to be added later. A file of the extracked rules is saved in the packs directory
-    :param loc_dict:
-    :param region:
-    :param location_list:
-    :param logic_dict:
-    :param overworld:
-    :param top_most_region:
-    :param fullpath:
-    :return:
+    Based on the created Locations-dictionary creates a JSON-compatible dict containing all the needed information
+    for poptracker to read the respective fil;es as valid location-trees.
+    Also adds references to all locations to an all-combining Overworlds file.
+
+    JSON-compatible dict is build in place thus no return value
+
+    To-Do: add logic-rules based on extracted information from logic file(s)
+
+    :param dict loc_dict:
+    :param str region: name of the current region you are in and add locations/check to
+    :param dict location_list: contains a dict to be filled with either more dict-structures ("children") for more
+    nesting of locations or gets "sections" added if this is the final stage for this specific location
+    :param dict logic_dict: currently unused thus empty. will contain a full dict containing the special access rules for each location
+    :param dict overworld: contains the dict for the overworld.json file to get filled with references
+    :param str top_most_region: containes the Name of the topmost Region so the check will be displayed when a Map is created with the same name
+    :param str fullpath: contains the full path to the specific location that's needed for the reference in the
+    overworld.json to work
+    :return: none
     '''
 
     # regions = region
@@ -85,6 +95,20 @@ def _write_locations(loc_dict, region, location_list:list, logic_dict, overworld
 
 
 def _location_dict_builder(locations_dict: dict, path: list, location_list: list, logic_dict: dict, building: bool):
+    '''
+    This function builds recursive a multi-layered dictionary.
+    As long as there are elements left in location_list to traverse downwards it will add the first entry of that
+    list as key to a new dictionary layer. If the Key already exists ist just adds another entry to that.
+    When the last item in location_list is reached it will add it the final stage of the dict containing an empty list.
+    The empty list is currently unused but is intended to store logic information or this specific Check/location.
+    :param dict locations_dict: contains the part of the dict that needs to still be traversed. get moved 1 stage
+    deeper with each iteration
+    :param list path: list of stages already traversed through the dict-structure
+    :param list location_list: remaining stages to traverse/add to the dict-structure
+    :param dict logic_dict: currently unused otherwise containing a dict of logic rules applicable for each check
+    :param bool building:
+    :return: returns a sorted dictionary of the currently added locations
+    '''
     # print(location_list)
     location_dict = locations_dict
     if building:
@@ -122,11 +146,12 @@ def _location_dict_builder(locations_dict: dict, path: list, location_list: list
 def create_locations(path: str): #, logic: dict[str, str]):
     '''
     creates the singled out location files according to the names found in the locations_mapping file.
-    distinct handling of 2 and 3 segment location splitting.
+
     Also asks for 2 images for still closed and already opened chests/items if not already defined in the datapackage file
-    :param path:
+    :param str path: Path to the root folder of the Tracker. Used for loading of the mapping file and saving the
+    resulting <location>.json files
     :param logic:
-    :return:
+    :return: none
     '''
     global open_chest, close_chest
     read_input = []
@@ -250,9 +275,11 @@ def create_maps(path: str, maps_names:list):
     '''
     creates the maps used in the tabbed section in poptracker.
     uses only regions with more than 9 sections in it according to the sectioning in the locations_mapping
-    :param path:
-    :param maps_names:
-    :return:
+    :param str path: Path to the root folder of the Tracker. Used for loading of the mapping file and saving the
+    resulting <map_name>.json files
+    :param list maps_names: list of names to be used to create the corresponding map definitions. Based of the first
+    stage in the locations_mapping for each location
+    :return: none
     '''
     with open(path+"/maps/maps.json", 'w') as maps:
         maps_json = []
@@ -264,6 +291,13 @@ def create_maps(path: str, maps_names:list):
 
 
 if __name__ == '__main__':
+    '''
+    - Askes for the root folder of the Trackerpack.
+    - Loades the locations_mapping.lua file that should have been created previously.
+    - Creates Map-definitions for the first stage of each location if there are more then 9 locations total inside of 
+    that stage
+    - Creates nested location-definitions for all the first stages of each location. 
+    '''
     root = tk.Tk()
     root.withdraw()
     #

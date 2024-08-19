@@ -95,11 +95,12 @@ def _item_static_preset(item_name:str):
 
 def create_items(path: str):
     '''
-    gathers the items vom the item_mapping file and converts them according to their specified item_type into a
-    pop-readable/-loadable json format.
+    gathers the items from the item_mapping.lua file and converts them according to their specified item_type into a
+    poptracker-readable/-loadable json format.
+    ignores with "--" commented out lines.
     Pre-places the itemnames as names for the loaded images. needs to be adjusted if that is not fitting.
-    :param path:
-    :return:
+    :param path: Path to the root folder of the Trackerpack
+    :return: none
     '''
     read_input = []
     item_list = []

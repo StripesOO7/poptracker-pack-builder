@@ -1,7 +1,6 @@
 import json
 import math
 import tkinter as tk
-from sys import intern
 from tkinter import filedialog
 
 def _maps_layouts(map_name):
