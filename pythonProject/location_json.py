@@ -157,6 +157,7 @@ def create_locations(path: str): #, logic: dict[str, str]):
     read_input = []
     location_list = []
     temp = []
+    forbidden = ["<", ">", ":", "/", "\\", "|", "?", "*"]
     # global lvls, locations_dict, maps_names
     with open(path+'/scripts/autotracking/location_mapping.lua') as mapping:
         while inputs := mapping.readline():
@@ -220,8 +221,8 @@ def create_locations(path: str): #, logic: dict[str, str]):
         overworld_list = []
         overworld_json = {
             "name": "Overworld",
-            "chest_unopened_img": f"/images/Items/{close_chest}",
-            "chest_opened_img": f"/images/Items/{open_chest}",
+            "chest_unopened_img": f"/images/items/{close_chest}",
+            "chest_opened_img": f"/images/items/{open_chest}",
             "overlay_background": "#000000",
             "access_rules": [" "],
             "children": []
@@ -233,8 +234,8 @@ def create_locations(path: str): #, logic: dict[str, str]):
             overworld_json["children"].append(
                 {
                     "name": f"{locations_region}",
-                    "chest_unopened_img": f"/images/Items/{close_chest}",
-                    "chest_opened_img": f"/images/Items/{open_chest}",
+                    "chest_unopened_img": f"/images/items/{close_chest}",
+                    "chest_opened_img": f"/images/items/{open_chest}",
                     "overlay_background": "#000000",
                     "access_rules": [" "],
                     "sections": [],

@@ -669,6 +669,8 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
     :param type:
     :return:
     '''
+    delimiter = [ ' - ', ': ', ') ']
+    replacement = ['/', '/', ')/']
     with open(path + '/scripts/autotracking/' + file_name + '.lua', "w") as mapping:
         mapping.write(f'{file_name.upper()} = \u007b\n')
         match type:
@@ -677,20 +679,20 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
                     mapping.write(f'\t[{ids}] = \u007b \u007b"{name.replace(" ", "").lower()}"\u007d, "toggle"\u007d,'
                                   f'\n'),
             case 'locations':
-                delimiter = [' - ', ': ', ') ']
                 for name, ids in data.items():
                     br = 'false'
-                    for spacer in delimiter:
+
+                    for i, spacer in enumerate(delimiter):
                         if spacer in name:
-                            mapping.write(f'\t[{ids}] = \u007b"@{name.replace(f"{spacer}","/")}"\u007d,\n'),
-                            br = 'true'
-                            break
-
-                        if br == "true":
-                            continue
-
-                        mapping.write(f'\t[{ids}] = \u007b"@{name}"\u007d,\n'),
-                        break
+                            opened = name.find("(")
+                            closed = name.find(")")
+                            check_inbetween = name.find(spacer)
+                            if opened < check_inbetween and check_inbetween < closed:
+                                name = name[:closed]+name[closed:].replace(f"{spacer}",replacement[i])
+                                name = name.replace(f"{spacer}", " - ")
+                            else:
+                                name = name.replace(f"{spacer}", replacement[i])
+                    mapping.write(f'\t[{ids}] = \u007b"@{name}"\u007d,\n')
         mapping.write("\u007d")
 
 
