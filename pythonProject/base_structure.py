@@ -674,7 +674,8 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
         match type:
             case 'items':
                 for name, ids in data.items():
-                    mapping.write(f'\t[{ids}] = \u007b \u007b"{name.replace(" ", "")}"\u007d, "toggle"\u007d,\n'),
+                    mapping.write(f'\t[{ids}] = \u007b \u007b"{name.replace(" ", "").lower()}"\u007d, "toggle"\u007d,'
+                                  f'\n'),
             case 'locations':
                 delimiter = [' - ', ': ', ') ']
                 for name, ids in data.items():

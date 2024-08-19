@@ -55,8 +55,8 @@ def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:d
     location_list.append(
         {
             "name": f"{region}",
-            "chest_unopened_img": f"/images/Items/{close_chest}",
-            "chest_opened_img": f"/images/Items/{open_chest}",
+            "chest_unopened_img": f"/images/items/{close_chest}",
+            "chest_opened_img": f"/images/items/{open_chest}",
             "overlay_background": "#000000",
             "access_rules": [" "],
         }
@@ -240,7 +240,7 @@ def create_locations(path: str): #, logic: dict[str, str]):
                     "sections": [],
                     "map_locations": [
                         {
-                            "map": f"{locations_region}",
+                            "map": "Overworld",
                             "x": random.randint(10, 2500),
                             "y": random.randint(10, 1500),
                             "size": 6

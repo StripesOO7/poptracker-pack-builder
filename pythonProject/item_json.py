@@ -114,7 +114,8 @@ def create_items(path: str):
 
     for k, _ in enumerate(read_input):
         first_open = read_input[k][1].index('{')
-        last_close = read_input[k][1].index('},\n')
+        last_close = read_input[k][1].index('},\n') if read_input[k][1].find('},\n') > 0  else read_input[k][
+            1].index('}\n')
         # second_close = read_input[k][1][first_close:].index('}')
         read_input[k][1] = read_input[k][1][first_open+1: last_close].strip()
         item_list.append(read_input[k][1].replace('"', '').rsplit(', ',1))
