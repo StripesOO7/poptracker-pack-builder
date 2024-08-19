@@ -4,7 +4,7 @@ from tkinter import filedialog
 from PIL import Image, ImageDraw, ImageFont
 
 
-def gimp_png(save_path, name, length):
+def _gimp_png(save_path, name, length):
     font = ImageFont.truetype(r'C:\Windows\Fonts\micross.ttf', 40)
     multiline_count = name.count('\n')
     print(multiline_count)
@@ -29,26 +29,26 @@ def gimp_png(save_path, name, length):
     bg_img.save(path)
 
 
-def gimp_png_multiline(save_path, name, length):
-    font = ImageFont.truetype(r'C:\Windows\Fonts\micross.ttf', 40)
-    # charsize = (length * 19, 92)
-    # W, H = charsize
-    color = '#fff'
-
-    multiline_count = name.count('\n')
-    charsize = (length * 17, 46*(multiline_count+1))
-    W, H = charsize
-    text = name.replace("\n", " ")
-    path = fr'{save_path}\{text.replace(" ", "_").lower()}.png'
-
-    print(path)
-    bg_img = Image.new('RGB', charsize, color)
-    mask_img = Image.new('L', bg_img.size, 0)
-    draw = ImageDraw.Draw(mask_img)
-    _, _, w, h = draw.textbbox((0, 0), text, font=font)
-    draw.multiline_text(((W - w) / 2, (H - h) / 2), text=text, font=font, fill='white', align='center')
-    bg_img.putalpha(mask_img)
-    bg_img.save(path)
+# def _gimp_png_multiline(save_path, name, length):
+#     font = ImageFont.truetype(r'C:\Windows\Fonts\micross.ttf', 40)
+#     # charsize = (length * 19, 92)
+#     # W, H = charsize
+#     color = '#fff'
+#
+#     multiline_count = name.count('\n')
+#     charsize = (length * 17, 46*(multiline_count+1))
+#     W, H = charsize
+#     text = name.replace("\n", " ")
+#     path = fr'{save_path}\{text.replace(" ", "_").lower()}.png'
+#
+#     print(path)
+#     bg_img = Image.new('RGB', charsize, color)
+#     mask_img = Image.new('L', bg_img.size, 0)
+#     draw = ImageDraw.Draw(mask_img)
+#     _, _, w, h = draw.textbbox((0, 0), text, font=font)
+#     draw.multiline_text(((W - w) / 2, (H - h) / 2), text=text, font=font, fill='white', align='center')
+#     bg_img.putalpha(mask_img)
+#     bg_img.save(path)
 
 if __name__ == '__main__':
     '''
@@ -106,12 +106,12 @@ if __name__ == '__main__':
                 for i, _ in enumerate(lines):
                     if i != 0:
                         # print('\n'.join((lines[0], lines[i])))
-                        gimp_png(save_to_path, '\n'.join((lines[0], lines[i])), 28)
+                        _gimp_png(save_to_path, '\n'.join((lines[0], lines[i])), 28)
 
             else:
                 # pass
                 # print(lines)
-                gimp_png(save_to_path, lines, 28)
+                _gimp_png(save_to_path, lines, 28)
                 # if len(lines[0]) > max:
             #     max = len(lines[0])
             # gimp_png(line[0]+line[1], 33)

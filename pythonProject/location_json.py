@@ -86,8 +86,8 @@ def _write_locations(loc_dict, region, location_list:list, logic_dict, overworld
 
 def _location_dict_builder(locations_dict: dict, path: list, location_list: list, logic_dict: dict, building: bool):
     # print(location_list)
+    location_dict = locations_dict
     if building:
-        location_dict = locations_dict
         if not len(location_list) == 1:
 
             for part in path:
