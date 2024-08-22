@@ -318,7 +318,7 @@ if __name__ == '__main__':
     with open(base_path + '/scripts/autotracking/location_mapping.lua') as mapping:
         while inputs := mapping.readline():
             if "]" in inputs:
-                if not inputs.strip()[0:2] == "--":
+                if not (inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"):
                     read_input.append(inputs.split("="))
             else:
                 pass
