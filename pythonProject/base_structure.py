@@ -22,6 +22,7 @@ def create_base_structure(path: str, game_name:str, game_dict:dict):
             ap_lua.write('''
         ScriptHost:LoadScript("scripts/autotracking/item_mapping.lua")
 ScriptHost:LoadScript("scripts/autotracking/location_mapping.lua")
+ScriptHost:LoadScript("scripts/autotracking/hints_mapping.lua")
 
 CUR_INDEX = -1
 --SLOT_DATA = nil
@@ -123,6 +124,13 @@ function onClear(slot_data)
     -- if Tracker:FindObjectForCode("autofill_settings").Active == true then
     --     autoFill(slot_data)
     -- end
+    -- print(PLAYER_ID, TEAM_NUMBER)
+    if Archipelago.PlayerNumber > -1 then
+
+        HINTS_ID = "_read_hints_"..TEAM_NUMBER.."_"..PLAYER_ID
+        Archipelago:SetNotify({HINTS_ID})
+        Archipelago:Get({HINTS_ID})
+    end
 end
 
 function onItem(index, item_id, item_name, player_number)
@@ -250,11 +258,70 @@ end
 --     end
 -- end
 
+function onNotify(key, value, old_value)
+    print("onNotify", key, value, old_value)
+    if value ~= old_value and key == HINTS_ID then
+        for _, hint in ipairs(value) do
+            if not hint.found and hint.finding_player == Archipelago.PlayerNumber then
+                updateHints(hint.location)
+            end
+        end
+    end
+end
+
+function onNotifyLaunch(key, value)
+    print("onNotifyLaunch", key, value)
+    if key == HINTS_ID then
+        for _, hint in ipairs(value) do
+            print("hint", hint, hint.fount)
+            print(dump_table(hint))
+            if not hint.found and hint.finding_player == Archipelago.PlayerNumber then
+                updateHints(hint.location)
+            end
+        end
+    end
+end
+
+function updateHints(locationID)
+    print("updatehint", locationID)
+    local item_codes = HINTS_MAPPING[locationID]
+
+    for _, item_table in ipairs(item_codes) do
+        for _, item_code in ipairs(item_table) do
+            print(item_code)
+            local obj = Tracker:FindObjectForCode(item_code)
+            if obj then
+                obj.Active = true
+            else
+                print(string.format("No object found for code: %s", item_code))
+            end
+        end
+    end
+end
+
 
 -- ScriptHost:AddWatchForCode("settings autofill handler", "autofill_settings", autoFill)
 Archipelago:AddClearHandler("clear handler", onClear)
 Archipelago:AddItemHandler("item handler", onItem)
 Archipelago:AddLocationHandler("location handler", onLocation)
+
+Archipelago:AddSetReplyHandler("notify handler", onNotify)
+Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
+
+
+
+--doc
+--hint layout
+-- {
+--     ["receiving_player"] = 1,
+--     ["class"] = Hint,
+--     ["finding_player"] = 1,
+--     ["location"] = 67361,
+--     ["found"] = false,
+--     ["item_flags"] = 2,
+--     ["entrance"] = ,
+--     ["item"] = 66062,
+-- } 
 ''')
     if not os.path.exists(path + "/scripts/init.lua"):
         with open(path + "/scripts/init.lua", "w") as init_lua:
@@ -262,6 +329,7 @@ Archipelago:AddLocationHandler("location handler", onLocation)
             local variant = Tracker.ActiveVariantUID
 
 Tracker:AddItems("items/items.json")
+Tracker:AddItems("items/hint_items.json")
 Tracker:AddItems("items/labels.json")
 
 -- Items
