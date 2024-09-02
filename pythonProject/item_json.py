@@ -102,9 +102,12 @@ def create_items(path: str):
     :param path: Path to the root folder of the Trackerpack
     :return: none
     '''
-    read_input = []
-    item_list = []
-    for file in ['hints_mapping', 'item_mapping']:
+
+    for file in ['item_mapping', 'hints_mapping']:
+        read_input = []
+        item_list = []
+        first_open = 0
+        last_close = 0
         print(file)
         with open(path+fr'/scripts/autotracking/{file}.lua') as mapping:
             while inputs := mapping.readline():
@@ -115,6 +118,9 @@ def create_items(path: str):
                     pass
 
         for k, _ in enumerate(read_input):
+            first_open = 0
+            last_close = 0
+            print(read_input[k][0], read_input[k][1])
             first_open = read_input[k][1].index('{')
             last_close = read_input[k][1].index('},\n') if read_input[k][1].find('},\n') > 0  else read_input[k][
                 1].index('}\n')

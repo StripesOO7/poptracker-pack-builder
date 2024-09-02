@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # create_mappings(game_data=games_dict[game_name], game=game_name)
     # create_item_mapping(location_data=games_dict[game_name], game=game_name)
     # create_location_mapping(location_data=games_dict[game_name], game=game_name)
-
+    location_json.create_hints(path=read_file_path)
     item_json.create_items(path=read_file_path)
     # maps_names = []
     read_input = []

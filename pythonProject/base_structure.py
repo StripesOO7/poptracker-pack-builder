@@ -708,6 +708,8 @@ end
         os.mkdir(path + "/locations")
     if not os.path.exists(path + "/maps"):
         os.mkdir(path + "/maps")
+    if not os.path.exists(path + "/scripts/autotracking/hints_mapping.lua"):
+        open(path + fr'/scripts/autotracking/hints_mapping.lua', "w").close()
     if not (os.path.exists(path + "/scripts/autotracking/item_mapping.lua") and os.path.exists(path +
                                                                                                "/scripts/autotracking/location_mapping.lua")):
         _create_mappings(path=path, game_data=game_dict[game_name])
@@ -744,8 +746,8 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
         match type:
             case 'items':
                 for name, ids in data.items():
-                    mapping.write(f'\t[{ids}] = \u007b \u007b"{name.replace(" ", "").lower()}"\u007d, "toggle"\u007d,'
-                                  f'\n'),
+                    mapping.write(f'\t[{ids}] = \u007b\u007b"{name.replace(" ", "").lower()}"\u007d, "toggle"\u007d,'
+                                  f'\n')
             case 'locations':
                 for name, ids in data.items():
                     br = 'false'

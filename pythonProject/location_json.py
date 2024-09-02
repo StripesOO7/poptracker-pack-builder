@@ -172,6 +172,32 @@ def _location_dict_builder(locations_dict: dict, path: list, location_list: list
     # print(location_dict.items())
     return dict(sorted(location_dict.items()))
 
+def create_hints (path:str):
+    read_input = []
+    hints_dict = {}
+    location_list = []
+    # global lvls, locations_dict, maps_names
+    with open(path + '/scripts/autotracking/location_mapping.lua') as mapping:
+        while inputs := mapping.readline():
+            if "]" in inputs:
+                read_input.append(inputs.split("="))
+            else:
+                pass
+    for k, _ in enumerate(read_input):
+        read_input[k][0] = int(read_input[k][0][read_input[k][0].find("[") + 1:read_input[k][0].rfind("]")])
+        read_input[k][1] = read_input[k][1][read_input[k][1].index('{') + 1: read_input[k][1].index('}')]
+        location_list.append(read_input[k][1].replace('@', '').replace('"', '').split("/"))
+
+        hints_dict[read_input[k][0]] = (read_input[k][1][:read_input[k][1].rfind('/')], read_input[k][1][:read_input[
+            k][1].rfind('/')].replace('@', '').replace('"', '').replace('/', '_').replace(' ', '_').lower())
+
+    with open(path + "/scripts/autotracking/hints_mapping.lua", "w") as hint_mapping:
+        hint_mapping.write('HINTS_MAPPING = \u007b\n')
+
+        for index in sorted(hints_dict.keys()):
+            hint_mapping.write(f'\t[{index}] = \u007b\u007b"{hints_dict[index][1]}"\u007d, "toggle"\u007d,\n')
+        hint_mapping.write("\u007d")
+
 def create_locations(path: str): #, logic: dict[str, str]):
     '''
     creates the singled out location files according to the names found in the locations_mapping file.
@@ -209,12 +235,6 @@ def create_locations(path: str): #, logic: dict[str, str]):
             temp.append(location_list[i][0])
     lvls = sorted(set(temp))
     #
-    with open(path + "/scripts/autotracking/hints_mapping.lua", "w") as hint_mapping:
-        hint_mapping.write('HINTS_MAPPING = \u007b\n')
-
-        for index in sorted(hints_dict.keys()):
-            hint_mapping.write(f'\t[{index}] = \u007b\u007b"{hints_dict[index][1]}"\u007d, "toggle"\u007d,\n')
-        hint_mapping.write("\u007d")
 
     with open(path+"/scripts/locations_import.lua", 'w') as locations_file:
         for level_name in lvls:
@@ -327,6 +347,7 @@ def create_locations(path: str): #, logic: dict[str, str]):
 
                 locations_file.write(json.dumps(location_hint_list+location_file_list, indent=4))
 
+        overworld_list.append(overworld_hints_json)
         overworld_list.append(overworld_json)
         overworld.write(json.dumps(overworld_list, indent=4))
 
