@@ -259,15 +259,14 @@ end
 -- end
 
 function onNotify(key, value, old_value)
-
+    print("onNotify", key, value, old_value)
     if value ~= old_value and key == HINTS_ID then
         for _, hint in ipairs(value) do
             if hint.finding_player == Archipelago.PlayerNumber then
-                if not hint.found then
-                    updateHints(hint.location, false)
-                else if hint.found then
+                if hint.found then
                     updateHints(hint.location, true)
-                    end
+                else
+                    updateHints(hint.location, false)
                 end
             end
         end
@@ -275,25 +274,29 @@ function onNotify(key, value, old_value)
 end
 
 function onNotifyLaunch(key, value)
+    print("onNotifyLaunch", key, value)
     if key == HINTS_ID then
         for _, hint in ipairs(value) do
+            print("hint", hint, hint.fount)
+            print(dump_table(hint))
             if hint.finding_player == Archipelago.PlayerNumber then
-                if not hint.found then
-                    updateHints(hint.location, false)
-                elseif hint.found then
+                if hint.found then
                     updateHints(hint.location, true)
-                    
+                else
+                    updateHints(hint.location, false)
                 end
             end
         end
     end
 end
- 
+
 function updateHints(locationID, clear)
+    print("updatehint", locationID)
     local item_codes = HINTS_MAPPING[locationID]
 
-    for _, item_table in ipairs(item_codes, clear) do
+    for _, item_table in ipairs(item_codes) do
         for _, item_code in ipairs(item_table) do
+            print(item_code)
             local obj = Tracker:FindObjectForCode(item_code)
             if obj then
                 if not clear then
