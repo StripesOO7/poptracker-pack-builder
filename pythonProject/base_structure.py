@@ -291,12 +291,10 @@ function onNotifyLaunch(key, value)
 end
 
 function updateHints(locationID, clear)
-    print("updatehint", locationID)
     local item_codes = HINTS_MAPPING[locationID]
 
-    for _, item_table in ipairs(item_codes) do
+    for _, item_table in ipairs(item_codes, clear) do
         for _, item_code in ipairs(item_table) do
-            print(item_code)
             local obj = Tracker:FindObjectForCode(item_code)
             if obj then
                 if not clear then
