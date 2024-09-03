@@ -259,39 +259,48 @@ end
 -- end
 
 function onNotify(key, value, old_value)
-    print("onNotify", key, value, old_value)
+
     if value ~= old_value and key == HINTS_ID then
         for _, hint in ipairs(value) do
-            if not hint.found and hint.finding_player == Archipelago.PlayerNumber then
-                updateHints(hint.location)
+            if hint.finding_player == Archipelago.PlayerNumber then
+                if not hint.found then
+                    updateHints(hint.location, false)
+                else if hint.found then
+                    updateHints(hint.location, true)
+                    end
+                end
             end
         end
     end
 end
 
 function onNotifyLaunch(key, value)
-    print("onNotifyLaunch", key, value)
     if key == HINTS_ID then
         for _, hint in ipairs(value) do
-            print("hint", hint, hint.fount)
-            print(dump_table(hint))
-            if not hint.found and hint.finding_player == Archipelago.PlayerNumber then
-                updateHints(hint.location)
+            if hint.finding_player == Archipelago.PlayerNumber then
+                if not hint.found then
+                    updateHints(hint.location, false)
+                elseif hint.found then
+                    updateHints(hint.location, true)
+                    
+                end
             end
         end
     end
 end
-
-function updateHints(locationID)
-    print("updatehint", locationID)
+ 
+function updateHints(locationID, clear)
     local item_codes = HINTS_MAPPING[locationID]
 
-    for _, item_table in ipairs(item_codes) do
+    for _, item_table in ipairs(item_codes, clear) do
         for _, item_code in ipairs(item_table) do
-            print(item_code)
             local obj = Tracker:FindObjectForCode(item_code)
             if obj then
-                obj.Active = true
+                if not clear then
+                    obj.Active = true
+                else
+                    obj.Active = false
+                end
             else
                 print(string.format("No object found for code: %s", item_code))
             end
