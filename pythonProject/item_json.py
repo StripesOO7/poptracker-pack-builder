@@ -128,13 +128,14 @@ def create_items(path: str):
             read_input[k][1] = read_input[k][1][first_open+1: last_close].strip()
             item_list.append(read_input[k][1].replace('"', '').rsplit(', ',1))
 
+        item_list = list(set(tuple(sub) for sub in item_list))
         if file == 'item_mapping':
             name = 'items'
+            item_list.append(("{update}", "toggle"))
         elif file == 'hints_mapping':
             name = 'hint_items'
         else:
             name = 'items_default'
-        item_list = list(set(tuple(sub) for sub in item_list))
 
         with open(path + rf"/items/{name}.json", "w") as items_file:
             # items_file.write("[")

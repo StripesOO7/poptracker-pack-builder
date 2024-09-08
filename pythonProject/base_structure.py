@@ -56,6 +56,38 @@ function dump_table(o, depth)
     end
 end
 
+function forceUpdate()
+    local update = Tracker:FindObjectForCode("update")
+    update.Active = not update.Active
+end
+
+function onClearHandler(slot_data)
+    clear_timer = os.clock()
+    
+    ScriptHost:RemoveWatchForCode("StateChange")
+    -- Disable tracker updates.
+    Tracker.BulkUpdate = true
+    -- Use a protected call so that tracker updates always get enabled again, even if an error occurred.
+    local ok, err = pcall(onClear, slot_data)
+    -- Enable tracker updates again.
+    if ok then
+        -- Defer re-enabling tracker updates until the next frame, which doesn't happen until all received items/cleared
+        -- locations from AP have been processed.
+        local handlerName = "AP onClearHandler"
+        local function frameCallback()
+            ScriptHost:AddWatchForCode("StateChange", "*", StateChange)
+            ScriptHost:RemoveOnFrameHandler(handlerName)
+            Tracker.BulkUpdate = false
+            forceUpdate()
+            print(string.format("Time taken total: %.2f", os.clock() - clear_timer))
+        end
+        ScriptHost:AddOnFrameHandler(handlerName, frameCallback)
+    else
+        Tracker.BulkUpdate = false
+        print("Error: onClear failed:")
+        print(err)
+    end
+end
 
 function onClear(slot_data)
     --SLOT_DATA = slot_data
@@ -311,7 +343,7 @@ end
 
 
 -- ScriptHost:AddWatchForCode("settings autofill handler", "autofill_settings", autoFill)
-Archipelago:AddClearHandler("clear handler", onClear)
+Archipelago:AddClearHandler("clear handler", onClearHandler)
 Archipelago:AddItemHandler("item handler", onItem)
 Archipelago:AddLocationHandler("location handler", onLocation)
 
@@ -346,7 +378,7 @@ Tracker:AddItems("items/labels.json")
 ScriptHost:LoadScript("scripts/items_import.lua")
 
 -- Logic
-ScriptHost:LoadScript("scripts/logic/logic_helpers.lua")
+ScriptHost:LoadScript("scripts/logic/logic_helper.lua")
 ScriptHost:LoadScript("scripts/logic/logic_main.lua")
 ScriptHost:LoadScript("scripts/logic_import.lua")
 
