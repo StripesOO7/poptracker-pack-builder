@@ -18,7 +18,8 @@ def _maps_json(map_name:str):
     return map_json_obj
 
 def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:dict, overworld:dict,
-                     top_most_region:str, fullpath:str, hints_list:list):
+                     overworld_hints:dict,
+                     top_most_region:str, fullpath:str, fullpath_hint:str, hints_list:list):
     '''
     Based on the created Locations-dictionary creates a JSON-compatible dict containing all the needed information
     for poptracker to read the respective fil;es as valid location-trees.
@@ -75,12 +76,13 @@ def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:d
         hints_list[-1]["children"] = []
         for index, location in enumerate(temp_dicts):
             _write_locations(sub_region, location, location_list[-1]["children"], logic_dict, overworld,
-                                 top_most_region, fullpath + '/' + location, hints_list[-1]["children"])
+                             overworld_hints, top_most_region, fullpath + '/' + location, fullpath_hint + ' - hint/' +
+                             location, hints_list[-1]["children"])
     if len(temp_lists) > 0:
         location_list[-1]["sections"] = []
         hints_list[-1]["sections"] = []
         # overworld["sections"] = []
-        for i, location in enumerate(temp_lists):
+        for location in temp_lists:
             x = random.randint(10, 2500)
             y = random.randint(10, 2500)
             location_list[-1]["sections"].append(
@@ -95,7 +97,7 @@ def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:d
                 {
                     "name": f"{location} - hint",
                     "access_rules": [],
-                    "visibility_rules": [f"{fullpath.replace(' ', '_').replace('/', '_').lower()}"],
+                    "visibility_rules": [f"{(fullpath+'/'+location).replace(' ', '_').replace('/', '_').lower()}"],
                     "item_count": 1
                 }
             )
@@ -103,6 +105,12 @@ def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:d
                 {
                     "name": f"{region} - {location}",
                     "ref": f"{fullpath + '/' + location}"
+                }
+            )
+            overworld_hints["sections"].append(
+                {
+                    "name": f"{region} - {location} - hint",
+                    "ref": f"{fullpath_hint + ' - hint/' + location} - hint"
                 }
             )
         location_list[-1]["map_locations"] = [
@@ -188,8 +196,7 @@ def create_hints (path:str):
         read_input[k][1] = read_input[k][1][read_input[k][1].index('{') + 1: read_input[k][1].index('}')]
         location_list.append(read_input[k][1].replace('@', '').replace('"', '').split("/"))
 
-        hints_dict[read_input[k][0]] = (read_input[k][1][:read_input[k][1].rfind('/')], read_input[k][1][:read_input[
-            k][1].rfind('/')].replace('@', '').replace('"', '').replace('/', '_').replace(' ', '_').lower())
+        hints_dict[read_input[k][0]] = (read_input[k][1], read_input[k][1].replace('@', '').replace('"', '').replace('/', '_').replace(' ', '_').lower())
 
     with open(path + "/scripts/autotracking/hints_mapping.lua", "w") as hint_mapping:
         hint_mapping.write('HINTS_MAPPING = \u007b\n')
@@ -279,7 +286,7 @@ def create_locations(path: str): #, logic: dict[str, str]):
     close_chest = "close.png"
         # open_chest = other_options[0]
         # close_chest = other_options[1]
-    with open(path+fr"\locations\Overworld.json", "w") as overworld:
+    with (open(path+fr"\locations\Overworld.json", "w") as overworld):
         overworld_list = []
         overworld_json = {
             "name": "Overworld",
@@ -323,11 +330,12 @@ def create_locations(path: str): #, logic: dict[str, str]):
             )
             overworld_hints_json["children"].append(
                 {
-                    "name": f"{locations_region}",
+                    "name": f"{locations_region} - hint",
                     "chest_unopened_img": f"/images/items/{close_chest}",
                     "chest_opened_img": f"/images/items/{open_chest}",
                     "overlay_background": "#000000",
                     "access_rules": ["{}"],
+                    "sections": [],
                     "map_locations": [
                         {
                             "map": "Overworld",
@@ -343,7 +351,9 @@ def create_locations(path: str): #, logic: dict[str, str]):
                 location_hint_list = []
 
                 _write_locations(locations_dict, locations_region, location_file_list, logic_dict,
-                                 overworld_json["children"][index], top_most_region, locations_region, location_hint_list)
+                                 overworld_json["children"][index], overworld_hints_json["children"][index],
+                                 top_most_region, top_most_region, locations_region,
+                location_hint_list)
 
                 locations_file.write(json.dumps(location_hint_list+location_file_list, indent=4))
 
