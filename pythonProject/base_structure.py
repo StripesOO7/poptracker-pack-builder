@@ -20,7 +20,7 @@ def create_base_structure(path: str, game_name:str, game_dict:dict):
     if not os.path.exists(path + "/scripts/autotracking/archipelago.lua"):
         with open(path + "/scripts/autotracking/archipelago.lua", "w") as ap_lua:
             ap_lua.write('''
-        ScriptHost:LoadScript("scripts/autotracking/item_mapping.lua")
+ScriptHost:LoadScript("scripts/autotracking/item_mapping.lua")
 ScriptHost:LoadScript("scripts/autotracking/location_mapping.lua")
 ScriptHost:LoadScript("scripts/autotracking/hints_mapping.lua")
 
@@ -62,7 +62,7 @@ function forceUpdate()
 end
 
 function onClearHandler(slot_data)
-    clear_timer = os.clock()
+    local clear_timer = os.clock()
     
     ScriptHost:RemoveWatchForCode("StateChange")
     -- Disable tracker updates.
@@ -451,32 +451,31 @@ ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")
         ''')
     if not os.path.exists(path + "manifest.json"):
         with open(path + "/manifest.json", 'w') as manifest:
-            manifest.write(f'''
-\u007b
-    "name": "{game_name} Archipelago",
-    "game_name": "{game_name}",
-    "package_version": "0.0.1",
-    // "platform": "snes",
-    "package_uid": "{game_name.lower()}_ap",
-    "author": "builder_script",
-    "variants": \u007b
-        "Map Tracker": \u007b
-            "display_name": "Map Tracker",
-            "flags": ["ap"]
-        \u007d,
-        "Items Only": \u007b
-            "display_name": "Items Only",
-            "flags": ["ap"]
-        \u007d
-    \u007d,
-    // "versions_url": "https://raw.githubusercontent.com/StripesOO7/alttp-ap-poptracker-pack/versions/versions.json",
-    "min_poptracker_version": "0.27.0"
-\u007d
-''')
+            manifest_json = {
+                "name": f"{game_name} Archipelago",
+                "game_name": f"{game_name}",
+                "package_version": "0.0.1",
+                "package_uid": f"{game_name.lower()}_ap",
+                "author": "builder_script",
+                "variants": {
+                    "Map Tracker": {
+                        "display_name": "Map Tracker",
+                        "flags": ["ap"]
+                    },
+                    "Items Only": {
+                        "display_name": "Items Only",
+                        "flags": ["ap"]
+                    }
+                },
+                "min_poptracker_version": "0.27.0"
+                }
+            # manifest["platform"] = "snes"
+            # manifest["versions_url"] = "https://raw.githubusercontent.com/<username>/<repo_name>/versions/versions.json"
+            manifest.write(json.dumps(manifest_json, indent=4))
     if not os.path.exists(path + "/scripts/logic/logic_main.lua"):
         with open(path + "/scripts/logic/logic_main.lua", "w") as logic_lua:
             logic_lua.write('''
-            ScriptHost:AddWatchForCode("keydropshuffle handler", "key_drop_shuffle", keyDropLayoutChange)
+ScriptHost:AddWatchForCode("keydropshuffle handler", "key_drop_shuffle", keyDropLayoutChange)
 ScriptHost:AddWatchForCode("boss handler", "boss_shuffle", bossShuffle)
 -- ScriptHost:AddWatchForCode("ow_dungeon details handler", "ow_dungeon_details", owDungeonDetails)
 
@@ -697,27 +696,28 @@ function any(...)
     return max
 end
 
-function has(item, noKDS_amount, noKDS_amountInLogic, KDS_amount, KDS_amountInLogic)
+function has(item, amount, amountInLogic)
+-- function has(item, noKDS_amount, noKDS_amountInLogic, KDS_amount, KDS_amountInLogic)
     local count
     local amount
     local amountInLogic
     if (Tracker:FindObjectForCode("small_keys").CurrentStage == 2) and item:sub(-8,-1) == "smallkey" then -- universal keys
         return true
     end
-    if Tracker:FindObjectForCode("key_drop_shuffle").Active then
-        -- print(KDS_amount, KDS_amountInLogic)
-        amount = KDS_amount
-        amountInLogic = KDS_amountInLogic
-        if item:sub(-8,-1) == "smallkey" then
-            count = Tracker:ProviderCountForCode(item.."_drop")
-        else
-            count = Tracker:ProviderCountForCode(item)
-        end
-    else
-        count = Tracker:ProviderCountForCode(item)
-        amount = noKDS_amount
-        amountInLogic = noKDS_amountInLogic
-    end
+    -- if Tracker:FindObjectForCode("key_drop_shuffle").Active then
+    --     -- print(KDS_amount, KDS_amountInLogic)
+    --     amount = KDS_amount
+    --     amountInLogic = KDS_amountInLogic
+    --     if item:sub(-8,-1) == "smallkey" then
+    --         count = Tracker:ProviderCountForCode(item.."_drop")
+    --     else
+    --         count = Tracker:ProviderCountForCode(item)
+    --     end
+    -- else
+    --     count = Tracker:ProviderCountForCode(item)
+    --     amount = noKDS_amount
+    --     amountInLogic = noKDS_amountInLogic
+    -- end
 
     -- print(item, count, amount, amountInLogic)
     if amountInLogic then
