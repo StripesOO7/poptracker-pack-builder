@@ -109,43 +109,45 @@ function onClear(slot_data)
         end
     end
     -- reset items
-    for _, item in pairs(ITEM_MAPPING) do
-        for _, item_code in pairs(item[1]) do
-            item_code, item_type = item
---            if item_code and item[2] then
-            local item_obj = Tracker:FindObjectForCode(item_code)
---            if item_obj then
---                if item_type == "toggle" then
---                    item_obj.Active = false
---                elseif item_type == "progressive" then
---                    item_obj.CurrentStage = 0
---                    item_obj.Active = false
---                elseif item_type == "consumable" then
---                    if item_obj.MinCount then
---                        item_obj.AcquiredCount = item_obj.MinCount
---                    else
---                        item_obj.AcquiredCount = 0
---                    end
---                elseif item_type == "progressive_toggle" then
---                    item_obj.CurrentStage = 0
---                    item_obj.Active = false
---                end
---            end
-            if item_obj then
-                if item_obj.Type == "toggle" then
-                    item_obj.Active = false
-                elseif item_obj.Type == "progressive" then
-                    item_obj.CurrentStage = 0
-                    item_obj.Active = false
-                elseif item_obj.Type == "consumable" then
-                    if item_obj.MinCount then
-                        item_obj.AcquiredCount = item_obj.MinCount
-                    else
-                        item_obj.AcquiredCount = 0
+    for _, item_tuples in pairs(ITEM_MAPPING) do
+        for _, item_pair in pairs(item_tuples) do
+            for item_type, item_code in pairs(item_pair) do
+    --          item_code, item_type = item
+    --            if item_code and item[2] then
+                local item_obj = Tracker:FindObjectForCode(item_code)
+    --            if item_obj then
+    --                if item_type == "toggle" then
+    --                    item_obj.Active = false
+    --                elseif item_type == "progressive" then
+    --                    item_obj.CurrentStage = 0
+    --                    item_obj.Active = false
+    --                elseif item_type == "consumable" then
+    --                    if item_obj.MinCount then
+    --                        item_obj.AcquiredCount = item_obj.MinCount
+    --                    else
+    --                        item_obj.AcquiredCount = 0
+    --                    end
+    --                elseif item_type == "progressive_toggle" then
+    --                    item_obj.CurrentStage = 0
+    --                    item_obj.Active = false
+    --                end
+    --            end
+                if item_obj then
+                    if item_obj.Type == "toggle" then
+                        item_obj.Active = false
+                    elseif item_obj.Type == "progressive" then
+                        item_obj.CurrentStage = 0
+                        item_obj.Active = false
+                    elseif item_obj.Type == "consumable" then
+                        if item_obj.MinCount then
+                            item_obj.AcquiredCount = item_obj.MinCount
+                        else
+                            item_obj.AcquiredCount = 0
+                        end
+                    elseif item_obj.Type == "progressive_toggle" then
+                        item_obj.CurrentStage = 0
+                        item_obj.Active = false
                     end
-                elseif item_obj.Type == "progressive_toggle" then
-                    item_obj.CurrentStage = 0
-                    item_obj.Active = false
                 end
             end
         end
@@ -179,52 +181,54 @@ function onItem(index, item_id, item_name, player_number)
     end
 --    for _, item_code in pairs(item[1]) do
         -- print(item[1], item[2])
-    item_code = item[1]
-    item_type = item[2]
-    local item_obj = Tracker:FindObjectForCode(item_code)
---    if item_obj then
---        if item_type == "toggle" then
---            -- print("toggle")
---            item_obj.Active = true
---        elseif item_type == "progressive" then
---            -- print("progressive")
---            item_obj.Active = true
---        elseif item_type == "consumable" then
---            -- print("consumable")
---            item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
---        elseif item_type == "progressive_toggle" then
---            -- print("progressive_toggle")
---            if item_obj.Active then
---                item_obj.CurrentStage = item_obj.CurrentStage + 1
---            else
---                item_obj.Active = true
---            end
---        end
---    else
---        print(string.format("onItem: could not find object for code %s", item_code[1]))
---    end
-    if item_obj then
-        if item_obj.Type == "toggle" then
-            -- print("toggle")
-            item_obj.Active = true
-        elseif item_obj.Type == "progressive" then
-            -- print("progressive")
-            item_obj.Active = true
-        elseif item_obj.Type == "consumable" then
-            -- print("consumable")
-            item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
-        elseif item_obj.Type == "progressive_toggle" then
-            -- print("progressive_toggle")
-            if item_obj.Active then
-                item_obj.CurrentStage = item_obj.CurrentStage + 1
-            else
+    for _, item_tuple in pairs(item) do
+        item_code = item_tuple[1]
+        item_type = item_tuple[2]
+        local item_obj = Tracker:FindObjectForCode(item_code)
+    --    if item_obj then
+    --        if item_type == "toggle" then
+    --            -- print("toggle")
+    --            item_obj.Active = true
+    --        elseif item_type == "progressive" then
+    --            -- print("progressive")
+    --            item_obj.Active = true
+    --        elseif item_type == "consumable" then
+    --            -- print("consumable")
+    --            item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
+    --        elseif item_type == "progressive_toggle" then
+    --            -- print("progressive_toggle")
+    --            if item_obj.Active then
+    --                item_obj.CurrentStage = item_obj.CurrentStage + 1
+    --            else
+    --                item_obj.Active = true
+    --            end
+    --        end
+    --    else
+    --        print(string.format("onItem: could not find object for code %s", item_code[1]))
+    --    end
+        if item_obj then
+            if item_obj.Type == "toggle" then
+                -- print("toggle")
                 item_obj.Active = true
+            elseif item_obj.Type == "progressive" then
+                -- print("progressive")
+                item_obj.Active = true
+            elseif item_obj.Type == "consumable" then
+                -- print("consumable")
+                item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
+            elseif item_obj.Type == "progressive_toggle" then
+                -- print("progressive_toggle")
+                if item_obj.Active then
+                    item_obj.CurrentStage = item_obj.CurrentStage + 1
+                else
+                    item_obj.Active = true
+                end
             end
+        else
+            print(string.format("onItem: could not find object for code %s", item_code[1]))
         end
-    else
-        print(string.format("onItem: could not find object for code %s", item_code[1]))
-    end
 --    end
+    end
 end
 
 --called when a location gets cleared
@@ -789,7 +793,7 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
         match type:
             case 'items':
                 for name, ids in data.items():
-                    mapping.write(f'\t[{ids}] = \u007b\u007b"{name.replace(" ", "").lower()}"\u007d, "toggle"\u007d,'
+                    mapping.write(f'\t[{ids}] = \u007b\u007b"{name.replace(" ", "").lower()}", "toggle"\u007d\u007d,'
                                   f'\n')
             case 'locations':
                 for name, ids in data.items():

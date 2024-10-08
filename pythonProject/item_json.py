@@ -112,7 +112,12 @@ def create_items(path: str):
         with open(path+fr'/scripts/autotracking/{file}.lua') as mapping:
             while inputs := mapping.readline():
                 if "]" in inputs:
-                    if not (inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"):
+                    if "--" in inputs and inputs.rindex("--") > inputs.rindex('}'):
+                        inputs = inputs[:inputs.rindex("--")]
+                        read_input.append(inputs.split("="))
+                    elif inputs.rindex('}') == inputs.rindex('{')-1:
+                        pass
+                    elif not (inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"):
                         read_input.append(inputs.split("="))
                 else:
                     pass
@@ -121,17 +126,21 @@ def create_items(path: str):
             first_open = 0
             last_close = 0
             print(read_input[k][0], read_input[k][1])
-            first_open = read_input[k][1].index('{')
-            last_close = read_input[k][1].index('},\n') if read_input[k][1].find('},\n') > 0  else read_input[k][
-                1].index('}\n')
+            first_open = read_input[k][1].index('{{')
+            last_close = read_input[k][1].index('}}')
             # second_close = read_input[k][1][first_close:].index('}')
-            read_input[k][1] = read_input[k][1][first_open+1: last_close].strip()
-            item_list.append(read_input[k][1].replace('"', '').rsplit(', ',1))
+            read_input[k][1] = read_input[k][1][first_open+2: last_close].strip().replace(' ', '')
+
+            if "},{" in read_input[k][1]:
+                for item_tuple in read_input[k][1].split("},{"):
+                    item_list.append(item_tuple.replace('"', '').rsplit(',',1))
+            else:
+                item_list.append(read_input[k][1].replace('"', '').rsplit(',', 1))
 
         item_list = list(set(tuple(sub) for sub in item_list))
         if file == 'item_mapping':
             name = 'items'
-            item_list.append(("{update}", "toggle"))
+            item_list.append(("update", "toggle"))
         elif file == 'hints_mapping':
             name = 'hint_items'
         else:
@@ -144,7 +153,7 @@ def create_items(path: str):
 
             for item_name, item_types in item_list:
                 # print(item_name, item_types)
-                item_name = item_name[item_name.index('{')+1:item_name.index('}')]
+                # item_name = item_name[item_name.index('{')+1:item_name.index('}')]
                 match item_types:
                     case "toggle":
                         item_json_obj.append(_item_toggle_preset(item_name))

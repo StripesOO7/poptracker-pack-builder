@@ -202,7 +202,7 @@ def create_hints (path:str):
         hint_mapping.write('HINTS_MAPPING = \u007b\n')
 
         for index in sorted(hints_dict.keys()):
-            hint_mapping.write(f'\t[{index}] = \u007b\u007b"{hints_dict[index][1]}"\u007d, "toggle"\u007d,\n')
+            hint_mapping.write(f'\t[{index}] = \u007b\u007b"{hints_dict[index][1]}", "toggle"\u007d\u007d,\n')
         hint_mapping.write("\u007d")
 
 def create_locations(path: str): #, logic: dict[str, str]):
