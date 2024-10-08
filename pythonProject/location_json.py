@@ -19,7 +19,8 @@ def _maps_json(map_name:str):
 
 def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:dict, overworld:dict,
                      overworld_hints:dict,
-                     top_most_region:str, fullpath:str, fullpath_hint:str, hints_list:list, filepath:str):
+                     top_most_region:str, fullpath:str, fullpath_hint:str, hints_list:list,
+                     location_mapping_string:str):
     '''
     Based on the created Locations-dictionary creates a JSON-compatible dict containing all the needed information
     for poptracker to read the respective fil;es as valid location-trees.
@@ -77,10 +78,8 @@ def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:d
         for index, location in enumerate(temp_dicts):
             _write_locations(sub_region, location, location_list[-1]["children"], logic_dict, overworld,
                              overworld_hints, top_most_region, fullpath + '/' + location, fullpath_hint + ' - hint/' +
-                             location, hints_list[-1]["children"], filepath)
+                             location, hints_list[-1]["children"], location_mapping_string)
     if len(temp_lists) > 0:
-        with open(filepath + r'\scripts\autotracking\location_mapping.lua') as mapping_file:
-                tmp = mapping_file.read().replace('\n', '')
         location_list[-1]["sections"] = []
         hints_list[-1]["sections"] = []
         # overworld["sections"] = []
@@ -102,7 +101,7 @@ def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:d
                     "name": f"{location} - hint",
                     "access_rules": [],
                     "visibility_rules": [f"{(fullpath+'/'+location).replace(' ', '_').replace('/', '_').lower()}"],
-                    "item_count": tmp.count(fullpath + '/' + location)
+                    "item_count": location_mapping_string.count(fullpath + '/' + location)
                 }
             )
             overworld["sections"].append(
@@ -290,6 +289,8 @@ def create_locations(path: str): #, logic: dict[str, str]):
     close_chest = "close.png"
         # open_chest = other_options[0]
         # close_chest = other_options[1]
+    with open(path + r'\scripts\autotracking\location_mapping.lua') as mapping_file:
+        location_mapping_string = mapping_file.read().replace('\n', '')
     with (open(path+fr"\locations\Overworld.json", "w") as overworld):
         overworld_list = []
         overworld_json = {
@@ -357,7 +358,7 @@ def create_locations(path: str): #, logic: dict[str, str]):
                 _write_locations(locations_dict, locations_region, location_file_list, logic_dict,
                                  overworld_json["children"][index], overworld_hints_json["children"][index],
                                  top_most_region, top_most_region, locations_region,
-                location_hint_list, path)
+                location_hint_list, location_mapping_string)
 
                 locations_file.write(json.dumps(location_hint_list+location_file_list, indent=4))
 
