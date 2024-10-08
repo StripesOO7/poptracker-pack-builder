@@ -19,7 +19,7 @@ def _maps_json(map_name:str):
 
 def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:dict, overworld:dict,
                      overworld_hints:dict,
-                     top_most_region:str, fullpath:str, fullpath_hint:str, hints_list:list):
+                     top_most_region:str, fullpath:str, fullpath_hint:str, hints_list:list, filepath:str):
     '''
     Based on the created Locations-dictionary creates a JSON-compatible dict containing all the needed information
     for poptracker to read the respective fil;es as valid location-trees.
@@ -77,12 +77,16 @@ def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:d
         for index, location in enumerate(temp_dicts):
             _write_locations(sub_region, location, location_list[-1]["children"], logic_dict, overworld,
                              overworld_hints, top_most_region, fullpath + '/' + location, fullpath_hint + ' - hint/' +
-                             location, hints_list[-1]["children"])
+                             location, hints_list[-1]["children"], filepath)
     if len(temp_lists) > 0:
+        with open(filepath + r'\scripts\autotracking\location_mapping.lua') as mapping_file:
+                tmp = mapping_file.read().replace('\n', '')
         location_list[-1]["sections"] = []
         hints_list[-1]["sections"] = []
         # overworld["sections"] = []
         for location in temp_lists:
+
+                # tmp.count(fullpath + '/' + location)
             x = random.randint(10, 2500)
             y = random.randint(10, 2500)
             location_list[-1]["sections"].append(
@@ -98,7 +102,7 @@ def _write_locations(loc_dict:dict, region:str, location_list:list, logic_dict:d
                     "name": f"{location} - hint",
                     "access_rules": [],
                     "visibility_rules": [f"{(fullpath+'/'+location).replace(' ', '_').replace('/', '_').lower()}"],
-                    "item_count": 1
+                    "item_count": tmp.count(fullpath + '/' + location)
                 }
             )
             overworld["sections"].append(
@@ -353,7 +357,7 @@ def create_locations(path: str): #, logic: dict[str, str]):
                 _write_locations(locations_dict, locations_region, location_file_list, logic_dict,
                                  overworld_json["children"][index], overworld_hints_json["children"][index],
                                  top_most_region, top_most_region, locations_region,
-                location_hint_list)
+                location_hint_list, path)
 
                 locations_file.write(json.dumps(location_hint_list+location_file_list, indent=4))
 
