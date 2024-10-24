@@ -5,22 +5,23 @@ from tkinter import filedialog
 import requests
 
 
-def create_base_structure(path: str, game_name:str, game_dict:dict):
-    '''
+def create_base_structure(path: str, game_name: str, game_dict: dict):
+    """
     creates every needed directory and file needed to get a basic poptracker pack working and loading if the needed
     file is not already present
     :param str path: Path to the root folder of the Trackerpack
     :param str game_name: Name of the Game the Tracker is Made for. needs to Match the name in the AP datapackage
     :param dict game_dict: the json formated part from the AP datapackage for the specified game
     :return:
-    '''
+    """
     if not os.path.exists(path + "/scripts"):
         os.mkdir(path + "/scripts")
         os.mkdir(path + "/scripts/autotracking")
         os.mkdir(path + "/scripts/logic")
     if not os.path.exists(path + "/scripts/autotracking/archipelago.lua"):
         with open(path + "/scripts/autotracking/archipelago.lua", "w") as ap_lua:
-            ap_lua.write('''
+            ap_lua.write(
+                """
 ScriptHost:LoadScript("scripts/autotracking/item_mapping.lua")
 ScriptHost:LoadScript("scripts/autotracking/location_mapping.lua")
 ScriptHost:LoadScript("scripts/autotracking/hints_mapping.lua")
@@ -369,10 +370,12 @@ Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
 --     ["entrance"] = ,
 --     ["item"] = 66062,
 -- } 
-''')
+"""
+            )
     if not os.path.exists(path + "/scripts/init.lua"):
         with open(path + "/scripts/init.lua", "w") as init_lua:
-            init_lua.write('''
+            init_lua.write(
+                """
             local variant = Tracker.ActiveVariantUID
 
 Tracker:AddItems("items/items.json")
@@ -407,10 +410,12 @@ ScriptHost:LoadScript("scripts/locations_import.lua")
 -- AutoTracking for Poptracker
 if PopVersion and PopVersion >= "0.18.0" then
     ScriptHost:LoadScript("scripts/autotracking.lua")
-end''')
+end"""
+            )
     if not os.path.exists(path + "/scripts/layouts_import.lua"):
         with open(path + "/scripts/layouts_import.lua", "w") as layouts_lua:
-            layouts_lua.write('''
+            layouts_lua.write(
+                """
         Tracker:AddLayouts("layouts/events.json")
 Tracker:AddLayouts("layouts/settings_popup.json")
 Tracker:AddLayouts("layouts/items.json")
@@ -418,18 +423,22 @@ Tracker:AddLayouts("layouts/tabs.json")
 Tracker:AddLayouts("layouts/tracker.json")
 Tracker:AddLayouts("layouts/broadcast.json")
 Tracker:AddLayouts("layouts/dungeon_items.json")
--- Tracker:AddLayouts("layouts/dungeon_items_keydrop.json")''')
+-- Tracker:AddLayouts("layouts/dungeon_items_keydrop.json")"""
+            )
     if not os.path.exists(path + "/scripts/settings.lua"):
         with open(path + "/scripts/settings.lua", "w") as settings_lua:
-            settings_lua.write('''
+            settings_lua.write(
+                """
         ------------------------------------------------------------------
 -- Configuration options for scripted systems in this pack
 ------------------------------------------------------------------
 AUTOTRACKER_ENABLE_ITEM_TRACKING = true
-AUTOTRACKER_ENABLE_LOCATION_TRACKING = true''')
+AUTOTRACKER_ENABLE_LOCATION_TRACKING = true"""
+            )
     if not os.path.exists(path + "/scripts/autotracking.lua"):
         with open(path + "/scripts/autotracking.lua", "w") as auto_lua:
-            auto_lua.write('''
+            auto_lua.write(
+                """
         -- Configuration --------------------------------------
 AUTOTRACKER_ENABLE_DEBUG_LOGGING = true and ENABLE_DEBUG_LOG
 AUTOTRACKER_ENABLE_DEBUG_LOGGING_AP = true and AUTOTRACKER_ENABLE_DEBUG_LOGGING
@@ -453,9 +462,10 @@ ScriptHost:LoadScript("scripts/autotracking/settings.lua")
 ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")
 
 
-        ''')
+        """
+            )
     if not os.path.exists(path + "manifest.json"):
-        with open(path + "/manifest.json", 'w') as manifest:
+        with open(path + "/manifest.json", "w") as manifest:
             manifest_json = {
                 "name": f"{game_name} Archipelago",
                 "game_name": f"{game_name}",
@@ -463,23 +473,18 @@ ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")
                 "package_uid": f"{game_name.lower()}_ap",
                 "author": "builder_script",
                 "variants": {
-                    "Map Tracker": {
-                        "display_name": "Map Tracker",
-                        "flags": ["ap"]
-                    },
-                    "Items Only": {
-                        "display_name": "Items Only",
-                        "flags": ["ap"]
-                    }
+                    "Map Tracker": {"display_name": "Map Tracker", "flags": ["ap"]},
+                    "Items Only": {"display_name": "Items Only", "flags": ["ap"]},
                 },
-                "min_poptracker_version": "0.27.0"
-                }
+                "min_poptracker_version": "0.27.0",
+            }
             # manifest["platform"] = "snes"
             # manifest["versions_url"] = "https://raw.githubusercontent.com/<username>/<repo_name>/versions/versions.json"
             manifest.write(json.dumps(manifest_json, indent=4))
     if not os.path.exists(path + "/scripts/logic/logic_main.lua"):
         with open(path + "/scripts/logic/logic_main.lua", "w") as logic_lua:
-            logic_lua.write('''
+            logic_lua.write(
+                """
 ScriptHost:AddWatchForCode("keydropshuffle handler", "key_drop_shuffle", keyDropLayoutChange)
 ScriptHost:AddWatchForCode("boss handler", "boss_shuffle", bossShuffle)
 -- ScriptHost:AddWatchForCode("ow_dungeon details handler", "ow_dungeon_details", owDungeonDetails)
@@ -653,10 +658,12 @@ function stateChanged()
 end
 
 ScriptHost:AddWatchForCode("stateChanged", "*", stateChanged)
-        ''')
+        """
+            )
     if not os.path.exists(path + "/scripts/logic/logic_helper.lua"):
         with open(path + "/scripts/logic/logic_helper.lua", "w") as logic_helper_lua:
-            logic_helper_lua.write('''
+            logic_helper_lua.write(
+                """
             function A(result)
     if result then
         return AccessibilityLevel.Normal
@@ -741,7 +748,8 @@ function has(item, amount, amountInLogic)
         return count >= amount
     end
 end
-            ''')
+            """
+            )
     if not os.path.exists(path + "/images"):
         os.mkdir(path + "/images")
         os.mkdir(path + "/images/items")
@@ -756,26 +764,32 @@ end
     if not os.path.exists(path + "/maps"):
         os.mkdir(path + "/maps")
     if not os.path.exists(path + "/scripts/autotracking/hints_mapping.lua"):
-        open(path + fr'/scripts/autotracking/hints_mapping.lua', "w").close()
-    if not (os.path.exists(path + "/scripts/autotracking/item_mapping.lua") and os.path.exists(path +
-                                                                                               "/scripts/autotracking/location_mapping.lua")):
+        open(path + rf"/scripts/autotracking/hints_mapping.lua", "w").close()
+    if not (
+        os.path.exists(path + "/scripts/autotracking/item_mapping.lua")
+        and os.path.exists(path + "/scripts/autotracking/location_mapping.lua")
+    ):
         _create_mappings(path=path, game_data=game_dict[game_name])
         return exit()
 
-def _create_mappings(path:str, game_data: dict[str, int]):
-    '''
+
+def _create_mappings(path: str, game_data: dict[str, int]):
+    """
     writes the 2 mapping files needed for location and item tracking via AP
     :param game_data:
     :return:
-    '''
-    items_data = game_data['item_name_to_id']
-    locations_data = game_data['location_name_to_id']
-    _write_mapping(path=path, file_name='item_mapping', data = items_data, type='items')
-    _write_mapping(path=path, file_name='location_mapping', data = locations_data, type='locations')
+    """
+    items_data = game_data["item_name_to_id"]
+    locations_data = game_data["location_name_to_id"]
+    _write_mapping(path=path, file_name="item_mapping", data=items_data, type="items")
+    _write_mapping(
+        path=path, file_name="location_mapping", data=locations_data, type="locations"
+    )
     pass
 
+
 def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
-    '''
+    """
     writes the corresponding mapping file if AP-ID's to names.
     searches for the most common delimiters used in locationnames to possibly preselect/-create some regions.
     Item-types need to be adjusted after that step.
@@ -785,19 +799,21 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
     :param data:
     :param type:
     :return:
-    '''
-    delimiter = [ ' - ', ': ', ') ']
-    replacement = ['/', '/', ')/']
-    with open(path + '/scripts/autotracking/' + file_name + '.lua', "w") as mapping:
-        mapping.write(f'{file_name.upper()} = \u007b\n')
+    """
+    delimiter = [" - ", ": ", ") "]
+    replacement = ["/", "/", ")/"]
+    with open(path + "/scripts/autotracking/" + file_name + ".lua", "w") as mapping:
+        mapping.write(f"{file_name.upper()} = \u007b\n")
         match type:
-            case 'items':
+            case "items":
                 for name, ids in data.items():
-                    mapping.write(f'\t[{ids}] = \u007b\u007b"{name.replace(" ", "").lower()}", "toggle"\u007d\u007d,'
-                                  f'\n')
-            case 'locations':
+                    mapping.write(
+                        f'\t[{ids}] = \u007b\u007b"{name.replace(" ", "").lower()}", "toggle"\u007d\u007d,'
+                        f"\n"
+                    )
+            case "locations":
                 for name, ids in data.items():
-                    br = 'false'
+                    br = "false"
 
                     for i, spacer in enumerate(delimiter):
                         if spacer in name:
@@ -805,7 +821,9 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
                             closed = name.find(")")
                             check_inbetween = name.find(spacer)
                             if opened < check_inbetween and check_inbetween < closed:
-                                name = name[:closed]+name[closed:].replace(f"{spacer}",replacement[i])
+                                name = name[:closed] + name[closed:].replace(
+                                    f"{spacer}", replacement[i]
+                                )
                                 name = name.replace(f"{spacer}", " - ")
                             else:
                                 name = name.replace(f"{spacer}", replacement[i])
@@ -813,22 +831,31 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
         mapping.write("\u007d")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
 
-    print("""
+    print(
+        """
     Please select the Directory the pack should be created in
     If there is no file called 'datapacke_url.txt' already present please provide the requested information.
-    """)
+    """
+    )
     read_file_path = tk.filedialog.askdirectory()
-    if not os.path.exists(read_file_path + '/datapacke_url.txt'):
-        with open(read_file_path + '/datapacke_url.txt', "w") as base_file:
-            url = input("datapackage source (url): ") or "https://archipelago.gg/datapackage"
+    if not os.path.exists(read_file_path + "/datapacke_url.txt"):
+        with open(read_file_path + "/datapacke_url.txt", "w") as base_file:
+            url = (
+                input("datapackage source (url): ")
+                or "https://archipelago.gg/datapackage"
+            )
             game = input("Game name from Datapackage: ")
             base_file.write(f"{url}, {game}, ")
-    datapackage_path, game_name, *other_options = open(read_file_path + '/datapacke_url.txt').readline().split(', ')
+    datapackage_path, game_name, *other_options = (
+        open(read_file_path + "/datapacke_url.txt").readline().split(", ")
+    )
 
-    games_dict = requests.get(datapackage_path).json()['games']
+    games_dict = requests.get(datapackage_path).json()["games"]
 
-    create_base_structure(path=read_file_path, game_name=game_name, game_dict=games_dict)
+    create_base_structure(
+        path=read_file_path, game_name=game_name, game_dict=games_dict
+    )

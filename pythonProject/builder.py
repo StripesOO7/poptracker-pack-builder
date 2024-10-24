@@ -21,16 +21,23 @@ if __name__ == "__main__":
     root.withdraw()
 
     read_file_path = tk.filedialog.askdirectory()
-    if not os.path.exists(read_file_path + '/datapacke_url.txt'):
-        with open(read_file_path + '/datapacke_url.txt', "w") as base_file:
-            url = input("datapackage source (url): ") or "https://archipelago.gg/datapackage"
+    if not os.path.exists(read_file_path + "/datapacke_url.txt"):
+        with open(read_file_path + "/datapacke_url.txt", "w") as base_file:
+            url = (
+                input("datapackage source (url): ")
+                or "https://archipelago.gg/datapackage"
+            )
             game = input("Game name from Datapackage: ")
             base_file.write(f"{url}, {game}, ")
-    datapackage_path, game_name, *other_options = open(read_file_path + '/datapacke_url.txt').readline().split(', ')
+    datapackage_path, game_name, *other_options = (
+        open(read_file_path + "/datapacke_url.txt").readline().split(", ")
+    )
 
-    games_dict = requests.get(datapackage_path).json()['games']
+    games_dict = requests.get(datapackage_path).json()["games"]
 
-    base_structure.create_base_structure(path=read_file_path, game_name=game_name, game_dict=games_dict)
+    base_structure.create_base_structure(
+        path=read_file_path, game_name=game_name, game_dict=games_dict
+    )
 
     # create_mappings(game_data=games_dict[game_name], game=game_name)
     # create_item_mapping(location_data=games_dict[game_name], game=game_name)
@@ -43,7 +50,7 @@ if __name__ == "__main__":
     temp = []
     lvls = set()
     locations_dict = dict()
-    with open(read_file_path + '/scripts/autotracking/location_mapping.lua') as mapping:
+    with open(read_file_path + "/scripts/autotracking/location_mapping.lua") as mapping:
         while inputs := mapping.readline():
             if "]" in inputs:
                 if not (inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"):
@@ -51,8 +58,12 @@ if __name__ == "__main__":
             else:
                 pass
     for k, _ in enumerate(read_input):
-        read_input[k][1] = read_input[k][1][read_input[k][1].index('{') + 1: read_input[k][1].index('}')]
-        location_list.append(read_input[k][1].replace('@', '').replace('"', '').split("/"))
+        read_input[k][1] = read_input[k][1][
+            read_input[k][1].index("{") + 1 : read_input[k][1].index("}")
+        ]
+        location_list.append(
+            read_input[k][1].replace("@", "").replace('"', "").split("/")
+        )
     for i, _ in enumerate(location_list):
         if len(location_list[i][0]) > 1:
             temp.append(location_list[i][0])
@@ -60,10 +71,8 @@ if __name__ == "__main__":
 
     location_json.create_locations(path=read_file_path)
 
-
     location_json.create_maps(path=read_file_path, maps_names=lvls)
     tracker_layout.create_broadcast_layout(path=read_file_path)
     tracker_layout.create_tracker_basic_layout(path=read_file_path)
     tracker_layout.create_tracker_tabs(path=read_file_path, maps_names=lvls)
     tracker_layout.create_item_layout(path=read_file_path)
-

@@ -1,18 +1,20 @@
 def generalized_rule_extractor(base_list: [str], delimiter1: str, delimiter2: str):
-    '''
+    """
     try's to open a possibly provided file containing the used logic for the AP-rando.
     for now, it reads the file and only looks for lambda rules. may change later to get expanded to lists/dicts but
     that's for another day.
     try's to split the rules into their intended and correct order. () > and > or
     after splitting it recombines them via vector/matrix multiplication to create ever possible permutation of rules.
     writes the extracted rules into a file as backup.
-    '''
+    """
     try:
-        x = " | ".join(" + ".join(base_list.split(delimiter1)).split(delimiter2)).split(" | ")
-    # logic_temp[i][1].replace(' or ', ' | ').replace(' and ', ' + ')
+        x = " | ".join(" + ".join(base_list.split(delimiter1)).split(delimiter2)).split(
+            " | "
+        )
+        # logic_temp[i][1].replace(' or ', ' | ').replace(' and ', ' + ')
 
         for iter, sub_list in enumerate(x):
-            if ' + ' in sub_list:
+            if " + " in sub_list:
                 x[iter] = sub_list.split("+")
             else:
                 x[iter] = [sub_list]
@@ -24,15 +26,19 @@ def generalized_rule_extractor(base_list: [str], delimiter1: str, delimiter2: st
                     search = "'"
                 else:
                     continue
-                x[iter][sub_iter] = code[code.index(search) + 1:code.index(search)]
+                x[iter][sub_iter] = code[code.index(search) + 1 : code.index(search)]
     except:
         x = base_list
     return list(itertools.product(*x))  # list cross multiplication to generate every
 
 
 def slice_at_brackets(list_to_slice: []):
-    lbracket = [j + 1 for j in range(len(list_to_slice)) if list_to_slice.startswith('(', j)]
-    rbracket = [j + 1 for j in range(len(list_to_slice)) if list_to_slice.startswith(')', j)]
+    lbracket = [
+        j + 1 for j in range(len(list_to_slice)) if list_to_slice.startswith("(", j)
+    ]
+    rbracket = [
+        j + 1 for j in range(len(list_to_slice)) if list_to_slice.startswith(")", j)
+    ]
     if len(lbracket) == len(rbracket) - 1:
         rbracket.pop()
     lcount = 1
@@ -50,8 +56,8 @@ def slice_at_brackets(list_to_slice: []):
             else:
                 # print(temp)
                 # print(rbracket[rcount], lbracket[lcount])
-                if ' or ' in list_to_slice[lbracket[lcount]:rbracket[rcount]]:
-                    temp.append(list_to_slice[lastslice:slice - 2])
+                if " or " in list_to_slice[lbracket[lcount] : rbracket[rcount]]:
+                    temp.append(list_to_slice[lastslice : slice - 2])
                     lastslice = slice
                 # else:
                 #     # print(f'logic_temp[{i}][1]', lastslice, logic_temp[i][1][lastslice:])
@@ -96,24 +102,26 @@ def slice_at_brackets(list_to_slice: []):
 
 
 def extract_logic():
-    """                           1 location             2+ rules, (if multiple lambdas then more lists else sublists in position 2
+    """1 location             2+ rules, (if multiple lambdas then more lists else sublists in position 2
     ###     logic_temp[i] layout: [ [] ,                   [ [ ] , [ ] ], [ ], [ [ ] , [ ] ] ]
                             location_str    lambda            and    or   or       and
     """
     global logic
-    logic_temp =[]
+    logic_temp = []
     logic_dict = {}
     file_path = filedialog.askopenfilename()
-    if not file_path == '':
+    if not file_path == "":
         with open(file_path) as logic_extract:
-            temp = logic_extract.read().split('\n')
+            temp = logic_extract.read().split("\n")
             for i in temp:
                 if " lambda " in i.lower():
-                    logic_temp.append(i.split("lambda"))  # """results in a list containing tuples of [location_string,
+                    logic_temp.append(
+                        i.split("lambda")
+                    )  # """results in a list containing tuples of [location_string,
 
             for i, test in enumerate(logic_temp):
                 # i = 81
-                if not '(' in logic_temp[i][1] and not ')' in logic_temp[i][1]:
+                if not "(" in logic_temp[i][1] and not ")" in logic_temp[i][1]:
                     logic_temp[i][1] = []
                 else:
                     temp = slice_at_brackets(logic_temp[i][1])
@@ -124,12 +132,18 @@ def extract_logic():
                     if type(logic_temp[i][1]) == list:
                         for counter, _ in enumerate(logic_temp[i][1]):
 
-                            logic_temp[i][1][counter] = generalized_rule_extractor(base_list=logic_temp[i][1][
-                                counter], delimiter1=' or', delimiter2=' and ')
+                            logic_temp[i][1][counter] = generalized_rule_extractor(
+                                base_list=logic_temp[i][1][counter],
+                                delimiter1=" or",
+                                delimiter2=" and ",
+                            )
 
                     else:
-                        logic_temp[i][1] = generalized_rule_extractor(base_list=logic_temp[i][1], delimiter1=' or',
-                                                                      delimiter2=' and ')
+                        logic_temp[i][1] = generalized_rule_extractor(
+                            base_list=logic_temp[i][1],
+                            delimiter1=" or",
+                            delimiter2=" and ",
+                        )
 
                     if '"' in test[0]:
                         search = '"'
@@ -137,24 +151,19 @@ def extract_logic():
                         search = "'"
                     else:
                         continue
-                    logic_temp[i][0] = test[0][test[0].index(search)+1:test[0].index(search)]
+                    logic_temp[i][0] = test[0][
+                        test[0].index(search) + 1 : test[0].index(search)
+                    ]
 
             for i, _ in enumerate(logic_temp):
                 # print("test")
                 for j, _ in enumerate(logic_temp[i][:-2]):
                     logic_temp[i][j] = logic_temp[i][j].strip('"').strip("'")
 
-    with open(read_file_path+'/logic_backup.txt', 'w') as logic_backup:
+    with open(read_file_path + "/logic_backup.txt", "w") as logic_backup:
         for line in logic_temp:
             logic_backup.write(f"{line}\n")
-    delimiter = [
-        '", "',
-        "', '",
-        '",',
-        "',",
-        ' - ',
-        ': ',
-        ') ']
+    delimiter = ['", "', "', '", '",', "',", " - ", ": ", ") "]
 
     for index, _ in enumerate(logic_temp):
         for spacer in delimiter:
@@ -177,10 +186,14 @@ def extract_logic():
             logic_temp[index][1] = logic_temp[index][1][0]
         if len(sub_list) == 3:
             try:
-                logic_dict[sub_list[0]][sub_list[1]].update({sub_list[2]: logic_temp[index][1]})
+                logic_dict[sub_list[0]][sub_list[1]].update(
+                    {sub_list[2]: logic_temp[index][1]}
+                )
             except:
                 logic_dict[sub_list[0]].update({sub_list[1]: {}})
-                logic_dict[sub_list[0]][sub_list[1]].update({sub_list[2]: logic_temp[index][1]})
+                logic_dict[sub_list[0]][sub_list[1]].update(
+                    {sub_list[2]: logic_temp[index][1]}
+                )
         elif len(sub_list) == 2:
             try:
                 logic_dict[sub_list[0]].update({sub_list[1]: logic_temp[index][1]})
