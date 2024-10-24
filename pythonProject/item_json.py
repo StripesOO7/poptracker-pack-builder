@@ -2,13 +2,14 @@ import json
 import tkinter as tk
 from tkinter import filedialog
 
-def _stages(name:str):
+
+def _stages(name: str):
     stage1 = {
         "name": f"{name} stage1",
         "inherit_codes": True,
         "img": f"/images/items/{name}.png",
         "img_mod": "",
-        "codes": f"{name.replace(' ', '')}_stage1"
+        "codes": f"{name.replace(' ', '')}_stage1",
     }
 
     stage2 = {
@@ -16,7 +17,7 @@ def _stages(name:str):
         "inherit_codes": True,
         "img": f"/images/items/{name}.png",
         "img_mod": "",
-        "codes": f"{name.replace(' ', '')}_stage2"
+        "codes": f"{name.replace(' ', '')}_stage2",
     }
 
     stage3 = {
@@ -24,22 +25,24 @@ def _stages(name:str):
         "inherit_codes": True,
         "img": f"/images/items/{name}.png",
         "img_mod": "",
-        "codes": f"{name.replace(' ', '')}_stage3"
+        "codes": f"{name.replace(' ', '')}_stage3",
     }
     return [stage1, stage2, stage3]
 
-def _item_toggle_preset(item_name:str):
+
+def _item_toggle_preset(item_name: str):
     toggle_json_preset = {
         "name": item_name,
         "type": "toggle",
         "img": f"images/items/{item_name}.png",
         "img_mods": "",
-        "codes": f"{item_name.replace(' ', '')}"
+        "codes": f"{item_name.replace(' ', '')}",
     }
 
     return toggle_json_preset
 
-def _item_progressive_toggle_preset(item_name:str):
+
+def _item_progressive_toggle_preset(item_name: str):
     progressive_toggle_json_preset = {
         "name": f"{item_name}",
         "type": "progressive_toggle",
@@ -47,11 +50,12 @@ def _item_progressive_toggle_preset(item_name:str):
         "initial_stage_idx": 0,
         "initial_active_state": False,
         "stages": _stages(item_name),
-        "codes": f"{item_name.replace(' ', '')}"
+        "codes": f"{item_name.replace(' ', '')}",
     }
     return progressive_toggle_json_preset
 
-def _item_progressive_preset(item_name:str):
+
+def _item_progressive_preset(item_name: str):
     progressive_json_preset = {
         "name": f"{item_name}",
         "type": "progressive",
@@ -59,11 +63,12 @@ def _item_progressive_preset(item_name:str):
         "allow_disabled": True,
         "initial_stage_idx": 0,
         "stages": _stages(item_name),
-        "codes": f"{item_name.replace(' ', '')}"
+        "codes": f"{item_name.replace(' ', '')}",
     }
     return progressive_json_preset
 
-def _item_consumable_preset(item_name:str):
+
+def _item_consumable_preset(item_name: str):
     consumable_json_preset = {
         "name": item_name,
         "type": "consumable",
@@ -75,49 +80,51 @@ def _item_consumable_preset(item_name:str):
         "decrement": 1,
         "initial_quantity": 2,
         "overlay_background": "#000000",
-        "codes": f"{item_name.replace(' ', '')}"
+        "codes": f"{item_name.replace(' ', '')}",
     }
 
     return consumable_json_preset
 
-def _item_static_preset(item_name:str):
+
+def _item_static_preset(item_name: str):
     static_json_preset = {
         "name": item_name,
         "type": "static",
         "img": f"images/items/{item_name}.png",
         "img_mods": "",
-        "codes": f"{item_name.replace(' ', '')}"
+        "codes": f"{item_name.replace(' ', '')}",
     }
 
     return static_json_preset
 
 
-
 def create_items(path: str):
-    '''
+    """
     gathers the items from the item_mapping.lua file and converts them according to their specified item_type into a
     poptracker-readable/-loadable json format.
     ignores with "--" commented out lines.
     Pre-places the itemnames as names for the loaded images. needs to be adjusted if that is not fitting.
     :param path: Path to the root folder of the Trackerpack
     :return: none
-    '''
+    """
 
-    for file in ['item_mapping', 'hints_mapping']:
+    for file in ["item_mapping", "hints_mapping"]:
         read_input = []
         item_list = []
         first_open = 0
         last_close = 0
         print(file)
-        with open(path+fr'/scripts/autotracking/{file}.lua') as mapping:
+        with open(path + rf"/scripts/autotracking/{file}.lua") as mapping:
             while inputs := mapping.readline():
                 if "]" in inputs:
-                    if "--" in inputs and inputs.rindex("--") > inputs.rindex('}'):
-                        inputs = inputs[:inputs.rindex("--")]
+                    if "--" in inputs and inputs.rindex("--") > inputs.rindex("}"):
+                        inputs = inputs[: inputs.rindex("--")]
                         read_input.append(inputs.split("="))
-                    elif inputs.rindex('}') == inputs.rindex('{')+1:
+                    elif inputs.rindex("}") == inputs.rindex("{") + 1:
                         pass
-                    elif not (inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"):
+                    elif not (
+                        inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"
+                    ):
                         read_input.append(inputs.split("="))
                 else:
                     pass
@@ -126,25 +133,27 @@ def create_items(path: str):
             first_open = 0
             last_close = 0
             print(read_input[k][0], read_input[k][1])
-            first_open = read_input[k][1].index('{{')
-            last_close = read_input[k][1].index('}}')
+            first_open = read_input[k][1].index("{{")
+            last_close = read_input[k][1].index("}}")
             # second_close = read_input[k][1][first_close:].index('}')
-            read_input[k][1] = read_input[k][1][first_open+2: last_close].strip().replace(' ', '')
+            read_input[k][1] = (
+                read_input[k][1][first_open + 2 : last_close].strip().replace(" ", "")
+            )
 
             if "},{" in read_input[k][1]:
                 for item_tuple in read_input[k][1].split("},{"):
-                    item_list.append(item_tuple.replace('"', '').rsplit(',',1))
+                    item_list.append(item_tuple.replace('"', "").rsplit(",", 1))
             else:
-                item_list.append(read_input[k][1].replace('"', '').rsplit(',', 1))
+                item_list.append(read_input[k][1].replace('"', "").rsplit(",", 1))
 
         item_list = list(set(tuple(sub) for sub in item_list))
-        if file == 'item_mapping':
-            name = 'items'
+        if file == "item_mapping":
+            name = "items"
             item_list.append(("update", "toggle"))
-        elif file == 'hints_mapping':
-            name = 'hint_items'
+        elif file == "hints_mapping":
+            name = "hint_items"
         else:
-            name = 'items_default'
+            name = "items_default"
 
         with open(path + rf"/items/{name}.json", "w") as items_file:
             # items_file.write("[")
@@ -172,11 +181,13 @@ def create_items(path: str):
                     case _:
                         item_json_obj.append(_item_toggle_preset(item_name))
 
-            items_file.write(f'{json.dumps(item_json_obj, indent=4)}')
+            items_file.write(f"{json.dumps(item_json_obj, indent=4)}")
+
+
 # #
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
     #
