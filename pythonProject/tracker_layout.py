@@ -44,7 +44,6 @@ def create_broadcast_layout(path: str):
     :param path:
     :return:
     """
-    # with open("H:\mario-is-missing-AP-tracker\layouts\\broadcast.json", 'w') as broadcast:
     with open(path + "/layouts/broadcast.json", "w") as broadcast:
         broadcast_json = {
             "tracker_broadcast": {
@@ -209,16 +208,7 @@ def create_tracker_basic_layout(path: str):
                                 "item": "autofill_settings",
                             }
                         ],
-                    },
-                    {
-                        "type": "group",
-                        "header": "Retro Caves",
-                        "description": "Enable/Disable the automatic fill of the settings panel from for connected Slot_Data",
-                        "header_background": "#3e4b57",
-                        "content": [
-                            {"type": "item", "margin": "5,1,5,5", "item": "retro_caves"}
-                        ],
-                    },
+                    }
                 ],
             }
         }
@@ -290,7 +280,6 @@ def create_item_layout(path: str):
         }
         divider = math.sqrt(len(item_codes)).__ceil__()
         for i, item in enumerate(item_codes):
-            # item_layout.write('\n[\n')
             if (i + 1) % divider == 1:
                 item_layout_json["shared_item_grid_horizontal"]["content"][0][
                     "content"
@@ -316,10 +305,7 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     root.withdraw()
-    #
-    # print("Select a file to open")
-    # path_to_item_json = filedialog.askopenfilename()
-    # print("Filename: ", path_to_item_json)
+
     print("Select the base-folder of the pack:")
     save_file_path = tk.filedialog.askdirectory()
     print("Path to base-folder of the pack: ", save_file_path)

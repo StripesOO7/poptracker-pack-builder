@@ -130,11 +130,9 @@ def create_items(path: str):
                     pass
 
         for k, _ in enumerate(read_input):
-            first_open = 0
-            last_close = 0
             print(read_input[k][0], read_input[k][1])
-            first_open = read_input[k][1].index("{{")
-            last_close = read_input[k][1].index("}}")
+            first_open = read_input[k][1].index("{{") or 0
+            last_close = read_input[k][1].index("}}") or 0
             # second_close = read_input[k][1][first_close:].index('}')
             read_input[k][1] = (
                 read_input[k][1][first_open + 2 : last_close].strip().replace(" ", "")
@@ -156,13 +154,9 @@ def create_items(path: str):
             name = "items_default"
 
         with open(path + rf"/items/{name}.json", "w") as items_file:
-            # items_file.write("[")
-            # print(item_list)
             item_json_obj = []
 
             for item_name, item_types in item_list:
-                # print(item_name, item_types)
-                # item_name = item_name[item_name.index('{')+1:item_name.index('}')]
                 match item_types:
                     case "toggle":
                         item_json_obj.append(_item_toggle_preset(item_name))
@@ -191,9 +185,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
     #
-    # print("Select a file to open")
-    # path_to_item_json = filedialog.askopenfilename()
-    # print("Filename: ", path_to_item_json)
     print("Select the base-folder of the pack:")
     save_file_path = tk.filedialog.askdirectory()
     print("Path to base-folder of the pack: ", save_file_path)

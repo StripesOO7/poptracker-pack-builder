@@ -11,7 +11,6 @@ def generalized_rule_extractor(base_list: [str], delimiter1: str, delimiter2: st
         x = " | ".join(" + ".join(base_list.split(delimiter1)).split(delimiter2)).split(
             " | "
         )
-        # logic_temp[i][1].replace(' or ', ' | ').replace(' and ', ' + ')
 
         for iter, sub_list in enumerate(x):
             if " + " in sub_list:

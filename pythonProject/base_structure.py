@@ -43,8 +43,8 @@ function dump_table(o, depth)
         depth = 0
     end
     if type(o) == 'table' then
-        local tabs = ('\t'):rep(depth)
-        local tabs2 = ('\t'):rep(depth + 1)
+        local tabs = ('\\t'):rep(depth)
+        local tabs2 = ('\\t'):rep(depth + 1)
         local s = '{'
         for k, v in pairs(o) do
             if type(k) ~= 'number' then
@@ -113,26 +113,7 @@ function onClear(slot_data)
     for _, item_tuples in pairs(ITEM_MAPPING) do
         for _, item_pair in pairs(item_tuples) do
             for item_type, item_code in pairs(item_pair) do
-    --          item_code, item_type = item
-    --            if item_code and item[2] then
                 local item_obj = Tracker:FindObjectForCode(item_code)
-    --            if item_obj then
-    --                if item_type == "toggle" then
-    --                    item_obj.Active = false
-    --                elseif item_type == "progressive" then
-    --                    item_obj.CurrentStage = 0
-    --                    item_obj.Active = false
-    --                elseif item_type == "consumable" then
-    --                    if item_obj.MinCount then
-    --                        item_obj.AcquiredCount = item_obj.MinCount
-    --                    else
-    --                        item_obj.AcquiredCount = 0
-    --                    end
-    --                elseif item_type == "progressive_toggle" then
-    --                    item_obj.CurrentStage = 0
-    --                    item_obj.Active = false
-    --                end
-    --            end
                 if item_obj then
                     if item_obj.Type == "toggle" then
                         item_obj.Active = false
@@ -152,7 +133,6 @@ function onClear(slot_data)
                 end
             end
         end
---        end
     end
     PLAYER_ID = Archipelago.PlayerNumber or -1
     TEAM_NUMBER = Archipelago.TeamNumber or 0
@@ -180,33 +160,10 @@ function onItem(index, item_id, item_name, player_number)
         --print(string.format("onItem: could not find item mapping for id %s", item_id))
         return
     end
---    for _, item_code in pairs(item[1]) do
-        -- print(item[1], item[2])
     for _, item_tuple in pairs(item) do
         item_code = item_tuple[1]
         item_type = item_tuple[2]
         local item_obj = Tracker:FindObjectForCode(item_code)
-    --    if item_obj then
-    --        if item_type == "toggle" then
-    --            -- print("toggle")
-    --            item_obj.Active = true
-    --        elseif item_type == "progressive" then
-    --            -- print("progressive")
-    --            item_obj.Active = true
-    --        elseif item_type == "consumable" then
-    --            -- print("consumable")
-    --            item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
-    --        elseif item_type == "progressive_toggle" then
-    --            -- print("progressive_toggle")
-    --            if item_obj.Active then
-    --                item_obj.CurrentStage = item_obj.CurrentStage + 1
-    --            else
-    --                item_obj.Active = true
-    --            end
-    --        end
-    --    else
-    --        print(string.format("onItem: could not find object for code %s", item_code[1]))
-    --    end
         if item_obj then
             if item_obj.Type == "toggle" then
                 -- print("toggle")
@@ -228,7 +185,6 @@ function onItem(index, item_id, item_name, player_number)
         else
             print(string.format("onItem: could not find object for code %s", item_code[1]))
         end
---    end
     end
 end
 
@@ -264,6 +220,8 @@ function onEventsLaunch(key, value)
     updateEvents(value)
 end
 
+-- this Autofill function is meant as an example on how to do the reading from slotdata and mapping the values to 
+-- your own settings
 -- function autoFill()
 --     if SLOT_DATA == nil  then
 --         print("its fucked")
@@ -378,11 +336,6 @@ Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
                 """
             local variant = Tracker.ActiveVariantUID
 
-Tracker:AddItems("items/items.json")
-Tracker:AddItems("items/hint_items.json")
-Tracker:AddItems("items/location_items.json")
-Tracker:AddItems("items/labels.json")
-
 -- Items
 ScriptHost:LoadScript("scripts/items_import.lua")
 
@@ -413,11 +366,21 @@ if PopVersion and PopVersion >= "0.18.0" then
     ScriptHost:LoadScript("scripts/autotracking.lua")
 end"""
             )
+    if not os.path.exists(path + "scripts/items_import.lua"):
+        with open(path + "/scripts/items_import.lua", "w") as items_lua:
+            items_lua.write(
+                """
+Tracker:AddItems("items/items.json")
+Tracker:AddItems("items/hint_items.json")
+Tracker:AddItems("items/location_items.json")
+Tracker:AddItems("items/labels.json")
+                """
+            )
     if not os.path.exists(path + "/scripts/layouts_import.lua"):
         with open(path + "/scripts/layouts_import.lua", "w") as layouts_lua:
             layouts_lua.write(
                 """
-        Tracker:AddLayouts("layouts/events.json")
+Tracker:AddLayouts("layouts/events.json")
 Tracker:AddLayouts("layouts/settings_popup.json")
 Tracker:AddLayouts("layouts/items.json")
 Tracker:AddLayouts("layouts/tabs.json")
@@ -486,13 +449,11 @@ ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")
         with open(path + "/scripts/logic/logic_main.lua", "w") as logic_lua:
             logic_lua.write(
                 """
-ScriptHost:AddWatchForCode("keydropshuffle handler", "key_drop_shuffle", keyDropLayoutChange)
-ScriptHost:AddWatchForCode("boss handler", "boss_shuffle", bossShuffle)
 -- ScriptHost:AddWatchForCode("ow_dungeon details handler", "ow_dungeon_details", owDungeonDetails)
 
 
-alttp_location = {}
-alttp_location.__index = alttp_location
+{gamename}_location = {}
+{gamename}_location.__index = {gamename}_location
 
 accessLVL= {
     [0] = "none",
@@ -532,10 +493,10 @@ function can_reach(name)
     return location:accessibility()
 end
 
--- creates a lua object for the given name. it acts as a representation of a overworld reagion or indoor locatoin and
--- tracks its connected objects wvia the exit-table
-function alttp_location.new(name)
-    local self = setmetatable({}, alttp_location)
+-- creates a lua object for the given name. it acts as a representation of a overworld region or indoor location and
+-- tracks its connected objects via the exit-table
+function {gamename}_location.new(name)
+    local self = setmetatable({}, {gamename}_location)
     if name then
         named_locations[name] = self
         self.name = name
@@ -554,10 +515,10 @@ local function always()
     return AccessibilityLevel.Normal
 end
 
--- markes a 1-way connections between 2 "locations/regions" in the source "locations" exit-table with rules if provided
-function alttp_location:connect_one_way(exit, rule)
+-- marks a 1-way connections between 2 "locations/regions" in the source "locations" exit-table with rules if provided
+function {gamename}_location:connect_one_way(exit, rule)
     if type(exit) == "string" then
-        exit = alttp_location.new(exit)
+        exit = {gamename}_location.new(exit)
     end
     if rule == nil then
         rule = always
@@ -565,15 +526,15 @@ function alttp_location:connect_one_way(exit, rule)
     self.exits[#self.exits + 1] = { exit, rule }
 end
 
--- markes a 2-way connection between 2 locations. acts as a shortcut for 2 connect_one_way-calls 
-function alttp_location:connect_two_ways(exit, rule)
+-- marks a 2-way connection between 2 locations. acts as a shortcut for 2 connect_one_way-calls 
+function {gamename}_location:connect_two_ways(exit, rule)
     self:connect_one_way(exit, rule)
     exit:connect_one_way(self, rule)
 end
 
 -- creates a 1-way connection from a region/location to another one via a 1-way connector like a ledge, hole,
 -- self-closing door, 1-way teleport, ...
-function alttp_location:connect_one_way_entrance(name, exit, rule)
+function {gamename}_location:connect_one_way_entrance(name, exit, rule)
     if rule == nil then
         rule = always
     end
@@ -582,7 +543,7 @@ end
 
 -- creates a connection between 2 locations that is traversable in both ways using the same rules both ways
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
-function alttp_location:connect_two_ways_entrance(name, exit, rule)
+function {gamename}_location:connect_two_ways_entrance(name, exit, rule)
     if exit == nil then -- for ER
         return
     end
@@ -592,13 +553,13 @@ end
 
 -- creates a connection between 2 locations that is traversable in both ways but each connection follow different rules.
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
-function alttp_location:connect_two_ways_entrance_door_stuck(name, exit, rule1, rule2)
+function {gamename}_location:connect_two_ways_entrance_door_stuck(name, exit, rule1, rule2)
     self:connect_one_way_entrance(name, exit, rule1)
     exit:connect_one_way_entrance(name, self, rule2)
 end
 
 -- checks for the accessibility of a regino/location given its own exit requirements
-function alttp_location:accessibility()
+function {gamename}_location:accessibility()
     if self.staleness < staleness then
         return AccessibilityLevel.None
     else
@@ -607,7 +568,7 @@ function alttp_location:accessibility()
 end
 
 -- 
-function alttp_location:discover(accessibility, keys)
+function {gamename}_location:discover(accessibility, keys)
 
     local change = false
     if accessibility > self:accessibility() then
@@ -645,12 +606,7 @@ function alttp_location:discover(accessibility, keys)
     end
 end
 
-entry_point = alttp_location.new("entry_point")
--- lightworld_spawns = alttp_location.new("lightworld_spawns")
--- darkworld_spawns = alttp_location.new("darkworld_spawns")
-
--- entry_point:connect_one_way(lightworld_spawns, function() return openOrStandard() end)
--- entry_point:connect_one_way(darkworld_spawns, function() return inverted() end)
+entry_point = {gamename}_location.new("entry_point")
 
 -- 
 function stateChanged()
@@ -714,23 +670,6 @@ function has(item, amount, amountInLogic)
     local count
     local amount
     local amountInLogic
-    if (Tracker:FindObjectForCode("small_keys").CurrentStage == 2) and item:sub(-8,-1) == "smallkey" then -- universal keys
-        return true
-    end
-    -- if Tracker:FindObjectForCode("key_drop_shuffle").Active then
-    --     -- print(KDS_amount, KDS_amountInLogic)
-    --     amount = KDS_amount
-    --     amountInLogic = KDS_amountInLogic
-    --     if item:sub(-8,-1) == "smallkey" then
-    --         count = Tracker:ProviderCountForCode(item.."_drop")
-    --     else
-    --         count = Tracker:ProviderCountForCode(item)
-    --     end
-    -- else
-    --     count = Tracker:ProviderCountForCode(item)
-    --     amount = noKDS_amount
-    --     amountInLogic = noKDS_amountInLogic
-    -- end
 
     -- print(item, count, amount, amountInLogic)
     if amountInLogic then

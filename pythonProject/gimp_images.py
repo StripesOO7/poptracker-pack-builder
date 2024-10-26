@@ -118,7 +118,6 @@ if __name__ == "__main__":
             else:
                 line_split.append(line.replace("\n", "").replace('"', ""))
         for index, lines in enumerate(line_split):
-            # print(line)
             if len(lines) > 1 and isinstance(lines, list):
                 for i, _ in enumerate(lines):
                     if i != 0:
@@ -126,9 +125,4 @@ if __name__ == "__main__":
                         _gimp_png(save_to_path, "\n".join((lines[0], lines[i])))
 
             else:
-                # pass
-                # print(lines)
                 _gimp_png(save_to_path, lines)
-                # if len(lines[0]) > max:
-            #     max = len(lines[0])
-            # gimp_png(line[0]+line[1], 33)

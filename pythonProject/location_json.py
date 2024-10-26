@@ -54,11 +54,8 @@ def _write_locations(
     :return: none
     """
 
-    # regions = region
-    well = False
     sub_region = loc_dict[region]
 
-    # print(sorted(sub_region), sub_region)
     temp_lists = []
     temp_dicts = []
     for i in sub_region.keys():
@@ -104,10 +101,8 @@ def _write_locations(
     if len(temp_lists) > 0:
         location_list[-1]["sections"] = []
         hints_list[-1]["sections"] = []
-        # overworld["sections"] = []
         for location in temp_lists:
 
-            # tmp.count(fullpath + '/' + location)
             x = random.randint(10, 2500)
             y = random.randint(10, 2500)
             location_list[-1]["sections"].append(
@@ -171,7 +166,6 @@ def _location_dict_builder(
     :param bool building:
     :return: returns a sorted dictionary of the currently added locations
     """
-    # print(location_list)
     location_dict = locations_dict
     if building:
         if not len(location_list) == 1:
@@ -181,7 +175,6 @@ def _location_dict_builder(
             # print(location_list[1:], location_list[1:][0])
             print(path)
             location_dict.setdefault(location_list[0], dict())
-            # location_dict[location_list[0]].update({location_list[1:][0]: dict()})
             path.append(location_list[0])
             _location_dict_builder(
                 locations_dict, path, location_list[1:], logic_dict, True
@@ -189,22 +182,18 @@ def _location_dict_builder(
         else:
             for part in path:
                 location_dict = location_dict[part]
-                # print(location_dict)
-            # print(location_list[0])
-            location_dict.setdefault(location_list[0], list())
-            # location_dict[location_list[0]].update({location_list[0]: list()})
-    # else:
-    #     if len(location_list[1:]) > 1:
-    #         location_dict[location_list[0]][location_list[1:][0]].append(location_list[1:][1])
-    #         location_dict_builder(location_dict[location_list[0]], location_list[1:],logic_dict, False)
-    #     elif len(location_list[1:]) == 1:
-    #         location_dict[location_list[0]][location_list[1:][0]].append(location_list[1:][0])
-    #     else:
-    #         try:
-    #             location_dict[location_list[0]][location_list[0]].append(logic_dict[location_list[0]])
-    #         except:
-    #             pass
-    # print(location_dict.items())
+            try:
+                location_dict.setdefault(location_list[0], list())
+            except AttributeError:
+                print(
+                    f"Script stopped at '{location_list[0]}' in:\n'@{'/'.join(path)}/{location_list[0]}'\n"
+                    f"This is because another location already exists that ends at '@{'/'.join(path)}' but the "
+                    f"current location has sections deeper down that path.\n"
+                    f"To fix this you need to add another section past '{path[-1]}'. The most basic way "
+                    f"would be to double the name of the last section such that it results in "
+                    f"'@{'/'.join(path)}/{path[-1]}'"
+                )
+                exit()
     return dict(sorted(location_dict.items()))
 
 
@@ -212,7 +201,6 @@ def create_hints(path: str):
     read_input = []
     hints_dict = {}
     location_list = []
-    # global lvls, locations_dict, maps_names
     with open(path + "/scripts/autotracking/location_mapping.lua") as mapping:
         while inputs := mapping.readline():
             if "]" in inputs:
@@ -315,14 +303,18 @@ def create_locations(path: str):  # , logic: dict[str, str]):
                         .lower(),
                     )
                 else:
-                    hosted_item_list.append(location.replace('"', "").strip())
+                    hosted_item_list.append(
+                        location.replace('"', "").strip().replace(" ", "")
+                    )
         else:
             if "@" in read_input[k][1]:
                 location_list.append(
                     read_input[k][1].replace("@", "").replace('"', "").split("/")
                 )
             else:
-                hosted_item_list.append(read_input[k][1].replace('"', "").strip())
+                hosted_item_list.append(
+                    read_input[k][1].replace('"', "").strip().replace(" ", "")
+                )
 
             hints_dict[read_input[k][0]] = (
                 read_input[k][1][: read_input[k][1].rfind("/")],
@@ -372,29 +364,6 @@ def create_locations(path: str):  # , logic: dict[str, str]):
         locations_dict = _location_dict_builder(
             locations_dict, [], location, logic_dict, True
         )
-        # if not len(location) == 1:
-        #     locations_dict[location[0]].update({location[1:][0]: list()})
-        # else:
-        #     locations_dict[location[0]].update({location[0]: list()})
-    # for location in location_list:
-    #     locations_dict = location_dict_builder(locations_dict, location, logic_dict, False)
-    #     # if len(location[1:]) > 1:
-    #     #     locations_dict[location[0]][location[1:][0]].append(location[1:][1])
-    #     # elif len(location[1:]) == 1:
-    #     #     locations_dict[location[0]][location[1:][0]].append(location[1:][0])
-    #     # else:
-    #     #     try:
-    #     #         locations_dict[location[0]][location[0]].append(logic_dict[location[0]])
-    #     #     except:
-    #     #         pass
-
-    # if other_options[0] in ["", " ", "\n"]:
-    #     print(other_options)
-    #     open_chest = tk.filedialog.askopenfilename().split('/')[-1]
-    #     close_chest = tk.filedialog.askopenfilename().split('/')[-1]
-    #     with open(path + '/datapacke_url.txt', 'a') as file:
-    #         file.write(f"{open_chest}, {close_chest}")
-    # else:
     open_chest = "open.png"
     close_chest = "close.png"
     # open_chest = other_options[0]
@@ -424,7 +393,6 @@ def create_locations(path: str):  # , logic: dict[str, str]):
             x = random.randint(10, 2500)
             y = random.randint(10, 2500)
             top_most_region = locations_region
-            # print(city, lvl_locations[city])
             overworld_json["children"].append(
                 {
                     "name": f"{locations_region}",
@@ -483,13 +451,6 @@ def create_locations(path: str):  # , logic: dict[str, str]):
         for lvl in lvls:
             if len(locations_dict[lvl]) > 9:
                 maps_names.append(lvl)
-        # overworld.write('''
-        #         }
-        # ]''')
-    # with open(path + fr"\locations\Overworld.json", "r+") as overworld:
-    #     json_obj = json.loads(overworld)
-    #     pretty_json = json.dumps(json_obj, indent=4)
-    #     overworld.write(json_obj)
 
 
 #
@@ -527,9 +488,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
     #
-    # print("Select a file to open")
-    # path_to_item_json = filedialog.askopenfilename()
-    # print("Filename: ", path_to_item_json)
     print("Select the base-folder of the pack:")
     base_path = tk.filedialog.askdirectory()
     print("Path to base-folder of the pack: ", base_path)
