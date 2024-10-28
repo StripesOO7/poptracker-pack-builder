@@ -448,24 +448,24 @@ ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")
     if not os.path.exists(path + "/scripts/logic/logic_main.lua"):
         with open(path + "/scripts/logic/logic_main.lua", "w") as logic_lua:
             logic_lua.write(
-                """
+                f"""
 -- ScriptHost:AddWatchForCode("ow_dungeon details handler", "ow_dungeon_details", owDungeonDetails)
 
 
-{gamename}_location = {}
-{gamename}_location.__index = {gamename}_location
+{game_name}_location = \u007b\u007d
+{game_name}_location.__index = {game_name}_location
 
-accessLVL= {
+accessLVL= \u007b
     [0] = "none",
     [1] = "partial",
     [3] = "inspect",
     [5] = "sequence break",
     [6] = "normal",
     [7] = "cleared"
-}
+\u007d
 
 -- Table to store named locations
-named_locations = {}
+named_locations = \u007b\u007d
 staleness = 0
 
 -- 
@@ -495,8 +495,8 @@ end
 
 -- creates a lua object for the given name. it acts as a representation of a overworld region or indoor location and
 -- tracks its connected objects via the exit-table
-function {gamename}_location.new(name)
-    local self = setmetatable({}, {gamename}_location)
+function {game_name}_location.new(name)
+    local self = setmetatable(\u007b\u007d, {game_name}_location)
     if name then
         named_locations[name] = self
         self.name = name
@@ -504,7 +504,7 @@ function {gamename}_location.new(name)
         self.name = self
     end
 
-    self.exits = {}
+    self.exits = \u007b\u007d
     self.staleness = -1
     self.keys = math.huge
     self.accessibility_level = AccessibilityLevel.None
@@ -516,34 +516,34 @@ local function always()
 end
 
 -- marks a 1-way connections between 2 "locations/regions" in the source "locations" exit-table with rules if provided
-function {gamename}_location:connect_one_way(exit, rule)
+function {game_name}_location:connect_one_way(exit, rule)
     if type(exit) == "string" then
-        exit = {gamename}_location.new(exit)
+        exit = {game_name}_location.new(exit)
     end
     if rule == nil then
         rule = always
     end
-    self.exits[#self.exits + 1] = { exit, rule }
+    self.exits[#self.exits + 1] = \u007b exit, rule \u007d
 end
 
 -- marks a 2-way connection between 2 locations. acts as a shortcut for 2 connect_one_way-calls 
-function {gamename}_location:connect_two_ways(exit, rule)
+function {game_name}_location:connect_two_ways(exit, rule)
     self:connect_one_way(exit, rule)
     exit:connect_one_way(self, rule)
 end
 
 -- creates a 1-way connection from a region/location to another one via a 1-way connector like a ledge, hole,
 -- self-closing door, 1-way teleport, ...
-function {gamename}_location:connect_one_way_entrance(name, exit, rule)
+function {game_name}_location:connect_one_way_entrance(name, exit, rule)
     if rule == nil then
         rule = always
     end
-    self.exits[#self.exits + 1] = { exit, rule }
+    self.exits[#self.exits + 1] = \u007b exit, rule \u007d
 end
 
 -- creates a connection between 2 locations that is traversable in both ways using the same rules both ways
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
-function {gamename}_location:connect_two_ways_entrance(name, exit, rule)
+function {game_name}_location:connect_two_ways_entrance(name, exit, rule)
     if exit == nil then -- for ER
         return
     end
@@ -553,13 +553,13 @@ end
 
 -- creates a connection between 2 locations that is traversable in both ways but each connection follow different rules.
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
-function {gamename}_location:connect_two_ways_entrance_door_stuck(name, exit, rule1, rule2)
+function {game_name}_location:connect_two_ways_entrance_door_stuck(name, exit, rule1, rule2)
     self:connect_one_way_entrance(name, exit, rule1)
     exit:connect_one_way_entrance(name, self, rule2)
 end
 
 -- checks for the accessibility of a regino/location given its own exit requirements
-function {gamename}_location:accessibility()
+function {game_name}_location:accessibility()
     if self.staleness < staleness then
         return AccessibilityLevel.None
     else
@@ -568,7 +568,7 @@ function {gamename}_location:accessibility()
 end
 
 -- 
-function {gamename}_location:discover(accessibility, keys)
+function {game_name}_location:discover(accessibility, keys)
 
     local change = false
     if accessibility > self:accessibility() then
@@ -606,7 +606,7 @@ function {gamename}_location:discover(accessibility, keys)
     end
 end
 
-entry_point = {gamename}_location.new("entry_point")
+entry_point = {game_name}_location.new("entry_point")
 
 -- 
 function stateChanged()
