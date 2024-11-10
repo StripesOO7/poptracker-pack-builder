@@ -334,7 +334,7 @@ Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
         with open(path + "/scripts/init.lua", "w") as init_lua:
             init_lua.write(
                 """
-            local variant = Tracker.ActiveVariantUID
+local variant = Tracker.ActiveVariantUID
 
 -- Items
 ScriptHost:LoadScript("scripts/items_import.lua")
@@ -393,7 +393,7 @@ Tracker:AddLayouts("layouts/dungeon_items.json")
         with open(path + "/scripts/settings.lua", "w") as settings_lua:
             settings_lua.write(
                 """
-        ------------------------------------------------------------------
+------------------------------------------------------------------
 -- Configuration options for scripted systems in this pack
 ------------------------------------------------------------------
 AUTOTRACKER_ENABLE_ITEM_TRACKING = true
@@ -403,7 +403,7 @@ AUTOTRACKER_ENABLE_LOCATION_TRACKING = true"""
         with open(path + "/scripts/autotracking.lua", "w") as auto_lua:
             auto_lua.write(
                 """
-        -- Configuration --------------------------------------
+-- Configuration --------------------------------------
 AUTOTRACKER_ENABLE_DEBUG_LOGGING = true and ENABLE_DEBUG_LOG
 AUTOTRACKER_ENABLE_DEBUG_LOGGING_AP = true and AUTOTRACKER_ENABLE_DEBUG_LOGGING
 AUTOTRACKER_ENABLE_DEBUG_LOGGING_SNES = true and AUTOTRACKER_ENABLE_DEBUG_LOGGING
@@ -621,7 +621,7 @@ ScriptHost:AddWatchForCode("stateChanged", "*", stateChanged)
         with open(path + "/scripts/logic/logic_helper.lua", "w") as logic_helper_lua:
             logic_helper_lua.write(
                 """
-            function A(result)
+function A(result)
     if result then
         return AccessibilityLevel.Normal
     else
