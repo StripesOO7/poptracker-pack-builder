@@ -161,29 +161,31 @@ function onItem(index, item_id, item_name, player_number)
         return
     end
     for _, item_tuple in pairs(item) do
-        item_code = item_tuple[1]
-        item_type = item_tuple[2]
-        local item_obj = Tracker:FindObjectForCode(item_code)
-        if item_obj then
-            if item_obj.Type == "toggle" then
-                -- print("toggle")
-                item_obj.Active = true
-            elseif item_obj.Type == "progressive" then
-                -- print("progressive")
-                item_obj.Active = true
-            elseif item_obj.Type == "consumable" then
-                -- print("consumable")
-                item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
-            elseif item_obj.Type == "progressive_toggle" then
-                -- print("progressive_toggle")
-                if item_obj.Active then
-                    item_obj.CurrentStage = item_obj.CurrentStage + 1
-                else
+        for _, item_pair in pairs(item_tuples) do
+            item_code = item_pair[1]
+            item_type = item_pair[2]
+            local item_obj = Tracker:FindObjectForCode(item_code)
+            if item_obj then
+                if item_obj.Type == "toggle" then
+                    -- print("toggle")
                     item_obj.Active = true
+                elseif item_obj.Type == "progressive" then
+                    -- print("progressive")
+                    item_obj.Active = true
+                elseif item_obj.Type == "consumable" then
+                    -- print("consumable")
+                    item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment
+                elseif item_obj.Type == "progressive_toggle" then
+                    -- print("progressive_toggle")
+                    if item_obj.Active then
+                        item_obj.CurrentStage = item_obj.CurrentStage + 1
+                    else
+                        item_obj.Active = true
+                    end
                 end
+            else
+                print(string.format("onItem: could not find object for code %s", item_code[1]))
             end
-        else
-            print(string.format("onItem: could not find object for code %s", item_code[1]))
         end
     end
 end
