@@ -15,49 +15,51 @@ def _gimp_png(save_path: str, name: str, length: int = 28):
     :return: none
     """
     font = ImageFont.truetype(r"C:\Windows\Fonts\micross.ttf", 40)
-    multiline_count = name.count("\n")
+    multiline_count: int = name.count("\n")
     print(multiline_count)
-    charsize = (length * 17, 46 * (multiline_count + 1))
+    charsize = (length * 19, 52 * (multiline_count + 1))
     W, H = charsize
     color = "#fff"
     if multiline_count > 0:
-        text = name.replace("\n", " ")
+        save_name = name.replace("\n", " ")
     else:
-        text = name
-    path = rf'{save_path}\{text.replace(" ","_").lower()}.png'
+        save_name = name
+    path = rf'{save_path}\{save_name.replace(" ","_").lower()}.png'
     print(path)
     # bg_img = Image.new("RGBA", charsize, color)
     mask_img = Image.new("RGBA", charsize, 0)
     draw = ImageDraw.Draw(mask_img)
-    _, _, w, h = draw.textbbox((0, 0), text, font=font)
+    _, _, w, h = draw.textbbox((0, 0), name, font=font)
     if multiline_count > 0:
 
+        # draw.multiline_text(
+        #     ((W - w) / 2, (H - h) / 2),
+        #     text=name,
+        #     font=font,
+        #     fill="black",
+        #     align="center",
+        #     stroke_width=3,
+        # )
         draw.multiline_text(
             ((W - w) / 2, (H - h) / 2),
-            text=text,
-            font=font,
-            fill="black",
-            align="center",
-            stroke_width=3,
-        )
-        draw.multiline_text(
-            ((W - w) / 2, (H - h) / 2),
-            text=text,
+            text=name,
             font=font,
             fill="white",
             align="center",
+            stroke_width=3,
+            stroke_fill="black",
         )
     else:
         draw.text(
-            xy=(0, 0),
-            text=text,
+            xy=((W - w) / 2, (H - h) / 2),
+            text=name,
             font=font,
             fill="black",
             stroke_width=3,
         )
         draw.text(
-            xy=(0, 0),
-            text=text,
+            xy=((W - w) / 2, (H - h) / 2),
+            text=name,
             font=font,
             fill="white",
         )
