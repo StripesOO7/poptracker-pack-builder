@@ -26,11 +26,20 @@ def _gimp_png(save_path: str, name: str, length: int = 28):
         text = name
     path = rf'{save_path}\{text.replace(" ","_").lower()}.png'
     print(path)
-    bg_img = Image.new("RGB", charsize, color)
-    mask_img = Image.new("L", bg_img.size, 0)
+    # bg_img = Image.new("RGBA", charsize, color)
+    mask_img = Image.new("RGBA", charsize, 0)
     draw = ImageDraw.Draw(mask_img)
     _, _, w, h = draw.textbbox((0, 0), text, font=font)
     if multiline_count > 0:
+
+        draw.multiline_text(
+            ((W - w) / 2, (H - h) / 2),
+            text=text,
+            font=font,
+            fill="black",
+            align="center",
+            stroke_width=3,
+        )
         draw.multiline_text(
             ((W - w) / 2, (H - h) / 2),
             text=text,
@@ -39,9 +48,22 @@ def _gimp_png(save_path: str, name: str, length: int = 28):
             align="center",
         )
     else:
-        draw.text(xy=(0, 0), text=text, font=font, fill="white")
-    bg_img.putalpha(mask_img)
-    bg_img.save(path)
+        draw.text(
+            xy=(0, 0),
+            text=text,
+            font=font,
+            fill="black",
+            stroke_width=3,
+        )
+        draw.text(
+            xy=(0, 0),
+            text=text,
+            font=font,
+            fill="white",
+        )
+    # bg_img.putalpha(mask_img)
+    # bg_img.save(path)
+    mask_img.save(path)
 
 
 # def _gimp_png_multiline(save_path, name, length):
