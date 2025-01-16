@@ -22,9 +22,9 @@ def create_base_structure(path: str, game_name: str, game_dict: dict):
         with open(path + "/scripts/autotracking/archipelago.lua", "w") as ap_lua:
             ap_lua.write(
                 """
-ScriptHost:LoadScript("scripts/autotracking/item_mapping.lua")
-ScriptHost:LoadScript("scripts/autotracking/location_mapping.lua")
-ScriptHost:LoadScript("scripts/autotracking/hints_mapping.lua")
+require("scripts/autotracking/item_mapping.lua")
+require("scripts/autotracking/location_mapping.lua")
+require("scripts/autotracking/hints_mapping.lua")
 
 CUR_INDEX = -1
 --SLOT_DATA = nil
@@ -339,12 +339,12 @@ Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
 local variant = Tracker.ActiveVariantUID
 
 -- Items
-ScriptHost:LoadScript("scripts/items_import.lua")
+require("scripts/items_import.lua")
 
 -- Logic
-ScriptHost:LoadScript("scripts/logic/logic_helper.lua")
-ScriptHost:LoadScript("scripts/logic/logic_main.lua")
-ScriptHost:LoadScript("scripts/logic_import.lua")
+require("scripts/logic/logic_helper.lua")
+require("scripts/logic/logic_main.lua")
+require("scripts/logic_import.lua")
 
 -- Maps
 if Tracker.ActiveVariantUID == "maps-u" then
@@ -358,14 +358,14 @@ if PopVersion and PopVersion >= "0.23.0" then
 end
 
 -- Layout
-ScriptHost:LoadScript("scripts/layouts_import.lua")
+require("scripts/layouts_import.lua")
 
 -- Locations
-ScriptHost:LoadScript("scripts/locations_import.lua")
+require("scripts/locations_import.lua")
 
 -- AutoTracking for Poptracker
-if PopVersion and PopVersion >= "0.18.0" then
-    ScriptHost:LoadScript("scripts/autotracking.lua")
+if PopVersion and PopVersion >= "0.26.0" then
+    require("scripts/autotracking.lua")
 end"""
             )
     if not os.path.exists(path + "scripts/items_import.lua"):
@@ -423,9 +423,9 @@ end
 print("---------------------------------------------------------------------")
 print("")
 
-ScriptHost:LoadScript("scripts/autotracking/settings.lua")
+require("scripts/autotracking/settings.lua")
 -- loads the AP autotracking code
-ScriptHost:LoadScript("scripts/autotracking/archipelago.lua")
+require("scripts/autotracking/archipelago.lua")
 
 
         """
