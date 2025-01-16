@@ -22,9 +22,9 @@ def create_base_structure(path: str, game_name: str, game_dict: dict):
         with open(path + "/scripts/autotracking/archipelago.lua", "w") as ap_lua:
             ap_lua.write(
                 """
-require("scripts/autotracking/item_mapping.lua")
-require("scripts/autotracking/location_mapping.lua")
-require("scripts/autotracking/hints_mapping.lua")
+require("scripts/autotracking/item_mapping")
+require("scripts/autotracking/location_mapping")
+require("scripts/autotracking/hints_mapping")
 
 CUR_INDEX = -1
 --SLOT_DATA = nil
@@ -339,12 +339,12 @@ Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
 local variant = Tracker.ActiveVariantUID
 
 -- Items
-require("scripts/items_import.lua")
+require("scripts/items_import")
 
 -- Logic
-require("scripts/logic/logic_helper.lua")
-require("scripts/logic/logic_main.lua")
-require("scripts/logic_import.lua")
+require("scripts/logic/logic_helper")
+require("scripts/logic/logic_main")
+require("scripts/logic_import")
 
 -- Maps
 if Tracker.ActiveVariantUID == "maps-u" then
@@ -358,14 +358,14 @@ if PopVersion and PopVersion >= "0.23.0" then
 end
 
 -- Layout
-require("scripts/layouts_import.lua")
+require("scripts/layouts_import")
 
 -- Locations
-require("scripts/locations_import.lua")
+require("scripts/locations_import")
 
 -- AutoTracking for Poptracker
 if PopVersion and PopVersion >= "0.26.0" then
-    require("scripts/autotracking.lua")
+    require("scripts/autotracking")
 end"""
             )
     if not os.path.exists(path + "scripts/items_import.lua"):
