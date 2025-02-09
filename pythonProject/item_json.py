@@ -117,15 +117,16 @@ def create_items(path: str):
         with open(path + rf"/scripts/autotracking/{file}.lua") as mapping:
             while inputs := mapping.readline():
                 if "]" in inputs:
-                    if "--" in inputs and inputs.rindex("--") > inputs.rindex("}"):
-                        inputs = inputs[: inputs.rindex("--")]
-                        read_input.append(inputs.split("="))
-                    elif inputs.rindex("}") == inputs.rindex("{") + 1:
-                        pass
-                    elif not (
-                        inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"
+                    if not (
+                            inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"
                     ):
-                        read_input.append(inputs.split("="))
+                        if "--" in inputs and inputs.rindex("--") > inputs.rindex("}"):
+                            inputs = inputs[: inputs.rindex("--")]
+                            read_input.append(inputs.split("="))
+                        elif inputs.rindex("}") == inputs.rindex("{") + 1:
+                            pass
+                        else:
+                            read_input.append(inputs.split("="))
                 else:
                     pass
 
