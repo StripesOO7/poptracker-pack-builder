@@ -110,26 +110,24 @@ function onClear(slot_data)
         end
     end
     -- reset items
-    for _, item_tuples in pairs(ITEM_MAPPING) do
-        for _, item_pair in pairs(item_tuples) do
-            for item_type, item_code in pairs(item_pair) do
-                local item_obj = Tracker:FindObjectForCode(item_code)
-                if item_obj then
-                    if item_obj.Type == "toggle" then
-                        item_obj.Active = false
-                    elseif item_obj.Type == "progressive" then
-                        item_obj.CurrentStage = 0
-                        item_obj.Active = false
-                    elseif item_obj.Type == "consumable" then
-                        if item_obj.MinCount then
-                            item_obj.AcquiredCount = item_obj.MinCount
-                        else
-                            item_obj.AcquiredCount = 0
-                        end
-                    elseif item_obj.Type == "progressive_toggle" then
-                        item_obj.CurrentStage = 0
-                        item_obj.Active = false
+    for _, item_pair in pairs(ITEM_MAPPING) do
+        for item_type, item_code in pairs(item_pair) do
+            local item_obj = Tracker:FindObjectForCode(item_code)
+            if item_obj then
+                if item_obj.Type == "toggle" then
+                    item_obj.Active = false
+                elseif item_obj.Type == "progressive" then
+                    item_obj.CurrentStage = 0
+                    item_obj.Active = false
+                elseif item_obj.Type == "consumable" then
+                    if item_obj.MinCount then
+                        item_obj.AcquiredCount = item_obj.MinCount
+                    else
+                        item_obj.AcquiredCount = 0
                     end
+                elseif item_obj.Type == "progressive_toggle" then
+                    item_obj.CurrentStage = 0
+                    item_obj.Active = false
                 end
             end
         end
@@ -160,32 +158,30 @@ function onItem(index, item_id, item_name, player_number)
         --print(string.format("onItem: could not find item mapping for id %s", item_id))
         return
     end
-    for _, item_tuple in pairs(item) do
-        for _, item_pair in pairs(item_tuples) do
-            item_code = item_pair[1]
-            item_type = item_pair[2]
-            local item_obj = Tracker:FindObjectForCode(item_code)
-            if item_obj then
-                if item_obj.Type == "toggle" then
-                    -- print("toggle")
+    for _, item_pair in pairs(item) do
+        item_code = item_pair[1]
+        item_type = item_pair[2]
+        local item_obj = Tracker:FindObjectForCode(item_code)
+        if item_obj then
+            if item_obj.Type == "toggle" then
+                -- print("toggle")
+                item_obj.Active = true
+            elseif item_obj.Type == "progressive" then
+                -- print("progressive")
+                item_obj.Active = true
+            elseif item_obj.Type == "consumable" then
+                -- print("consumable")
+                item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment * (tonumber(item_pair[3]) or 1)
+            elseif item_obj.Type == "progressive_toggle" then
+                -- print("progressive_toggle")
+                if item_obj.Active then
+                    item_obj.CurrentStage = item_obj.CurrentStage + 1
+                else
                     item_obj.Active = true
-                elseif item_obj.Type == "progressive" then
-                    -- print("progressive")
-                    item_obj.Active = true
-                elseif item_obj.Type == "consumable" then
-                    -- print("consumable")
-                    item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment * (item_pair[3] or 1)
-                elseif item_obj.Type == "progressive_toggle" then
-                    -- print("progressive_toggle")
-                    if item_obj.Active then
-                        item_obj.CurrentStage = item_obj.CurrentStage + 1
-                    else
-                        item_obj.Active = true
-                    end
                 end
-            else
-                print(string.format("onItem: could not find object for code %s", item_code[1]))
             end
+        else
+            print(string.format("onItem: could not find object for code %s", item_code[1]))
         end
     end
 end
@@ -211,7 +207,6 @@ function onLocation(location_id, location_name)
             print(string.format("onLocation: could not find location_object for code %s", location))
         end
     end
-    canFinish()
 end
 
 function onEvent(key, value, old_value)
@@ -275,8 +270,8 @@ function onNotifyLaunch(key, value)
     print("onNotifyLaunch", key, value)
     if key == HINTS_ID then
         for _, hint in ipairs(value) do
-            print("hint", hint, hint.fount)
-            print(dump_table(hint))
+            -- print("hint", hint, hint.found)
+            -- print(dump_table(hint))
             if hint.finding_player == Archipelago.PlayerNumber then
                 if hint.found then
                     updateHints(hint.location, true)
@@ -344,7 +339,6 @@ require("scripts/items_import")
 -- Logic
 require("scripts/logic/logic_helper")
 require("scripts/logic/logic_main")
-require("scripts/logic_import")
 
 -- Maps
 if Tracker.ActiveVariantUID == "maps-u" then
@@ -423,14 +417,15 @@ end
 print("---------------------------------------------------------------------")
 print("")
 
-require("scripts/autotracking/settings.lua")
+require("scripts/settings")
 -- loads the AP autotracking code
-require("scripts/autotracking/archipelago.lua")
+require("scripts/autotracking/archipelago")
 
 
         """
             )
     if not os.path.exists(path + "manifest.json"):
+        game_name_lua = game_name.lower().replace(' ', '_')
         with open(path + "/manifest.json", "w") as manifest:
             manifest_json = {
                 "name": f"{game_name} Archipelago",
@@ -454,8 +449,8 @@ require("scripts/autotracking/archipelago.lua")
 -- ScriptHost:AddWatchForCode("ow_dungeon details handler", "ow_dungeon_details", owDungeonDetails)
 
 
-{game_name}_location = \u007b\u007d
-{game_name}_location.__index = {game_name}_location
+{game_name_lua}_location = \u007b\u007d
+{game_name_lua}_location.__index = {game_name_lua}_location
 
 accessLVL= \u007b
     [0] = "none",
@@ -497,8 +492,8 @@ end
 
 -- creates a lua object for the given name. it acts as a representation of a overworld region or indoor location and
 -- tracks its connected objects via the exit-table
-function {game_name}_location.new(name)
-    local self = setmetatable(\u007b\u007d, {game_name}_location)
+function {game_name_lua}_location.new(name)
+    local self = setmetatable(\u007b\u007d, {game_name_lua}_location)
     if name then
         named_locations[name] = self
         self.name = name
@@ -518,9 +513,9 @@ local function always()
 end
 
 -- marks a 1-way connections between 2 "locations/regions" in the source "locations" exit-table with rules if provided
-function {game_name}_location:connect_one_way(exit, rule)
+function {game_name_lua}_location:connect_one_way(exit, rule)
     if type(exit) == "string" then
-        exit = {game_name}_location.new(exit)
+        exit = {game_name_lua}_location.new(exit)
     end
     if rule == nil then
         rule = always
@@ -529,14 +524,14 @@ function {game_name}_location:connect_one_way(exit, rule)
 end
 
 -- marks a 2-way connection between 2 locations. acts as a shortcut for 2 connect_one_way-calls 
-function {game_name}_location:connect_two_ways(exit, rule)
+function {game_name_lua}_location:connect_two_ways(exit, rule)
     self:connect_one_way(exit, rule)
     exit:connect_one_way(self, rule)
 end
 
 -- creates a 1-way connection from a region/location to another one via a 1-way connector like a ledge, hole,
 -- self-closing door, 1-way teleport, ...
-function {game_name}_location:connect_one_way_entrance(name, exit, rule)
+function {game_name_lua}_location:connect_one_way_entrance(name, exit, rule)
     if rule == nil then
         rule = always
     end
@@ -545,7 +540,7 @@ end
 
 -- creates a connection between 2 locations that is traversable in both ways using the same rules both ways
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
-function {game_name}_location:connect_two_ways_entrance(name, exit, rule)
+function {game_name_lua}_location:connect_two_ways_entrance(name, exit, rule)
     if exit == nil then -- for ER
         return
     end
@@ -555,13 +550,13 @@ end
 
 -- creates a connection between 2 locations that is traversable in both ways but each connection follow different rules.
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
-function {game_name}_location:connect_two_ways_entrance_door_stuck(name, exit, rule1, rule2)
+function {game_name_lua}_location:connect_two_ways_entrance_door_stuck(name, exit, rule1, rule2)
     self:connect_one_way_entrance(name, exit, rule1)
     exit:connect_one_way_entrance(name, self, rule2)
 end
 
 -- checks for the accessibility of a regino/location given its own exit requirements
-function {game_name}_location:accessibility()
+function {game_name_lua}_location:accessibility()
     if self.staleness < staleness then
         return AccessibilityLevel.None
     else
@@ -570,7 +565,7 @@ function {game_name}_location:accessibility()
 end
 
 -- 
-function {game_name}_location:discover(accessibility, keys)
+function {game_name_lua}_location:discover(accessibility, keys)
 
     local change = false
     if accessibility > self:accessibility() then
@@ -608,7 +603,7 @@ function {game_name}_location:discover(accessibility, keys)
     end
 end
 
-entry_point = {game_name}_location.new("entry_point")
+entry_point = {game_name_lua}_location.new("entry_point")
 
 -- 
 function stateChanged()
@@ -780,12 +775,12 @@ if __name__ == "__main__":
     print(
         """
     Please select the Directory the pack should be created in
-    If there is no file called 'datapacke_url.txt' already present please provide the requested information.
+    If there is no file called 'datapackage_url.txt' already present please provide the requested information.
     """
     )
     read_file_path = tk.filedialog.askdirectory()
-    if not os.path.exists(read_file_path + "/datapacke_url.txt"):
-        with open(read_file_path + "/datapacke_url.txt", "w") as base_file:
+    if not os.path.exists(read_file_path + "/datapackage_url.txt"):
+        with open(read_file_path + "/datapackage_url.txt", "w") as base_file:
             url = (
                 input("datapackage source (url): ")
                 or "https://archipelago.gg/datapackage"
@@ -793,7 +788,7 @@ if __name__ == "__main__":
             game = input("Game name from Datapackage: ")
             base_file.write(f"{url}, {game}, ")
     datapackage_path, game_name, *other_options = (
-        open(read_file_path + "/datapacke_url.txt").readline().split(", ")
+        open(read_file_path + "/datapackage_url.txt").readline().split(", ")
     )
 
     games_dict = requests.get(datapackage_path).json()["games"]
