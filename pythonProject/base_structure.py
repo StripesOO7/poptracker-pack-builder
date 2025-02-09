@@ -669,6 +669,7 @@ function has(item, amount, amountInLogic)
     local amountInLogic
 
     -- print(item, count, amount, amountInLogic)
+    count = Tracker:ProviderCountForCode(item)
     if amountInLogic then
         if count >= amountInLogic then
             return AccessibilityLevel.Normal
