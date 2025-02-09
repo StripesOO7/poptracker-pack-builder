@@ -21,8 +21,8 @@ if __name__ == "__main__":
     root.withdraw()
 
     read_file_path = tk.filedialog.askdirectory()
-    if not os.path.exists(read_file_path + "/datapacke_url.txt"):
-        with open(read_file_path + "/datapacke_url.txt", "w") as base_file:
+    if not os.path.exists(read_file_path + "/datapackage_url.txt"):
+        with open(read_file_path + "/datapackage_url.txt", "w") as base_file:
             url = (
                 input("datapackage source (url): ")
                 or "https://archipelago.gg/datapackage"
@@ -30,7 +30,7 @@ if __name__ == "__main__":
             game = input("Game name from Datapackage: ")
             base_file.write(f"{url}, {game}, ")
     datapackage_path, game_name, *other_options = (
-        open(read_file_path + "/datapacke_url.txt").readline().split(", ")
+        open(read_file_path + "/datapackage_url.txt").readline().split(", ")
     )
 
     games_dict = requests.get(datapackage_path).json()["games"]
