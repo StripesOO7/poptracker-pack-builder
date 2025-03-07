@@ -9,7 +9,10 @@ def _stages(name: str):
         "inherit_codes": True,
         "img": f"/images/items/{name}.png",
         "img_mod": "",
+        "disabled_img": "",
+        "disabled_img_mods": "",
         "codes": f"{name.replace(' ', '')}_stage1",
+        "secondary_codes": "",
     }
 
     stage2 = {
@@ -17,7 +20,10 @@ def _stages(name: str):
         "inherit_codes": True,
         "img": f"/images/items/{name}.png",
         "img_mod": "",
+        "disabled_img": "",
+        "disabled_img_mods": "",
         "codes": f"{name.replace(' ', '')}_stage2",
+        "secondary_codes": "",
     }
 
     stage3 = {
@@ -25,7 +31,10 @@ def _stages(name: str):
         "inherit_codes": True,
         "img": f"/images/items/{name}.png",
         "img_mod": "",
+        "disabled_img": "",
+        "disabled_img_mods": "",
         "codes": f"{name.replace(' ', '')}_stage3",
+        "secondary_codes": "",
     }
     return [stage1, stage2, stage3]
 
@@ -36,6 +45,9 @@ def _item_toggle_preset(item_name: str):
         "type": "toggle",
         "img": f"images/items/{item_name}.png",
         "img_mods": "",
+        "disabled_img": "",
+        "initial_active_state": False,
+        "overlay_align": True,
         "codes": f"{item_name.replace(' ', '')}",
     }
 
@@ -49,8 +61,9 @@ def _item_progressive_toggle_preset(item_name: str):
         "loop": False,
         "initial_stage_idx": 0,
         "initial_active_state": False,
+        "overlay_align": True,
         "stages": _stages(item_name),
-        "codes": f"{item_name.replace(' ', '')}",
+        # "codes": f"{item_name.replace(' ', '')}",
     }
     return progressive_toggle_json_preset
 
@@ -62,8 +75,9 @@ def _item_progressive_preset(item_name: str):
         "loop": False,
         "allow_disabled": True,
         "initial_stage_idx": 0,
+        "overlay_align": True,
         "stages": _stages(item_name),
-        "codes": f"{item_name.replace(' ', '')}",
+        # "codes": f"{item_name.replace(' ', '')}",
     }
     return progressive_json_preset
 
@@ -79,6 +93,8 @@ def _item_consumable_preset(item_name: str):
         "increment": 1,
         "decrement": 1,
         "initial_quantity": 2,
+        "overlay_align": True,
+        "overlay_font_size": True,
         "overlay_background": "#000000",
         "codes": f"{item_name.replace(' ', '')}",
     }
@@ -92,6 +108,8 @@ def _item_static_preset(item_name: str):
         "type": "static",
         "img": f"images/items/{item_name}.png",
         "img_mods": "",
+        "disabled_img": "",
+        "overlay_align": True,
         "codes": f"{item_name.replace(' ', '')}",
     }
 
