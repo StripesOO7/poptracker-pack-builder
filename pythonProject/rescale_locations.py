@@ -1,7 +1,10 @@
 def key_lookup(json_dict):
     if "map_locations" in json_dict.keys():
-        json_dict["map_locations"][0]["x"] = math.floor(int(json_dict["map_locations"][0]["x"])* ratio_width)
-        json_dict["map_locations"][0]["y"] = math.floor(int(json_dict["map_locations"][0]["y"]) * ratio_height)
+        for map_index, _ in enumerate(json_dict["map_locations"]):
+            json_dict["map_locations"][map_index]["x"] = math.floor(int(json_dict["map_locations"][map_index]["x"])*
+                                                                ratio_width)
+            json_dict["map_locations"][map_index]["y"] = math.floor(int(json_dict["map_locations"][map_index]["y"]) *
+                                                               ratio_height)
     if "children" in json_dict.keys():
         for index, child in enumerate(json_dict["children"]):
             json_dict["children"][index] = key_lookup(json_dict["children"][index])
