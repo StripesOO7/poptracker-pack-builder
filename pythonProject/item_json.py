@@ -47,7 +47,7 @@ def _item_toggle_preset(item_name: str):
         "img_mods": "",
         "disabled_img": "",
         "initial_active_state": False,
-        "overlay_align": True,
+        "overlay_align": "right",
         "codes": f"{item_name.replace(' ', '')}",
     }
 
@@ -61,7 +61,7 @@ def _item_progressive_toggle_preset(item_name: str):
         "loop": False,
         "initial_stage_idx": 0,
         "initial_active_state": False,
-        "overlay_align": True,
+        "overlay_align": "right",
         "stages": _stages(item_name),
         # "codes": f"{item_name.replace(' ', '')}",
     }
@@ -75,7 +75,7 @@ def _item_progressive_preset(item_name: str):
         "loop": False,
         "allow_disabled": True,
         "initial_stage_idx": 0,
-        "overlay_align": True,
+        "overlay_align": "right",
         "stages": _stages(item_name),
         # "codes": f"{item_name.replace(' ', '')}",
     }
@@ -93,7 +93,7 @@ def _item_consumable_preset(item_name: str):
         "increment": 1,
         "decrement": 1,
         "initial_quantity": 2,
-        "overlay_align": True,
+        "overlay_align": "right",
         "overlay_font_size": True,
         "overlay_background": "#000000",
         "codes": f"{item_name.replace(' ', '')}",
@@ -109,7 +109,7 @@ def _item_static_preset(item_name: str):
         "img": f"images/items/{item_name}.png",
         "img_mods": "",
         "disabled_img": "",
-        "overlay_align": True,
+        "overlay_align": "right",
         "codes": f"{item_name.replace(' ', '')}",
     }
 
