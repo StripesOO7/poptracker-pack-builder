@@ -76,7 +76,7 @@ if __name__ == "__main__":
                 hint_json = traverse_json(json_obj, {"x":x_offset, "y":y_offset}, "")
 
         with open(f'{path}/{file.replace(".json","_hints.json")}', 'w') as new_location_json:
-            new_location_json.write(json.dumps([hint_json, json_obj]))
+            new_location_json.write(json.dumps([hint_json, json_obj], indent=4))
     with open(f'{path.replace(path.split("/")[-1], "items")}/hints_items.json', "w") as hint_items_file:
         hint_item_json = []
         for hint_item in hint_item_list:
