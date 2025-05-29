@@ -120,7 +120,7 @@ if __name__ == "__main__":
     
     the option with a single item will be converted into an image with a single line
     
-    the option in list form will be combines one by one with the first one resulting in 
+    the option in list form will be combined one by one with the first one resulting in 
     - "Logic Rules" glitchless
     - "Logic Rules" glitched
     - "Logic Rules" no logic
