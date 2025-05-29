@@ -478,7 +478,37 @@ def create_maps(path: str, maps_names: list):
 
 
 # #
-
+def preparations(path):
+    read_input = []
+    location_list = []
+    temp = []
+    lvl = set()
+    locations_dict = dict()
+    # maps_names = []
+    with open(path + "/scripts/autotracking/location_mapping.lua") as mapping:
+        while inputs := mapping.readline():
+            if "]" in inputs:
+                if "--" in inputs and inputs.rindex("--") > inputs.rindex("}"):
+                    inputs = inputs[: inputs.rindex("--")]
+                    read_input.append(inputs.split("="))
+                elif inputs.rindex("}") == inputs.rindex("{") - 1:
+                    pass
+                elif not (inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"):
+                    read_input.append(inputs.split("="))
+            else:
+                pass
+    for k, _ in enumerate(read_input):
+        read_input[k][1] = read_input[k][1][
+                           read_input[k][1].index("{") + 1: read_input[k][1].index("}")
+                           ]
+        location_list.append(
+            read_input[k][1].replace("@", "").replace('"', "").split("/")
+        )
+    for i, _ in enumerate(location_list):
+        if len(location_list[i][0]) > 1:
+            temp.append(location_list[i][0])
+    lvl = sorted(set(temp))
+    return lvl
 
 if __name__ == "__main__":
     """
@@ -494,36 +524,10 @@ if __name__ == "__main__":
     print("Select the base-folder of the pack:")
     base_path = tk.filedialog.askdirectory()
     print("Path to base-folder of the pack: ", base_path)
-
-    read_input = []
-    location_list = []
-    temp = []
-    lvls = set()
     locations_dict = dict()
     # maps_names = []
-    with open(base_path + "/scripts/autotracking/location_mapping.lua") as mapping:
-        while inputs := mapping.readline():
-            if "]" in inputs:
-                if "--" in inputs and inputs.rindex("--") > inputs.rindex("}"):
-                    inputs = inputs[: inputs.rindex("--")]
-                    read_input.append(inputs.split("="))
-                elif inputs.rindex("}") == inputs.rindex("{") - 1:
-                    pass
-                elif not (inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"):
-                    read_input.append(inputs.split("="))
-            else:
-                pass
-    for k, _ in enumerate(read_input):
-        read_input[k][1] = read_input[k][1][
-            read_input[k][1].index("{") + 1 : read_input[k][1].index("}")
-        ]
-        location_list.append(
-            read_input[k][1].replace("@", "").replace('"', "").split("/")
-        )
-    for i, _ in enumerate(location_list):
-        if len(location_list[i][0]) > 1:
-            temp.append(location_list[i][0])
-    lvls = sorted(set(temp))
+
+    lvls = preparations(base_path)
 
     create_maps(base_path, lvls)
     create_locations(base_path)
