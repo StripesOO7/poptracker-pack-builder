@@ -723,6 +723,9 @@ def _create_mappings(path: str, game_data: dict[str, int]):
     _write_mapping(
         path=path, file_name="location_mapping", data=locations_data, type="locations"
     )
+    _write_mapping(
+        path=path, file_name="item_names", data=items_data, type="item_names"
+    )
     pass
 
 
@@ -766,6 +769,12 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
                             else:
                                 name = name.replace(f"{spacer}", replacement[i])
                     mapping.write(f'\t[{ids}] = \u007b"@{name}"\u007d,\n')
+            case "item_names":
+                for name, ids in data.items():
+                    mapping.write(
+                        f'\t[{name.replace(" ", "").lower()}] = "{name}",'
+                        f"\n"
+                    )
         mapping.write("\u007d")
 
 
