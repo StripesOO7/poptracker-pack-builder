@@ -31,6 +31,14 @@ CUR_INDEX = -1
 
 SLOT_DATA = {}
 
+local highlight_lvl= {
+    [0] = Highlight.Unspecified,
+    [10] = Highlight.NoPriority,
+    [20] = Highlight.Avoid,
+    [30] = Highlight.Priority,
+    [40] = Highlight.None,
+}
+
 function has_value (t, val)
     for i, v in ipairs(t) do
         if v == val then return 1 end
@@ -284,22 +292,31 @@ function onNotifyLaunch(key, value)
 end
 
 function updateHints(locationID, clear)
-    local item_codes = HINTS_MAPPING[locationID]
-
-    for _, item_table in ipairs(item_codes, clear) do
-        for _, item_code in ipairs(item_table) do
-            local obj = Tracker:FindObjectForCode(item_code)
-            if obj then
-                if not clear then
-                    obj.Active = true
-                else
-                    obj.Active = false
-                end
-            else
-                print(string.format("No object found for code: %s", item_code))
-            end
+    local location_table = LOCATION_MAPPING[locationID]
+    for _, location in ipairs(location_table) do
+        local obj = Tracker:FindObjectForCode(location)
+        if obj then
+            obj.Highlight = highlight_lvl[status]
+        else
+            print(string.format("No object found for code: %s", location))
         end
     end
+    -- local item_codes = HINTS_MAPPING[locationID]
+    -- 
+    -- for _, item_table in ipairs(item_codes, clear) do
+    --     for _, item_code in ipairs(item_table) do
+    --         local obj = Tracker:FindObjectForCode(item_code)
+    --         if obj then
+    --             if not clear then
+    --                 obj.Active = true
+    --             else
+    --                 obj.Active = false
+    --             end
+    --         else
+    --             print(string.format("No object found for code: %s", item_code))
+    --         end
+    --     end
+    -- end
 end
 
 
