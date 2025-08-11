@@ -126,7 +126,7 @@ function onClear(slot_data)
                     item_obj.Active = false
                 elseif item_obj.Type == "progressive" then
                     item_obj.CurrentStage = 0
-                    item_obj.Active = false
+                    item_obj.CurrentStage = item_obj.CurrentStage + 1
                 elseif item_obj.Type == "consumable" then
                     if item_obj.MinCount then
                         item_obj.AcquiredCount = item_obj.MinCount
