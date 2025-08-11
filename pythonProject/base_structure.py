@@ -126,7 +126,7 @@ function onClear(slot_data)
                     item_obj.Active = false
                 elseif item_obj.Type == "progressive" then
                     item_obj.CurrentStage = 0
-                    item_obj.CurrentStage = item_obj.CurrentStage + 1
+                    item_obj.CurrentStage = item_obj.initial_stage_idx
                 elseif item_obj.Type == "consumable" then
                     if item_obj.MinCount then
                         item_obj.AcquiredCount = item_obj.MinCount
@@ -176,7 +176,7 @@ function onItem(index, item_id, item_name, player_number)
                 item_obj.Active = true
             elseif item_obj.Type == "progressive" then
                 -- print("progressive")
-                item_obj.Active = true
+                item_obj.CurrentStage = item_obj.CurrentStage + 1
             elseif item_obj.Type == "consumable" then
                 -- print("consumable")
                 item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment * (tonumber(item_pair[3]) or 1)
