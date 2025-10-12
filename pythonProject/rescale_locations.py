@@ -34,7 +34,7 @@ if __name__ == '__main__':
     ratio_height = new_height/old_height
 
 
-    with open(f"{save_file_name}") as recalc_json_file:
+    with open(f"{save_file_name}", encoding="utf-8") as recalc_json_file:
         file_list = recalc_json_file.readlines()
         file_str = "".join(file_list)
         file_json_list = json.loads(file_str)

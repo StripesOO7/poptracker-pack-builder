@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     read_file_path = tk.filedialog.askdirectory()
     if not os.path.exists(read_file_path + "/datapackage_url.txt"):
-        with open(read_file_path + "/datapackage_url.txt", "w") as base_file:
+        with open(read_file_path + "/datapackage_url.txt", "w", encoding="utf-8") as base_file:
             url = (
                 input("datapackage source (url): ")
                 or "https://archipelago.gg/datapackage"
@@ -39,14 +39,13 @@ if __name__ == "__main__":
         path=read_file_path, game_name=game_name, game_dict=games_dict
     )
 
-    location_json.create_hints(path=read_file_path)
     item_json.create_items(path=read_file_path)
     read_input = []
     location_list = []
     temp = []
     lvls = set()
     locations_dict = dict()
-    with open(read_file_path + "/scripts/autotracking/location_mapping.lua") as mapping:
+    with open(read_file_path + "/scripts/autotracking/location_mapping.lua", encoding="utf-8") as mapping:
         while inputs := mapping.readline():
             if "]" in inputs:
                 if not (inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"):

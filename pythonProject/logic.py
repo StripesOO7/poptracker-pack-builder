@@ -110,7 +110,7 @@ def extract_logic():
     logic_dict = {}
     file_path = filedialog.askopenfilename()
     if not file_path == "":
-        with open(file_path) as logic_extract:
+        with open(file_path, encoding="utf-8") as logic_extract:
             temp = logic_extract.read().split("\n")
             for i in temp:
                 if " lambda " in i.lower():
@@ -159,7 +159,7 @@ def extract_logic():
                 for j, _ in enumerate(logic_temp[i][:-2]):
                     logic_temp[i][j] = logic_temp[i][j].strip('"').strip("'")
 
-    with open(read_file_path + "/logic_backup.txt", "w") as logic_backup:
+    with open(read_file_path + "/logic_backup.txt", "w", encoding="utf-8") as logic_backup:
         for line in logic_temp:
             logic_backup.write(f"{line}\n")
     delimiter = ['", "', "', '", '",', "',", " - ", ": ", ") "]

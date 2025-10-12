@@ -19,31 +19,26 @@ def create_base_structure(path: str, game_name: str, game_dict: dict):
         os.mkdir(path + "/scripts/autotracking")
         os.mkdir(path + "/scripts/logic")
     if not os.path.exists(path + "/scripts/autotracking/archipelago.lua"):
-        with open(path + "/scripts/autotracking/archipelago.lua", "w") as ap_lua:
+        with open(path + "/scripts/autotracking/archipelago.lua", "w", encoding="utf-8") as ap_lua:
             ap_lua.write(
                 """
 require("scripts/autotracking/item_mapping")
 require("scripts/autotracking/location_mapping")
-require("scripts/autotracking/hints_mapping")
 
 CUR_INDEX = -1
 --SLOT_DATA = nil
 
+ALL_LOCATIONS = {}
 SLOT_DATA = {}
 
-local highlight_lvl= {
-    [0] = Highlight.Unspecified,
-    [10] = Highlight.NoPriority,
-    [20] = Highlight.Avoid,
-    [30] = Highlight.Priority,
-    [40] = Highlight.None,
-}
-
-function has_value (t, val)
-    for i, v in ipairs(t) do
-        if v == val then return 1 end
-    end
-    return 0
+if Highlight then
+    HIGHTLIGHT_LEVEL= {
+        [0] = Highlight.Unspecified,
+        [10] = Highlight.NoPriority,
+        [20] = Highlight.Avoid,
+        [30] = Highlight.Priority,
+        [40] = Highlight.None,
+    }
 end
 
 function dump_table(o, depth)
@@ -66,8 +61,11 @@ function dump_table(o, depth)
     end
 end
 
-function forceUpdate()
+function ForceUpdate()
     local update = Tracker:FindObjectForCode("update")
+    if update == nil then
+        return
+    end
     update.Active = not update.Active
 end
 
@@ -85,10 +83,10 @@ function onClearHandler(slot_data)
         -- locations from AP have been processed.
         local handlerName = "AP onClearHandler"
         local function frameCallback()
-            ScriptHost:AddWatchForCode("StateChange", "*", StateChange)
+            ScriptHost:AddWatchForCode("StateChange", "*", StateChanged)
             ScriptHost:RemoveOnFrameHandler(handlerName)
             Tracker.BulkUpdate = false
-            forceUpdate()
+            ForceUpdate()
             print(string.format("Time taken total: %.2f", os.clock() - clear_timer))
         end
         ScriptHost:AddOnFrameHandler(handlerName, frameCallback)
@@ -100,6 +98,8 @@ function onClearHandler(slot_data)
 end
 
 function onClear(slot_data)
+    ScriptHost:RemoveWatchForCode("StateChanged")
+    ScriptHost:RemoveOnLocationSectionHandler("location_section_change_handler")
     --SLOT_DATA = slot_data
     CUR_INDEX = -1
     -- reset locations
@@ -118,8 +118,11 @@ function onClear(slot_data)
         end
     end
     -- reset items
-    for _, item_pair in pairs(ITEM_MAPPING) do
-        for item_type, item_code in pairs(item_pair) do
+    for _, item_array in pairs(ITEM_MAPPING) do
+        for _, item_pair in pairs(item_array) do
+            item_code = item_pair[1]
+            item_type = item_pair[2]
+            -- print("on clear", item_code, item_type)
             local item_obj = Tracker:FindObjectForCode(item_code)
             if item_obj then
                 if item_obj.Type == "toggle" then
@@ -148,11 +151,22 @@ function onClear(slot_data)
     -- end
     -- print(PLAYER_ID, TEAM_NUMBER)
     if Archipelago.PlayerNumber > -1 then
+        if #ALL_LOCATIONS > 0 then
+            ALL_LOCATIONS = {}
+        end
+        for _, value in pairs(Archipelago.MissingLocations) do
+            table.insert(ALL_LOCATIONS, #ALL_LOCATIONS + 1, value)
+        end
+
+        for _, value in pairs(Archipelago.CheckedLocations) do
+            table.insert(ALL_LOCATIONS, #ALL_LOCATIONS + 1, value)
+        end
 
         HINTS_ID = "_read_hints_"..TEAM_NUMBER.."_"..PLAYER_ID
         Archipelago:SetNotify({HINTS_ID})
         Archipelago:Get({HINTS_ID})
     end
+    ScriptHost:AddOnFrameHandler("load handler", OnFrameHandler)
 end
 
 function onItem(index, item_id, item_name, player_number)
@@ -262,63 +276,62 @@ end
 function onNotify(key, value, old_value)
     print("onNotify", key, value, old_value)
     if value ~= old_value and key == HINTS_ID then
+        Tracker.BulkUpdate = true
         for _, hint in ipairs(value) do
             if hint.finding_player == Archipelago.PlayerNumber then
-                updateHints(hint.location, hint.status)
+                if not hint.found then
+                    updateHints(hint.location, hint.status)
+                elseif hint.found then
+                    updateHints(hint.location, hint.status)
+                end
             end
         end
+        Tracker.BulkUpdate = false
     end
 end
 
 function onNotifyLaunch(key, value)
-    print("onNotifyLaunch", key, value)
     if key == HINTS_ID then
+        Tracker.BulkUpdate = true
         for _, hint in ipairs(value) do
-            -- print("hint", hint, hint.found)
-            -- print(dump_table(hint))
             if hint.finding_player == Archipelago.PlayerNumber then
-                updateHints(hint.location, hint.status)
+                if not hint.found then
+                    updateHints(hint.location, hint.status)
+                else if hint.found then
+                    updateHints(hint.location, hint.status)
+                end end
+            end
+        end
+        Tracker.BulkUpdate = false
+    end
+end
+
+function updateHints(locationID, status) -->
+    if Highlight then
+        print(locationID, status)
+        local location_table = LOCATION_MAPPING[locationID]
+        for _, location in ipairs(location_table) do
+            if location:sub(1, 1) == "@" then
+                local obj = Tracker:FindObjectForCode(location)
+
+                if obj then
+                    obj.Highlight = HIGHTLIGHT_LEVEL[status]
+                else
+                    print(string.format("No object found for code: %s", location))
+                end
             end
         end
     end
 end
 
-function updateHints(locationID, status) -->
-    local location_table = LOCATION_MAPPING[locationID]
-    for _, location in ipairs(location_table) do
-        local obj = Tracker:FindObjectForCode(location)
-        if obj then
-            obj.Highlight = highlight_lvl[status]
-        else
-            print(string.format("No object found for code: %s", location))
-        end
-    end
-    -- local item_codes = HINTS_MAPPING[locationID]
-    -- 
-    -- for _, item_table in ipairs(item_codes, clear) do
-    --     for _, item_code in ipairs(item_table) do
-    --         local obj = Tracker:FindObjectForCode(item_code)
-    --         if obj then
-    --             if not clear then
-    --                 obj.Active = true
-    --             else
-    --                 obj.Active = false
-    --             end
-    --         else
-    --             print(string.format("No object found for code: %s", item_code))
-    --         end
-    --     end
-    -- end
-end
-
 
 -- ScriptHost:AddWatchForCode("settings autofill handler", "autofill_settings", autoFill)
-Archipelago:AddClearHandler("clear handler", onClearHandler)
-Archipelago:AddItemHandler("item handler", onItem)
-Archipelago:AddLocationHandler("location handler", onLocation)
+-- Archipelago:AddClearHandler("clear handler", onClearHandler)
+-- Archipelago:AddItemHandler("item handler", onItem)
+-- Archipelago:AddLocationHandler("location handler", onLocation)
 
-Archipelago:AddSetReplyHandler("notify handler", onNotify)
-Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
+-- Archipelago:AddSetReplyHandler("notify handler", onNotify)
+-- Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
 
 
 
@@ -337,7 +350,7 @@ Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
 """
             )
     if not os.path.exists(path + "/scripts/init.lua"):
-        with open(path + "/scripts/init.lua", "w") as init_lua:
+        with open(path + "/scripts/init.lua", "w", encoding="utf-8") as init_lua:
             init_lua.write(
                 """
 local variant = Tracker.ActiveVariantUID
@@ -369,20 +382,30 @@ require("scripts/locations_import")
 -- AutoTracking for Poptracker
 if PopVersion and PopVersion >= "0.26.0" then
     require("scripts/autotracking")
-end"""
+end
+
+function OnFrameHandler()
+    ScriptHost:RemoveOnFrameHandler("load handler")
+    -- stuff
+    ScriptHost:AddWatchForCode("StateChanged", "*", StateChanged)
+    ScriptHost:AddOnLocationSectionChangedHandler("location_section_change_handler", ForceUpdate)
+    ForceUpdate()
+end
+require("scripts/watches")
+ScriptHost:AddOnFrameHandler("load handler", OnFrameHandler)
+"""
             )
     if not os.path.exists(path + "scripts/items_import.lua"):
-        with open(path + "/scripts/items_import.lua", "w") as items_lua:
+        with open(path + "/scripts/items_import.lua", "w", encoding="utf-8") as items_lua:
             items_lua.write(
                 """
 Tracker:AddItems("items/items.json")
-Tracker:AddItems("items/hint_items.json")
 Tracker:AddItems("items/location_items.json")
 Tracker:AddItems("items/labels.json")
                 """
             )
     if not os.path.exists(path + "/scripts/layouts_import.lua"):
-        with open(path + "/scripts/layouts_import.lua", "w") as layouts_lua:
+        with open(path + "/scripts/layouts_import.lua", "w", encoding="utf-8") as layouts_lua:
             layouts_lua.write(
                 """
 Tracker:AddLayouts("layouts/events.json")
@@ -395,7 +418,7 @@ Tracker:AddLayouts("layouts/dungeon_items.json")
 -- Tracker:AddLayouts("layouts/dungeon_items_keydrop.json")"""
             )
     if not os.path.exists(path + "/scripts/settings.lua"):
-        with open(path + "/scripts/settings.lua", "w") as settings_lua:
+        with open(path + "/scripts/settings.lua", "w", encoding="utf-8") as settings_lua:
             settings_lua.write(
                 """
 ------------------------------------------------------------------
@@ -405,7 +428,7 @@ AUTOTRACKER_ENABLE_ITEM_TRACKING = true
 AUTOTRACKER_ENABLE_LOCATION_TRACKING = true"""
             )
     if not os.path.exists(path + "/scripts/autotracking.lua"):
-        with open(path + "/scripts/autotracking.lua", "w") as auto_lua:
+        with open(path + "/scripts/autotracking.lua", "w", encoding="utf-8") as auto_lua:
             auto_lua.write(
                 """
 -- Configuration --------------------------------------
@@ -433,9 +456,24 @@ require("scripts/autotracking/archipelago")
 
         """
             )
+    if not os.path.exists(path + "/scripts/watches.lua"):
+        with open(path + "/scripts/watches.lua", "w", encoding="utf-8") as auto_lua:
+            auto_lua.write(
+                """
+-- Archipelago:AddClearHandler("clear handler", onClear)
+Archipelago:AddClearHandler("clear handler", onClearHandler)
+Archipelago:AddItemHandler("item handler", onItem)
+Archipelago:AddLocationHandler("location handler", onLocation)
+
+Archipelago:AddSetReplyHandler("notify handler", onNotify)
+Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
+
+
+        """
+            )
     if not os.path.exists(path + "manifest.json"):
         game_name_lua = game_name.lower().replace(' ', '_')
-        with open(path + "/manifest.json", "w") as manifest:
+        with open(path + "/manifest.json", "w", encoding="utf-8") as manifest:
             manifest_json = {
                 "name": f"{game_name} Archipelago",
                 "game_name": f"{game_name}",
@@ -446,13 +484,13 @@ require("scripts/autotracking/archipelago")
                     "Map Tracker": {"display_name": "Map Tracker", "flags": ["ap"]},
                     "Items Only": {"display_name": "Items Only", "flags": ["ap"]},
                 },
-                "min_poptracker_version": "0.27.0",
+                "min_poptracker_version": "0.31.0",
             }
             # manifest["platform"] = "snes"
             # manifest["versions_url"] = "https://raw.githubusercontent.com/<username>/<repo_name>/versions/versions.json"
             manifest.write(json.dumps(manifest_json, indent=4))
     if not os.path.exists(path + "/scripts/logic/logic_main.lua"):
-        with open(path + "/scripts/logic/logic_main.lua", "w") as logic_lua:
+        with open(path + "/scripts/logic/logic_main.lua", "w", encoding="utf-8") as logic_lua:
             logic_lua.write(
                 f"""
 -- ScriptHost:AddWatchForCode("ow_dungeon details handler", "ow_dungeon_details", owDungeonDetails)
@@ -467,34 +505,63 @@ accessLVL= \u007b
     [3] = "inspect",
     [5] = "sequence break",
     [6] = "normal",
-    [7] = "cleared"
+    [7] = "cleared",
+    [false] = "none",
+    [true] = "normal",
 \u007d
 
 -- Table to store named locations
-named_locations = \u007b\u007d
-staleness = 0
+NAMED_LOCATIONS = \u007b\u007d
+local stale = true
+local accessibilityCache = \u007b\u007d
+local accessibilityCacheComplete = false
+local currentParent = nil
+local currentLocation = nil
+local indirectConnections = \u007b\u007d
+
+
+--
+function Table_insert_at(er_table, key, value)
+    if er_table[key] == nil then
+        er_table[key] = \u007b\u007d
+    end
+    table.insert(er_table[key], value)
+end
 
 -- 
-function can_reach(name)
-    local location
-    -- if type(region_name) == "function" then
-    --     location = self
-    -- else
-    if type(name) == "table" then
-        -- print(name.name)
-        location = named_locations[name.name]
-    else 
-        location = named_locations[name]
-    end
-    -- print(location, name)
+function CanReach(name)
+    -- if type(name) == "table" then
+    --     -- print("-----------")
+    --     -- print("start CanREach for", name.name)
+    -- -- else
+    --     -- print("start CanREach for", name)
     -- end
-    if location == nil then
-        -- print(location, name)
-        if type(name) == "table" then
-        else
-            print("Unknown location : " .. tostring(name))
+    local location
+    if stale then
+        stale = false
+        accessibilityCacheComplete = false
+        accessibilityCache = \u007b\u007d
+        indirectConnections = \u007b\u007d
+        while not accessibilityCacheComplete do
+            accessibilityCacheComplete = true
+            entry_point:discover(ACCESS_NORMAL, 0, nil)
+            for dst, parents in pairs(indirectConnections) do
+                if dst:accessibility() < ACCESS_NORMAL then
+                    for parent, src in pairs(parents) do
+                        -- print("Checking indirect " .. src.name .. " for " .. parent.name .. " -> " .. dst.name)
+                        parent:discover(parent:accessibility(), parent.keys, parent.worldstate)
+                    end
+                end
+            end
         end
-        return AccessibilityLevel.None
+        --entry_point:discover(ACCESS_NORMAL, 0) -- since there is no code to track indirect connections, we run it twice here
+        --entry_point:discover(ACCESS_NORMAL, 0)
+    end
+    
+    location = NAMED_LOCATIONS[name]
+    
+    if location == nil then
+        return ACCESS_NONE
     end
     return location:accessibility()
 end
@@ -504,27 +571,44 @@ end
 function {game_name_lua}_location.new(name)
     local self = setmetatable(\u007b\u007d, {game_name_lua}_location)
     if name then
-        named_locations[name] = self
+        NAMED_LOCATIONS[name] = self
         self.name = name
     else
-        self.name = self
+        NAMED_LOCATIONS[name] = self
+        self.name = tostring(self)
     end
-
+    if string.find(self.name, "_inside") then
+        self.side = "inside"
+    elseif string.find(self.name, "_outside") then
+        self.side = "outside"
+    else
+        self.side = nil
+    end
+    -- print("------")
+    -- print(origin)
+    self.worldstate = origin
+    -- print(self.worldstate)
+    -- print("------")
     self.exits = \u007b\u007d
-    self.staleness = -1
     self.keys = math.huge
-    self.accessibility_level = AccessibilityLevel.None
+
     return self
 end
 
 local function always()
-    return AccessibilityLevel.Normal
+    return ACCESS_NORMAL
 end
 
 -- marks a 1-way connections between 2 "locations/regions" in the source "locations" exit-table with rules if provided
 function {game_name_lua}_location:connect_one_way(exit, rule)
     if type(exit) == "string" then
-        exit = {game_name_lua}_location.new(exit)
+        local existing = NAMED_LOCATIONS[exit]
+        if existing then
+            print("Warning: " .. exit .. " defined multiple times")  -- not sure if it's worth fixing in data or simply allowing this
+            exit = existing
+        else
+            exit = {game_name_lua}_location.new(exit)
+        end
     end
     if rule == nil then
         rule = always
@@ -564,50 +648,89 @@ function {game_name_lua}_location:connect_two_ways_entrance_door_stuck(name, exi
     exit:connect_one_way_entrance(name, self, rule2)
 end
 
--- checks for the accessibility of a regino/location given its own exit requirements
+-- technically redundant but well
+-- creates a connection between 2 locations that is traversable in both ways but each connection follow different rules.
+-- acts as a shortcut for 2 connect_one_way-calls
+function {game_name_lua}_location:connect_two_ways_stuck(exit, rule1, rule2)
+    self:connect_one_way(exit, rule1)
+    exit:connect_one_way(self, rule2)
+end
+
+-- checks for the accessibility of a region/location given its own exit requirements
 function {game_name_lua}_location:accessibility()
-    if self.staleness < staleness then
-        return AccessibilityLevel.None
-    else
-        return self.accessibility_level
+    -- only executed when run from a rules within a connection
+    if currentLocation ~= nil and currentParent ~= nil then
+        if indirectConnections[currentLocation] == nil then
+            indirectConnections[currentLocation] = \u007b\u007d
+        end
+        indirectConnections[currentLocation][currentParent] = self
     end
+    -- up to here
+    local res = accessibilityCache[self] -- get accessibilty lvl set in discover for a given location
+    if res == nil then
+        res = ACCESS_NONE
+        accessibilityCache[self] = res
+    end
+    return res
 end
 
 -- 
 function {game_name_lua}_location:discover(accessibility, keys)
-
-    local change = false
+    -- checks if given Accessbibility is higer then last stored one
+    -- prevents walking in circles
+    
     if accessibility > self:accessibility() then
-        change = true
-        self.staleness = staleness
-        self.accessibility_level = accessibility
-        self.keys = math.huge
+        self.keys = math.huge -- resets keys used up to this point
+        accessibilityCache[self] = accessibility
+        accessibilityCacheComplete = false -- forces CanReach tu run again/further
     end
     if keys < self.keys then
-        self.keys = keys
-        change = true
+        self.keys = keys -- sets current amout of keys used
     end
 
-    if change then
-        for _, exit in pairs(self.exits) do
-            local location = exit[1]
-            local rule = exit[2]
+    if accessibility > 0 then -- if parent-location was accessible
+        for _, exit in pairs(self.exits) do -- iterate over current watched locations exits
+            local location
 
-            local access, key = rule(keys)
-            -- print(access)
-            if access == 5 then
-                access = AccessibilityLevel.SequenceBreak
-            elseif access == true then
-                access = AccessibilityLevel.Normal
-            elseif access == false then
-                access = AccessibilityLevel.None
+            -- local exit_name = exit[1].name
+            local location_name = self.name
+
+            if location == nil then
+                location = exit[1] or empty_location-- exit name
             end
-            if key == nil then
-                key = keys
+            
+            local oldAccess = location:accessibility() -- get most recent accessibilty level for exit
+            local oldKey = location.keys or 0
+            
+            if oldAccess < accessibility then -- if new accessibility from above is higher then currently stored one, so is more accessible then before
+                local rule = exit[2] -- get rules to check
+
+                currentParent, currentLocation = self, location -- just set for ":accessibilty()" check within rules
+                local access, key = rule(keys)
+                local parent_access = currentParent:accessibility()
+                if type(access) == "boolean" then --
+                    access = A(access)
+                end
+                -- print(self.name, type(access), type(parent_access), location.name)
+                if access > parent_access then
+                    access = parent_access
+                end
+                currentParent, currentLocation = nil, nil -- just set for ":accessibilty()" check within rules
+
+                if access == nil then
+                    print("Warning: " .. self.name .. " -> " .. location.name .. " rule returned nil")
+                    access = ACCESS_NONE
+                end
+               
+                if key == nil then
+                    key = keys
+                end
+                if access > oldAccess or (access == oldAccess and key < oldKey) then -- not sure about the <
+                    -- print(self.name, "to", location.name)
+                    -- print(accessLVL[self:accessibility()], "from", self.name, "to", location.name, ":", accessLVL[access])
+                    location:discover(access, key)
+                end
             end
-            -- print(self.name) 
-            -- print(accessLVL[self.accessibility_level], "from", self.name, "to", location.name, ":", accessLVL[access])
-            location:discover(access, key)
         end
     end
 end
@@ -615,87 +738,112 @@ end
 entry_point = {game_name_lua}_location.new("entry_point")
 
 -- 
-function stateChanged()
-    staleness = staleness + 1
-    entry_point:discover(AccessibilityLevel.Normal, 0)
+function StateChanged()
+    stale = true
+    -- entry_point:discover(AccessibilityLevel.Normal, 0)
 end
 
-ScriptHost:AddWatchForCode("stateChanged", "*", stateChanged)
+ScriptHost:AddWatchForCode("StateChanged", "*", StateChanged)
         """
             )
     if not os.path.exists(path + "/scripts/logic/logic_helper.lua"):
-        with open(path + "/scripts/logic/logic_helper.lua", "w") as logic_helper_lua:
+        with open(path + "/scripts/logic/logic_helper.lua", "w", encoding="utf-8") as logic_helper_lua:
             logic_helper_lua.write(
                 """
+ACCESS_NONE = AccessibilityLevel.None
+ACCESS_PARTIAL = AccessibilityLevel.Partial
+ACCESS_INSPECT = AccessibilityLevel.Inspect
+ACCESS_SEQUENCEBREAK = AccessibilityLevel.SequenceBreak
+ACCESS_NORMAL = AccessibilityLevel.Normal
+ACCESS_CLEARED = AccessibilityLevel.Cleared
+
+local bool_to_accesslvl = {
+    [true] = ACCESS_NORMAL,
+    [false] = ACCESS_NONE
+}
+                
 function A(result)
     if result then
-        return AccessibilityLevel.Normal
-    else
-        return AccessibilityLevel.None
+        return ACCESS_NORMAL
     end
+    return ACCESS_NONE
 end
 
-function all(...)
+function ALL(...)
     local args = { ... }
-    local min = AccessibilityLevel.Normal
-    for i, v in ipairs(args) do
+    local min = ACCESS_NORMAL
+    for _, v in ipairs(args) do
+        if type(v) == "function" then
+            v = v()
+        elseif type(v) == "string" then
+            v = Has(v)
+        end
         if type(v) == "boolean" then
-            v = A(v)
+            v = bool_to_accesslvl[v]
         end
         if v < min then
-            if v == AccessibilityLevel.None then
-                return AccessibilityLevel.None
-            else
-                min = v
+            if v == ACCESS_NONE then
+                return ACCESS_NONE
             end
+            min = v
         end
     end
     return min
 end
 
-function any(...)
+function ANY(...)
     local args = { ... }
-    local max = AccessibilityLevel.None
-    for i, v in ipairs(args) do
-        if type(v) == "boolean" then
-            v = A(v)
+    local max = ACCESS_NONE
+    for _, v in ipairs(args) do
+        if type(v) == "function" then
+            v = v()
+        elseif type(v) == "string" then
+            v = Has(v)
         end
-        if tonumber(v) > tonumber(max) then
-            if tonumber(v) == AccessibilityLevel.Normal then
-                return AccessibilityLevel.Normal
-            else
-                max = tonumber(v)
+        if type(v) == "boolean" then
+            v = bool_to_accesslvl[v]
+            -- v = A(v)
+        end
+        if v > max then
+            if v == ACCESS_NORMAL then
+                return ACCESS_NORMAL
             end
+            max = v
         end
     end
     return max
 end
 
-function has(item, amount, amountInLogic)
--- function has(item, noKDS_amount, noKDS_amountInLogic, KDS_amount, KDS_amountInLogic)
-    local count
-    local amount
-    local amountInLogic
+function Has(item, amount, amountInLogic)
+    local count = Tracker:ProviderCountForCode(item)
 
     -- print(item, count, amount, amountInLogic)
-    count = Tracker:ProviderCountForCode(item)
     if amountInLogic then
         if count >= amountInLogic then
-            return AccessibilityLevel.Normal
+            return ACCESS_NORMAL
         elseif count >= amount then
-            return AccessibilityLevel.SequenceBreak
-        else
-            return AccessibilityLevel.None
+            return ACCESS_SEQUENCEBREAK
         end
+        return ACCESS_NONE
     end
     if not amount then
-        return count > 0
+        if count > 0 then
+            return ACCESS_NORMAL
+        end
+        return ACCESS_NONE
     else
-        amount = tonumber(amount)
-        return count >= amount
+        if count >= amount then
+            return ACCESS_SEQUENCEBREAK
+        end
+        return ACCESS_NONE
     end
 end
-            """
+
+
+-- ANy function added here and used in access rules should try to return an Accessibility Level if it is used inside 
+-- the ANY() and ALL() functions
+--
+--"""
             )
     if not os.path.exists(path + "/images"):
         os.mkdir(path + "/images")
@@ -710,8 +858,6 @@ end
         os.mkdir(path + "/locations")
     if not os.path.exists(path + "/maps"):
         os.mkdir(path + "/maps")
-    if not os.path.exists(path + "/scripts/autotracking/hints_mapping.lua"):
-        open(path + rf"/scripts/autotracking/hints_mapping.lua", "w").close()
     if not (
         os.path.exists(path + "/scripts/autotracking/item_mapping.lua")
         and os.path.exists(path + "/scripts/autotracking/location_mapping.lua")
@@ -728,12 +874,13 @@ def _create_mappings(path: str, game_data: dict[str, int]):
     """
     items_data = game_data["item_name_to_id"]
     locations_data = game_data["location_name_to_id"]
+    item_name_data = {**items_data, **locations_data}
     _write_mapping(path=path, file_name="item_mapping", data=items_data, type="items")
     _write_mapping(
         path=path, file_name="location_mapping", data=locations_data, type="locations"
     )
     _write_mapping(
-        path=path, file_name="item_names", data=items_data, type="item_names"
+        path=path, file_name="item_names", data=item_name_data, type="item_names"
     )
     pass
 
@@ -752,11 +899,18 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
     """
     delimiter = [" - ", ": ", ") "]
     replacement = ["/", "/", ")/"]
-    with open(path + "/scripts/autotracking/" + file_name + ".lua", "w") as mapping:
+    escape = ["\\", "\'", "\""]
+    forbidden = ["<", ">", ":", "|", "?", "*"]
+
+    with open(path + "/scripts/autotracking/" + file_name + ".lua", "w", encoding="utf-8") as mapping:
         mapping.write(f"{file_name.upper()} = \u007b\n")
         match type:
             case "items":
                 for name, ids in data.items():
+                    for escape_char in escape:
+                        if escape_char in name:
+                            # name = name.replace(f"{escape_char}", f"\\{escape_char}")
+                            name = name.replace(f"{escape_char}", "")
                     mapping.write(
                         f'\t[{ids}] = \u007b\u007b"{name.replace(" ", "").lower()}", "toggle"\u007d\u007d,'
                         f"\n"
@@ -777,11 +931,21 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
                                 name = name.replace(f"{spacer}", " - ")
                             else:
                                 name = name.replace(f"{spacer}", replacement[i])
+                    for forbidden_char in forbidden:
+                        name = name.replace(f"{forbidden_char}", "")
+                    for escape_char in escape:
+                        if escape_char in name:
+                            # name = name.replace(f"{escape_char}", f"\\{escape_char}")
+                            name = name.replace(f"{escape_char}", "")
                     mapping.write(f'\t[{ids}] = \u007b"@{name}"\u007d,\n')
             case "item_names":
                 for name, ids in data.items():
+                    for escape_char in escape:
+                        if escape_char in name:
+                            # name = name.replace(f"{escape_char}", f"\\{escape_char}")
+                            name = name.replace(f"{escape_char}", "")
                     mapping.write(
-                        f'\t[{name.replace(" ", "").lower()}] = "{name}",'
+                        f'\t["{name.replace(" ", "").lower()}"] = "{name}",'
                         f"\n"
                     )
         mapping.write("\u007d")
@@ -799,7 +963,7 @@ if __name__ == "__main__":
     )
     read_file_path = tk.filedialog.askdirectory()
     if not os.path.exists(read_file_path + "/datapackage_url.txt"):
-        with open(read_file_path + "/datapackage_url.txt", "w") as base_file:
+        with open(read_file_path + "/datapackage_url.txt", "w", encoding="utf-8") as base_file:
             url = (
                 input("datapackage source (url): ")
                 or "https://archipelago.gg/datapackage"

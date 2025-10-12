@@ -26,11 +26,8 @@ def _write_locations(
     location_list: list,
     logic_dict: dict,
     overworld: dict,
-    overworld_hints: dict,
     top_most_region: str,
     fullpath: str,
-    fullpath_hint: str,
-    hints_list: list,
     location_mapping_string: str,
 ):
     """
@@ -72,18 +69,8 @@ def _write_locations(
             "access_rules": [" "],
         }
     )
-    hints_list.append(
-        {
-            "name": f"{region} - hint",
-            "chest_unopened_img": f"/images/items/{close_chest}",
-            "chest_opened_img": f"/images/items/{open_chest}",
-            "overlay_background": "#000000",
-            "access_rules": ["{}"],
-        }
-    )
     if len(temp_dicts) > 0:
         location_list[-1]["children"] = []
-        hints_list[-1]["children"] = []
         for index, location in enumerate(temp_dicts):
             _write_locations(
                 sub_region,
@@ -91,16 +78,12 @@ def _write_locations(
                 location_list[-1]["children"],
                 logic_dict,
                 overworld,
-                overworld_hints,
                 top_most_region,
                 fullpath + "/" + location,
-                fullpath_hint + " - hint/" + location,
-                hints_list[-1]["children"],
                 location_mapping_string,
             )
     if len(temp_lists) > 0:
         location_list[-1]["sections"] = []
-        hints_list[-1]["sections"] = []
         for location in temp_lists:
 
             x = random.randint(10, 2500)
@@ -113,35 +96,14 @@ def _write_locations(
                     "item_count": 1,
                 }
             )
-            hints_list[-1]["sections"].append(
-                {
-                    "name": f"{location} - hint",
-                    "access_rules": [],
-                    "visibility_rules": [
-                        f"{(fullpath+'/'+location).replace(' ', '_').replace('/', '_').lower()}"
-                    ],
-                    "item_count": location_mapping_string.count(
-                        fullpath + "/" + location
-                    ),
-                }
-            )
             overworld["sections"].append(
                 {
                     "name": f"{region} - {location}",
                     "ref": f"{fullpath + '/' + location}",
                 }
             )
-            overworld_hints["sections"].append(
-                {
-                    "name": f"{region} - {location} - hint",
-                    "ref": f"{fullpath_hint + ' - hint/' + location} - hint",
-                }
-            )
         location_list[-1]["map_locations"] = [
             {"map": f"{top_most_region}", "x": f"{x}", "y": f"{y}", "size": 6}
-        ]
-        hints_list[-1]["map_locations"] = [
-            {"map": f"{top_most_region}", "x": f"{x}", "y": f"{y}", "size": 12}
         ]
 
 
@@ -197,52 +159,9 @@ def _location_dict_builder(
     return dict(sorted(location_dict.items()))
 
 
-def create_hints(path: str):
-    read_input = []
-    hints_dict = {}
-    location_list = []
-    with open(path + "/scripts/autotracking/location_mapping.lua") as mapping:
-        while inputs := mapping.readline():
-            if "]" in inputs:
-                read_input.append(inputs.split("="))
-            else:
-                pass
-    for k, _ in enumerate(read_input):
-        read_input[k][0] = int(
-            read_input[k][0][
-                read_input[k][0].find("[") + 1 : read_input[k][0].rfind("]")
-            ]
-        )
-        read_input[k][1] = read_input[k][1][
-            read_input[k][1].index("{") + 1 : read_input[k][1].index("}")
-        ]
-        location_list.append(
-            read_input[k][1].replace("@", "").replace('"', "").split("/")
-        )
-
-        hints_dict[read_input[k][0]] = (
-            read_input[k][1],
-            read_input[k][1]
-            .replace("@", "")
-            .replace('"', "")
-            .replace("/", "_")
-            .replace(" ", "_")
-            .lower(),
-        )
-
-    with open(path + "/scripts/autotracking/hints_mapping.lua", "w") as hint_mapping:
-        hint_mapping.write("HINTS_MAPPING = \u007b\n")
-
-        for index in sorted(hints_dict.keys()):
-            hint_mapping.write(
-                f'\t[{index}] = \u007b\u007b"{hints_dict[index][1]}", "toggle"\u007d\u007d,\n'
-            )
-        hint_mapping.write("\u007d")
-
-
 def create_locations(path: str):  # , logic: dict[str, str]):
     """
-    creates the singled out location files according to the names found in the locations_mapping file.
+    creates the singled out location files according to the names found in the location_mapping file.
 
     Also asks for 2 images for still closed and already opened chests/items if not already defined in the datapackage file
     :param str path: Path to the root folder of the Tracker. Used for loading of the mapping file and saving the
@@ -255,11 +174,11 @@ def create_locations(path: str):  # , logic: dict[str, str]):
     location_list = []
     hosted_item_list = []
 
-    hints_dict = {}
     temp = []
-    forbidden = ["<", ">", ":", "/", "\\", "|", "?", "*"]
+    # forbidden_with_quotes = ["<", ">", ":", "/", "\\", "|", "?", "*", '"']
+    # forbidden_without_quotes = ["<", ">", ":", "/", "\\", "|", "?", "*"]
     # global lvls, locations_dict, maps_names
-    with open(path + "/scripts/autotracking/location_mapping.lua") as mapping:
+    with open(path + "/scripts/autotracking/location_mapping.lua", encoding="utf-8") as mapping:
         while inputs := mapping.readline():
             if "]" in inputs:
                 if not (
@@ -296,15 +215,6 @@ def create_locations(path: str):  # , logic: dict[str, str]):
                     location_list.append(
                         location.replace("@", "").replace('"', "").split("/")
                     )
-                    hints_dict[read_input[k][0]] = (
-                        location[: location.rfind("/")],
-                        location[: location.rfind("/")]
-                        .replace("@", "")
-                        .replace('"', "")
-                        .replace("/", "_")
-                        .replace(" ", "_")
-                        .lower(),
-                    )
                 else:
                     hosted_item_list.append(
                         location.replace('"', "").strip().replace(" ", "")
@@ -319,36 +229,27 @@ def create_locations(path: str):  # , logic: dict[str, str]):
                     read_input[k][1].replace('"', "").strip().replace(" ", "")
                 )
 
-            hints_dict[read_input[k][0]] = (
-                read_input[k][1][: read_input[k][1].rfind("/")],
-                read_input[k][1][: read_input[k][1].rfind("/")]
-                .replace("@", "")
-                .replace('"', "")
-                .replace("/", "_")
-                .replace(" ", "_")
-                .lower(),
-            )
-
     hosted_item_list = list(set(hosted_item_list))
     for index, item in enumerate(hosted_item_list):
         hosted_item_list[index] = [item, "consumable"]
 
-    with open(path + "/items/location_items.json", "w") as location_items:
+    with open(path + "/items/location_items.json", "w", encoding="utf-8") as location_items:
         item_json_obj = []
 
         for item_name, item_types in hosted_item_list:
             item_json_obj.append(_item_consumable_preset(item_name))
 
         location_items.write(f"{json.dumps(item_json_obj, indent=4)}")
-
     for i, _ in enumerate(location_list):
         if len(location_list[i][0]) > 1:
             temp.append(location_list[i][0])
     lvls = sorted(set(temp))
     #
 
-    with open(path + "/scripts/locations_import.lua", "w") as locations_file:
+    with open(path + "/scripts/locations_import.lua", "w", encoding="utf-8") as locations_file:
         for level_name in lvls:
+            # for char in forbidden_with_quotes:
+            #     level_name = level_name.replace(f"{char}", "")
             locations_file.write(
                 f'Tracker:AddLocations("locations/{level_name}.json")\n'
             )
@@ -371,20 +272,13 @@ def create_locations(path: str):  # , logic: dict[str, str]):
     close_chest = "close.png"
     # open_chest = other_options[0]
     # close_chest = other_options[1]
-    with open(path + r"\scripts\autotracking\location_mapping.lua") as mapping_file:
+    with open(path + r"\scripts\autotracking\location_mapping.lua", encoding="utf-8") as mapping_file:
         location_mapping_string = mapping_file.read().replace("\n", "")
-    with open(path + rf"\locations\Overworld.json", "w") as overworld:
+    with open(path + rf"\locations\Overworld.json", "w", encoding="utf-8") as overworld:
         overworld_list = []
+        # temp_locations_region = ""
         overworld_json = {
             "name": "Overworld",
-            "chest_unopened_img": f"/images/items/{close_chest}",
-            "chest_opened_img": f"/images/items/{open_chest}",
-            "overlay_background": "#000000",
-            "access_rules": [" "],
-            "children": [],
-        }
-        overworld_hints_json = {
-            "name": "Overworld Hints",
             "chest_unopened_img": f"/images/items/{close_chest}",
             "chest_opened_img": f"/images/items/{open_chest}",
             "overlay_background": "#000000",
@@ -396,6 +290,9 @@ def create_locations(path: str):  # , logic: dict[str, str]):
             x = random.randint(10, 2500)
             y = random.randint(10, 2500)
             top_most_region = locations_region
+            # temp_locations_region = locations_region
+            # for char in forbidden_without_quotes:
+            #     temp_locations_region = temp_locations_region.replace(f"{char}", "")
             overworld_json["children"].append(
                 {
                     "name": f"{locations_region}",
@@ -409,24 +306,14 @@ def create_locations(path: str):  # , logic: dict[str, str]):
                     ],
                 }
             )
-            overworld_hints_json["children"].append(
-                {
-                    "name": f"{locations_region} - hint",
-                    "chest_unopened_img": f"/images/items/{close_chest}",
-                    "chest_opened_img": f"/images/items/{open_chest}",
-                    "overlay_background": "#000000",
-                    "access_rules": ["{}"],
-                    "sections": [],
-                    "map_locations": [
-                        {"map": "Overworld", "x": f"{x}", "y": f"{y}", "size": 12}
-                    ],
-                }
-            )
+
+            # temp_locations_region = locations_region
+            # for char in forbidden_with_quotes:
+            #     temp_locations_region = temp_locations_region.replace(char, "")
             with open(
-                path + rf"\locations\{locations_region}.json", "w"
+                path + rf"\locations\{locations_region}.json", "w", encoding="utf-8"
             ) as locations_file:
                 location_file_list = []
-                location_hint_list = []
 
                 _write_locations(
                     locations_dict,
@@ -434,19 +321,15 @@ def create_locations(path: str):  # , logic: dict[str, str]):
                     location_file_list,
                     logic_dict,
                     overworld_json["children"][index],
-                    overworld_hints_json["children"][index],
                     top_most_region,
                     top_most_region,
-                    locations_region,
-                    location_hint_list,
                     location_mapping_string,
                 )
 
                 locations_file.write(
-                    json.dumps(location_hint_list + location_file_list, indent=4)
+                    json.dumps(location_file_list, indent=4)
                 )
 
-        overworld_list.append(overworld_hints_json)
         overworld_list.append(overworld_json)
         overworld.write(json.dumps(overworld_list, indent=4))
 
@@ -462,14 +345,14 @@ def create_locations(path: str):  # , logic: dict[str, str]):
 def create_maps(path: str, maps_names: list):
     """
     creates the maps used in the tabbed section in poptracker.
-    uses only regions with more than 9 sections in it according to the sectioning in the locations_mapping
+    uses only regions with more than 9 sections in it according to the sectioning in the location_mapping
     :param str path: Path to the root folder of the Tracker. Used for loading of the mapping file and saving the
     resulting <map_name>.json files
     :param list maps_names: list of names to be used to create the corresponding map definitions. Based of the first
-    stage in the locations_mapping for each location
+    stage in the location_mapping for each location
     :return: none
     """
-    with open(path + "/maps/maps.json", "w") as maps:
+    with open(path + "/maps/maps.json", "w", encoding="utf-8") as maps:
         maps_json = []
         for map in maps_names:
             maps_json.append(_maps_json(map))
@@ -485,7 +368,7 @@ def preparations(path):
     lvl = set()
     locations_dict = dict()
     # maps_names = []
-    with open(path + "/scripts/autotracking/location_mapping.lua") as mapping:
+    with open(path + "/scripts/autotracking/location_mapping.lua", encoding="utf-8") as mapping:
         while inputs := mapping.readline():
             if "]" in inputs:
                 if "--" in inputs and inputs.rindex("--") > inputs.rindex("}"):
@@ -513,7 +396,7 @@ def preparations(path):
 if __name__ == "__main__":
     """
     - Askes for the root folder of the Trackerpack.
-    - Loades the locations_mapping.lua file that should have been created previously.
+    - Loades the location_mapping.lua file that should have been created previously.
     - Creates Map-definitions for the first stage of each location if there are more then 9 locations total inside of
     that stage
     - Creates nested location-definitions for all the first stages of each location.

@@ -20,7 +20,7 @@ def create_tracker_tabs(path: str, maps_names: list):
     :return:
     """
 
-    with open(path + "/layouts/tabs.json", "w") as tabs:
+    with open(path + "/layouts/tabs.json", "w", encoding="utf-8") as tabs:
         tabbed_maps_horizontal = {"type": "tabbed", "tabs": []}
         tabbed_maps_vertical = {"type": "tabbed", "tabs": []}
 
@@ -44,7 +44,7 @@ def create_broadcast_layout(path: str):
     :param path:
     :return:
     """
-    with open(path + "/layouts/broadcast.json", "w") as broadcast:
+    with open(path + "/layouts/broadcast.json", "w", encoding="utf-8") as broadcast:
         broadcast_json = {
             "tracker_broadcast": {
                 "type": "array",
@@ -75,7 +75,7 @@ def create_tracker_basic_layout(path: str):
     :param path:
     :return:
     """
-    with open(path + "/layouts/tracker.json", "w") as tracker:
+    with open(path + "/layouts/tracker.json", "w", encoding="utf-8") as tracker:
         track_data = {
             "tracker_default": {
                 "type": "container",
@@ -190,7 +190,7 @@ def create_tracker_basic_layout(path: str):
 
         tracker.write(json.dumps(track_data, indent=4))
     # #
-    with open(path + "/layouts/settings_popup.json", "w") as settings_popup:
+    with open(path + "/layouts/settings_popup.json", "w", encoding="utf-8") as settings_popup:
         settings_popup_json = {
             "settings_popup": {
                 "type": "array",
@@ -223,12 +223,12 @@ def create_item_layout(path: str):
     :return:
     """
     item_codes = []
-    with open(path + "/items/items.json") as items:
+    with open(path + "/items/items.json", encoding="utf-8") as items:
         json_data = json.load(items)
         for data in json_data:
             if not data == {}:
                 item_codes.append(data["codes"])
-    with open(path + "/layouts/items.json", "w") as item_layout:
+    with open(path + "/layouts/items.json", "w", encoding="utf-8") as item_layout:
         item_layout_json = dict()
         item_layout_json["shared_item_grid_horizontal"] = {
             "type": "array",
@@ -316,7 +316,7 @@ if __name__ == "__main__":
     lvls = set()
     locations_dict = dict()
     maps_names = []
-    with open(save_file_path + "/scripts/autotracking/location_mapping.lua") as mapping:
+    with open(save_file_path + "/scripts/autotracking/location_mapping.lua", encoding="utf-8") as mapping:
         while inputs := mapping.readline():
             if "]" in inputs:
                 if not inputs.strip()[0:2] == "--":

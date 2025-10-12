@@ -78,21 +78,21 @@ if __name__ == "__main__":
         hint_json = []
         if file == "lightworld.json":
             print("pause")
-        with open(f'{path}/{file}','r') as location_json:
+        with open(f'{path}/{file}','r', encoding="utf-8") as location_json:
             file_list = location_json.readlines()
             file_str = "".join(file_list)
             file_json_list = json.loads(file_str)
             for json_obj in file_json_list:
                 hint_json.append(traverse_json(json_obj, {"x":x_offset, "y":y_offset}, ""))
 
-        with open(f'{path}/{file.replace(".json","_hints.json")}', 'w') as new_location_json:
+        with open(f'{path}/{file.replace(".json","_hints.json")}', 'w', encoding="utf-8") as new_location_json:
             new_location_json.write(json.dumps(hint_json, indent=4))
-    with open(f'{path.replace(path.split("/")[-1], "items")}/hints_items.json', "w") as hint_items_file:
+    with open(f'{path.replace(path.split("/")[-1], "items")}/hints_items.json', "w", encoding="utf-8") as hint_items_file:
         hint_item_json = []
         for hint_item in hint_item_list:
             hint_item_json.append(_item_toggle_preset(hint_item))
         hint_items_file.write(json.dumps(hint_item_json, indent=4))
-    with open(f'{path.replace(path.split("/")[-1], "scripts")}/autotracking/hints_mapping.lua', "w") as hint_mapping:
+    with open(f'{path.replace(path.split("/")[-1], "scripts")}/autotracking/hints_mapping.lua', "w", encoding="utf-8") as hint_mapping:
         read_input = []
         location_list = []
         hosted_item_list = []
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         hints_dict = {}
         temp = []
         with open(f'{path.replace(path.split("/")[-1], "scripts")}/autotracking/location_mapping.lua',
-                  "r") as location_mapping:
+                  "r", encoding="utf-8") as location_mapping:
             while inputs := location_mapping.readline():
                 if "]" in inputs:
                     if not (

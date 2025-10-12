@@ -17,7 +17,7 @@ def _gimp_png(save_path: str, name: str, length: int = 28):
     font = ImageFont.truetype(r"C:\Windows\Fonts\micross.ttf", 40)
     multiline_count: int = name.count("\n")
     print(multiline_count)
-    charsize = (length * 19, 52 * (multiline_count + 1))
+    charsize = (length * 12, 52 * (multiline_count + 1))
     W, H = charsize
     color = "#fff"
     if multiline_count > 0:
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     print("Select a folder to save the created images into:")
     save_to_path = filedialog.askdirectory()
     print("Path to folder to save file to: ", save_to_path)
-    with open(rf"{text_to_image_filepath}") as names:
+    with open(rf"{text_to_image_filepath}", encoding="utf-8") as names:
         # max = 0
         line_split = []
         for line in names:
