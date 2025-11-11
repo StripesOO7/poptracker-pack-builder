@@ -103,7 +103,7 @@ def _write_locations(
                 }
             )
         location_list[-1]["map_locations"] = [
-            {"map": f"{top_most_region}", "x": f"{x}", "y": f"{y}", "size": 6}
+            {"map": f"{top_most_region}", "x": x, "y": y, "size": 6}
         ]
 
 
@@ -302,7 +302,7 @@ def create_locations(path: str):  # , logic: dict[str, str]):
                     "access_rules": [" "],
                     "sections": [],
                     "map_locations": [
-                        {"map": "Overworld", "x": f"{x}", "y": f"{y}", "size": 6}
+                        {"map": "Overworld", "x": x, "y": y, "size": 6}
                     ],
                 }
             )
