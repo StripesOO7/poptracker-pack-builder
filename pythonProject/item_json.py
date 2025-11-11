@@ -94,7 +94,7 @@ def _item_consumable_preset(item_name: str, full_name: str):
         "decrement": 1,
         "initial_quantity": 2,
         "overlay_align": "right",
-        "overlay_font_size": True,
+        "overlay_font_size": 14,
         "overlay_background": "#000000",
         "codes": f"{item_name.replace(' ', '')}",
     }
