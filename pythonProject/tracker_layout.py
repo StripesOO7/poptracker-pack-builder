@@ -121,10 +121,12 @@ def create_tracker_basic_layout(path: str):
                         },
                         {
                             "type": "dock",
-                            "content": {
-                                "type": "layout",
-                                "key": "tabbed_maps_vertical",
-                            },
+                            "content": [
+                                {
+                                    "type": "layout",
+                                    "key": "tabbed_maps_vertical",
+                                },
+                            ]
                         },
                     ],
                 },
@@ -178,10 +180,12 @@ def create_tracker_basic_layout(path: str):
                         },
                         {
                             "type": "dock",
-                            "content": {
-                                "type": "layout",
-                                "key": "tabbed_maps_horizontal",
-                            },
+                            "content": [
+                                {
+                                    "type": "layout",
+                                    "key": "tabbed_maps_horizontal",
+                                },
+                            ]
                         },
                     ],
                 },
