@@ -62,7 +62,7 @@ def _item_progressive_toggle_preset(item_name: str, full_name: str):
         "initial_stage_idx": 0,
         "initial_active_state": False,
         "overlay_align": "right",
-        "stages": _stages(item_name),
+        "stages": _stages(item_name, full_name),
         # "codes": f"{item_name.replace(' ', '')}",
     }
     return progressive_toggle_json_preset
@@ -76,7 +76,7 @@ def _item_progressive_preset(item_name: str, full_name: str):
         "allow_disabled": True,
         "initial_stage_idx": 0,
         "overlay_align": "right",
-        "stages": _stages(item_name),
+        "stages": _stages(item_name, full_name),
         # "codes": f"{item_name.replace(' ', '')}",
     }
     return progressive_json_preset
