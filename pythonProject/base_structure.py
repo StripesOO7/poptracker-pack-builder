@@ -958,21 +958,26 @@ if __name__ == "__main__":
     print(
         """
     Please select the Directory the pack should be created in
-    If there is no file called 'datapackage_url.txt' already present please provide the requested information.
+    If there is no file called 'datapackage_url.json' already present please provide the requested information.
     """
     )
     read_file_path = tk.filedialog.askdirectory()
-    if not os.path.exists(read_file_path + "/datapackage_url.txt"):
-        with open(read_file_path + "/datapackage_url.txt", "w", encoding="utf-8") as base_file:
+    if not os.path.exists(read_file_path + "/datapackage_url.json"):
+        with open(read_file_path + "/datapackage_url.json", "w", encoding="utf-8") as base_file:
             url = (
-                input("datapackage source (url): ")
-                or "https://archipelago.gg/datapackage"
+                    input("datapackage source (url): ")
+                    or "https://archipelago.gg"
             )
-            game = input("Game name from Datapackage: ")
-            base_file.write(f"{url}, {game}, ")
-    datapackage_path, game_name, *other_options = (
-        open(read_file_path + "/datapackage_url.txt").readline().split(", ")
-    )
+            game_name = input("Game name from Datapackage: ")
+            dp_json = {
+                "url": f"{url}/datapackage",
+                "game_name": f"{game_name}"
+            }
+            base_file.write(json.dumps(dp_json, indent=4))
+    with open(f"{read_file_path}/datapackage_url.json") as args_json:
+        dp_json = json.load(args_json)
+        datapackage_path = dp_json["url"]
+        game_name = dp_json["game_name"]
 
     games_dict = requests.get(datapackage_path).json()["games"]
 

@@ -28,10 +28,10 @@ they conflict with the naming scheme for Poptracker.
 Next the Pack askes for a source, an URL, to fetch the needed Datapackage from. This can be
 `https://archipelago.gg/datapackage` for supported Games or i.e `http://localhost/datapackage` if you are locally hosting a copy of the Archipelago Webhost with custom (unsupported/in-development) apworlds.
 After that it will ask for the **exact** name of the game you want to create the Tracker for. It needs to match the one from the Datapackage.  
-After both has been provided these information get stored inside of `datapackage_url.txt`
+After both has been provided these information get stored inside of `datapackage_url.json`
 
-If you already have a files called `datapackage_url.txt` containing these information in the format
-`<Datapackage_URL>, <game_name>` they will get loaded from there instead of being asked for.
+If you already have a files called `datapackage_url.json` containing these information in the format
+`{"url":<Datapackage_URL>, "game_name":<game_name>}` they will get loaded from there instead of being asked for.
 
 Now the Datapackage gets loaded, the needed gamedata extracted and stored inside of the 2 main files the rest of the pack gets build from. 
 These files are stored inside `/scripts/autotracking/` and are called `location_mapping.lua` and `item_mapping.lua`.
