@@ -27,35 +27,35 @@ if __name__ == "__main__":
         gimp_images.py to create images for text based options in bulk.""",
 
     )
-    cmd_parser.add_argument("-dp", "--datapackage-host", type=str)
-    cmd_parser.add_argument("-gn", "--game-name", type=str)
-    cmd_parser.add_argument("-r", "--pack-root", type=str)
+    cmd_parser.add_argument("-H", "--home", type=str)
+    cmd_parser.add_argument("-G", "--game", type=str)
+    cmd_parser.add_argument("-S", "--source", type=str)
     # cmd_parser.add_argument("", "")
     # cmd_parser.add_argument("", "")
     # cmd_parser.add_argument("", "", )
     cmd_args = cmd_parser.parse_args()
-    if len(sys.argv) == 1 or cmd_args.pack_root == None:
+    if len(sys.argv) == 1 or cmd_args.source == None:
         root = tk.Tk()
         root.withdraw()
 
         read_file_path = tk.filedialog.askdirectory()
     else:
-        read_file_path = cmd_args.pack_root
+        read_file_path = cmd_args.source
     if not os.path.exists(read_file_path + "/datapackage_url.json"):
         with open(read_file_path + "/datapackage_url.json", "w", encoding="utf-8") as base_file:
             url = (
-                cmd_args.datapackage_host or input("datapackage source (url): ")
+                cmd_args.source or input("datapackage source (url): ")
                 or "https://archipelago.gg"
             )
-            game_name = cmd_args.game_name or input("Game name from Datapackage: ")
+            game_name = cmd_args.game or input("Game name from Datapackage: ")
             dp_json = {
                 "url" : f"{url}/datapackage",
                 "game_name" : f"{game_name}"
             }
             base_file.write(json.dumps(dp_json, indent=4))
-    if cmd_args.datapackage_host and cmd_args.game_name:
-        datapackage_path = f"{cmd_args.datapackage_host}/datapackage"
-        game_name = cmd_args.game_name
+    if cmd_args.source and cmd_args.game:
+        datapackage_path = f"{cmd_args.source}/datapackage"
+        game_name = cmd_args.game
     else:
         with open(f"{read_file_path}/datapackage_url.json") as args_json:
             dp_json = json.load(args_json)
