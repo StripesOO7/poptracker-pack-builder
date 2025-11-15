@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  generate-output:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13' 
+
+      - name: Generate a pack
+        shell: bash
+        run: |
+          pip install -r pythonProject/requirements.txt
+          # start server hosting the datapackage
+          python -m http.server -d test &
+          SERVER_PID=$!
+          sleep .1
+          # initialize pack
+          mkdir -p tmp/pack
+          python pythonProject/builder.py --home tmp/pack --game "Adventure" --source http://localhost:8000/
+          # populate pack
+          python pythonProject/builder.py --home tmp/pack
+          # stop server
+          kill $SERVER_PID
+
+      - name: Validate pack
+        uses: PopTracker/pack-checker-action@v1
+        with:
+          pack: tmp/pack
+          strict: true
