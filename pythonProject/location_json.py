@@ -272,9 +272,9 @@ def create_locations(path: str):  # , logic: dict[str, str]):
     close_chest = "close.png"
     # open_chest = other_options[0]
     # close_chest = other_options[1]
-    with open(path + r"\scripts\autotracking\location_mapping.lua", encoding="utf-8") as mapping_file:
+    with open(path + r"/scripts/autotracking/location_mapping.lua", encoding="utf-8") as mapping_file:
         location_mapping_string = mapping_file.read().replace("\n", "")
-    with open(path + rf"\locations\Overworld.json", "w", encoding="utf-8") as overworld:
+    with open(path + rf"/locations/Overworld.json", "w", encoding="utf-8") as overworld:
         overworld_list = []
         # temp_locations_region = ""
         overworld_json = {
@@ -311,7 +311,7 @@ def create_locations(path: str):  # , logic: dict[str, str]):
             # for char in forbidden_with_quotes:
             #     temp_locations_region = temp_locations_region.replace(char, "")
             with open(
-                path + rf"\locations\{locations_region}.json", "w", encoding="utf-8"
+                path + rf"/locations/{locations_region}.json", "w", encoding="utf-8"
             ) as locations_file:
                 location_file_list = []
 
