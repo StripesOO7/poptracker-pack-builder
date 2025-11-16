@@ -198,7 +198,7 @@ def create_tracker_basic_layout(path: str):
         settings_popup_json = {
             "settings_popup": {
                 "type": "array",
-                "margin": "5",
+                "margin": 5,
                 "content": [
                     {
                         "type": "group",
