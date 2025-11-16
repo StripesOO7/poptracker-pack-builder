@@ -34,13 +34,13 @@ if __name__ == "__main__":
     # cmd_parser.add_argument("", "")
     # cmd_parser.add_argument("", "", )
     cmd_args = cmd_parser.parse_args()
-    if len(sys.argv) == 1 or cmd_args.source == None:
+    if cmd_args.home is None:
         root = tk.Tk()
         root.withdraw()
 
         read_file_path = tk.filedialog.askdirectory()
     else:
-        read_file_path = cmd_args.source
+        read_file_path = cmd_args.home
     if not os.path.exists(read_file_path + "/datapackage_url.json"):
         with open(read_file_path + "/datapackage_url.json", "w", encoding="utf-8") as base_file:
             url = (
