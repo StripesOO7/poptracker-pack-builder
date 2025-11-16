@@ -203,7 +203,7 @@ def create_tracker_basic_layout(path: str):
                     {
                         "type": "group",
                         "header": "Autofill Settings",
-                        "description": "Enable/Disable the automatic fill of the settings panel from for connected Slot_Data",
+                        # "description": "Enable/Disable the automatic fill of the settings panel from for connected Slot_Data",
                         "header_background": "#3e4b57",
                         "content": [
                             {
