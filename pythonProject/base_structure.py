@@ -15,7 +15,6 @@ def create_base_structure(path: str, game_name: str, game_dict: dict, test_state
     :param dict game_dict: the json formated part from the AP datapackage for the specified game
     :return:
     """
-    print("create_base_structure", test_state)
     if not os.path.exists(path + "/scripts"):
         os.mkdir(path + "/scripts")
         os.mkdir(path + "/scripts/autotracking")
@@ -899,7 +898,6 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str, t
     :param type:
     :return:
     """
-    print("_write_mapping", test_state)
     delimiter = [" - ", ": ", ") "]
     replacement = ["/", "/", ")/"]
     escape = ["\\", "\'", "\""]
@@ -917,7 +915,7 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str, t
                             name = name.replace(f"{escape_char}", "")
                     mapping.write(
                         f'\t[{ids}] = \u007b\u007b"{name.replace(" ", "").lower()}", '
-                        f'"{"toggle" if test_state else random.choice(item_states)}"\u007d\u007d,'
+                        f'"{random.choice(item_states) if test_state else "toggle" }"\u007d\u007d,'
                         f'\n'
                     )
             case "locations":
