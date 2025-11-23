@@ -31,7 +31,7 @@ jobs:
           sleep .1
           # initialize pack
           mkdir -p tmp/pack
-          python pythonProject/builder.py --home tmp/pack --game "Adventure" --source http://localhost:8000/
+          python pythonProject/builder.py --home tmp/pack --game "Adventure" --source http://localhost:8000/ --test
           # populate pack
           python pythonProject/builder.py --home tmp/pack
           # stop server

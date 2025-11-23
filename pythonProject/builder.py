@@ -30,7 +30,7 @@ if __name__ == "__main__":
     cmd_parser.add_argument("-H", "--home", type=str)
     cmd_parser.add_argument("-G", "--game", type=str)
     cmd_parser.add_argument("-S", "--source", type=str)
-    # cmd_parser.add_argument("", "")
+    cmd_parser.add_argument("-T", "--test", type=bool, action="store_true", default=False)
     # cmd_parser.add_argument("", "")
     # cmd_parser.add_argument("", "", )
     cmd_args = cmd_parser.parse_args()
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     games_dict = requests.get(datapackage_path).json()["games"]
 
     base_structure.create_base_structure(
-        path=read_file_path, game_name=game_name, game_dict=games_dict
+        path=read_file_path, game_name=game_name, game_dict=games_dict, test_state=cmd_args.test
     )
 
     item_json.create_items(path=read_file_path)

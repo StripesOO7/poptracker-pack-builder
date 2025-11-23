@@ -1,11 +1,12 @@
 import os
 import json
+import random
 import tkinter as tk
 from tkinter import filedialog
 import requests
 
 
-def create_base_structure(path: str, game_name: str, game_dict: dict):
+def create_base_structure(path: str, game_name: str, game_dict: dict, test_state: bool = False):
     """
     creates every needed directory and file needed to get a basic poptracker pack working and loading if the needed
     file is not already present
@@ -129,7 +130,6 @@ function onClear(slot_data)
                     item_obj.Active = false
                 elseif item_obj.Type == "progressive" then
                     item_obj.CurrentStage = 0
-                    item_obj.CurrentStage = item_obj.CurrentStage + 1
                 elseif item_obj.Type == "consumable" then
                     if item_obj.MinCount then
                         item_obj.AcquiredCount = item_obj.MinCount
@@ -191,6 +191,7 @@ function onItem(index, item_id, item_name, player_number)
             elseif item_obj.Type == "progressive" then
                 -- print("progressive")
                 item_obj.Active = true
+                item_obj.CurrentStage = item_obj.CurrentStage + 1
             elseif item_obj.Type == "consumable" then
                 -- print("consumable")
                 item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment * (tonumber(item_pair[3]) or 1)
@@ -862,11 +863,11 @@ end
         os.path.exists(path + "/scripts/autotracking/item_mapping.lua")
         and os.path.exists(path + "/scripts/autotracking/location_mapping.lua")
     ):
-        _create_mappings(path=path, game_data=game_dict[game_name])
+        _create_mappings(path=path, game_data=game_dict[game_name], test_state=test_state)
         return exit()
 
 
-def _create_mappings(path: str, game_data: dict[str, int]):
+def _create_mappings(path: str, game_data: dict[str, int], test_state: bool = False):
     """
     writes the 2 mapping files needed for location and item tracking via AP
     :param game_data:
@@ -875,7 +876,7 @@ def _create_mappings(path: str, game_data: dict[str, int]):
     items_data = game_data["item_name_to_id"]
     locations_data = game_data["location_name_to_id"]
     item_name_data = {**items_data, **locations_data}
-    _write_mapping(path=path, file_name="item_mapping", data=items_data, type="items")
+    _write_mapping(path=path, file_name="item_mapping", data=items_data, type="items", test_state=test_state)
     _write_mapping(
         path=path, file_name="location_mapping", data=locations_data, type="locations"
     )
@@ -885,12 +886,12 @@ def _create_mappings(path: str, game_data: dict[str, int]):
     pass
 
 
-def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
+def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str, test_state: bool = False):
     """
     writes the corresponding mapping file if AP-ID's to names.
     searches for the most common delimiters used in locationnames to possibly preselect/-create some regions.
     Item-types need to be adjusted after that step.
-    Defaults to "toggle"
+    Defaults to "toggle", randomizes it if Test-flag is set
     :param path:
     :param file_name:
     :param data:
@@ -901,6 +902,7 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
     replacement = ["/", "/", ")/"]
     escape = ["\\", "\'", "\""]
     forbidden = ["<", ">", ":", "|", "?", "*"]
+    item_states = ["toggle", "consumable", "static", "progressive", "progressive_toggle"]
 
     with open(path + "/scripts/autotracking/" + file_name + ".lua", "w", encoding="utf-8") as mapping:
         mapping.write(f"{file_name.upper()} = \u007b\n")
@@ -912,8 +914,9 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str):
                             # name = name.replace(f"{escape_char}", f"\\{escape_char}")
                             name = name.replace(f"{escape_char}", "")
                     mapping.write(
-                        f'\t[{ids}] = \u007b\u007b"{name.replace(" ", "").lower()}", "toggle"\u007d\u007d,'
-                        f"\n"
+                        f'\t[{ids}] = \u007b\u007b"{name.replace(" ", "").lower()}", '
+                        f'"{"toggle" if test_state else random.choice(item_states)}"\u007d\u007d,'
+                        f'\n'
                     )
             case "locations":
                 for name, ids in data.items():
