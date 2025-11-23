@@ -231,7 +231,10 @@ def create_item_layout(path: str):
         json_data = json.load(items)
         for data in json_data:
             if not data == {}:
-                item_codes.append(data["codes"])
+                if data["type"] in ["progressive", "progressive_toggle"]:
+                    item_codes.append(data["stages"][0]["codes"])
+                else:
+                    item_codes.append(data["codes"])
     with open(path + "/layouts/items.json", "w", encoding="utf-8") as item_layout:
         item_layout_json = dict()
         item_layout_json["shared_item_grid_horizontal"] = {
