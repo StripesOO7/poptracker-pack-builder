@@ -34,6 +34,7 @@ if __name__ == "__main__":
     # cmd_parser.add_argument("", "")
     # cmd_parser.add_argument("", "", )
     cmd_args = cmd_parser.parse_args()
+    print("__main__", cmd_args.test)
     if cmd_args.home is None:
         root = tk.Tk()
         root.withdraw()

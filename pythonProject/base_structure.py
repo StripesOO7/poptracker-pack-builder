@@ -15,6 +15,7 @@ def create_base_structure(path: str, game_name: str, game_dict: dict, test_state
     :param dict game_dict: the json formated part from the AP datapackage for the specified game
     :return:
     """
+    print("create_base_structure", test_state)
     if not os.path.exists(path + "/scripts"):
         os.mkdir(path + "/scripts")
         os.mkdir(path + "/scripts/autotracking")
@@ -898,6 +899,7 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str, t
     :param type:
     :return:
     """
+    print("_write_mapping", test_state)
     delimiter = [" - ", ": ", ") "]
     replacement = ["/", "/", ")/"]
     escape = ["\\", "\'", "\""]
