@@ -32,6 +32,9 @@ CUR_INDEX = -1
 ALL_LOCATIONS = {}
 SLOT_DATA = {}
 
+MANUAL_CHECKED = true
+ROOM_SEED = "default"
+
 if Highlight then
     HIGHTLIGHT_LEVEL= {
         [0] = Highlight.Unspecified,
@@ -60,6 +63,33 @@ function dump_table(o, depth)
     else
         return tostring(o)
     end
+end
+
+function LocationHandler(location)
+    if MANUAL_CHECKED then
+        local storage_item = Tracker:FindObjectForCode("manual_location_storage")
+        if Archipelago.PlayerNumber == -1 then -- not connected
+            if ROOM_SEED ~= "default" then -- seed is from previous connection
+                ROOM_SEED = "default"
+                storage_item.ItemState.MANUAL_LOCATIONS["default"] = {}
+            else -- seed is default
+            end
+        end
+        local full_path = location.FullID
+        if storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][full_path] then --not in list for curretn seed
+            if location.AvailableChestCount < location.ChestCount then --add to list
+                storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][full_path] = location.AvailableChestCount
+            else --remove from list of set back to max chestcount
+                storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][full_path] = nil
+            end
+        elseif location.AvailableChestCount < location.ChestCount then -- not in list and not set back to its max chest count
+            storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][full_path] = location.AvailableChestCount
+        else
+        end
+    end
+    local storage_item = Tracker:FindObjectForCode("manual_location_storage")
+    -- print(dump_table(storage_item.ItemState.MANUAL_LOCATIONS))
+    ForceUpdate() -- 
 end
 
 function ForceUpdate()
@@ -98,7 +128,53 @@ function onClearHandler(slot_data)
     end
 end
 
+function preOnClear()
+    PLAYER_ID = Archipelago.PlayerNumber or -1
+    TEAM_NUMBER = Archipelago.TeamNumber or 0
+    if Archipelago.PlayerNumber > -1 then
+        if #ALL_LOCATIONS > 0 then
+            ALL_LOCATIONS = {}
+        end
+        for _, value in pairs(Archipelago.MissingLocations) do
+            table.insert(ALL_LOCATIONS, #ALL_LOCATIONS + 1, value)
+        end
+
+        for _, value in pairs(Archipelago.CheckedLocations) do
+            table.insert(ALL_LOCATIONS, #ALL_LOCATIONS + 1, value)
+        end
+        -- HINTS_ID = "_read_hints_"..TEAM_NUMBER.."_"..PLAYER_ID
+        -- Archipelago:SetNotify({HINTS_ID})
+        -- Archipelago:Get({HINTS_ID})
+    end
+
+
+    -- print(Archipelago.Seed)
+    local storage_item = Tracker:FindObjectForCode("manual_location_storage")
+    local SEED_BASE = (Archipelago.Seed or tostring(#ALL_LOCATIONS)).."_"..Archipelago.TeamNumber.."_"..Archipelago.PlayerNumber
+
+    if ROOM_SEED == "default" or ROOM_SEED ~= SEED_BASE then -- seed is default or from previous connection
+
+        ROOM_SEED = SEED_BASE
+        if #storage_item.ItemState.MANUAL_LOCATIONS > 10 then
+            storage_item.ItemState.MANUAL_LOCATIONS[storage_item.ItemState.MANUAL_LOCATIONS_ORDER[1]] = nil
+            table.remove(storage_item.ItemState.MANUAL_LOCATIONS_ORDER, 1)
+        end
+        if storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED] == nil then
+            storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED] = {}
+            table.insert(storage_item.ItemState.MANUAL_LOCATIONS_ORDER, ROOM_SEED)
+        end
+    else -- seed is from previous connection
+    end
+end
+
 function onClear(slot_data)
+    MANUAL_CHECKED = false
+    local storage_item = Tracker:FindObjectForCode("manual_location_storage")
+    if storage_item == nil then
+        CreateLuaManualLocationStorage("manual_location_storage")
+        storage_item = Tracker:FindObjectForCode("manual_location_storage")
+    end
+    preOnClear()
     ScriptHost:RemoveWatchForCode("StateChanged")
     ScriptHost:RemoveOnLocationSectionHandler("location_section_change_handler")
     --SLOT_DATA = slot_data
@@ -110,7 +186,11 @@ function onClear(slot_data)
                 local location_obj = Tracker:FindObjectForCode(location)
                 if location_obj then
                     if location:sub(1, 1) == "@" then
-                        location_obj.AvailableChestCount = location_obj.ChestCount
+                        if storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID] then
+                            location_obj.AvailableChestCount = storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID]
+                        else
+                            location_obj.AvailableChestCount = location_obj.ChestCount
+                        end
                     else
                         location_obj.Active = false
                     end
@@ -167,6 +247,7 @@ function onClear(slot_data)
         Archipelago:Get({HINTS_ID})
     end
     ScriptHost:AddOnFrameHandler("load handler", OnFrameHandler)
+    MANUAL_CHECKED = true
 end
 
 function onItem(index, item_id, item_name, player_number)
@@ -211,6 +292,7 @@ end
 
 --called when a location gets cleared
 function onLocation(location_id, location_name)
+    MANUAL_CHECKED = false
     local location_array = LOCATION_MAPPING[location_id]
     if not location_array or not location_array[1] then
         print(string.format("onLocation: could not find location mapping for id %s", location_id))
@@ -230,6 +312,7 @@ function onLocation(location_id, location_name)
             print(string.format("onLocation: could not find location_object for code %s", location))
         end
     end
+    MANUAL_CHECKED = true
 end
 
 function onEvent(key, value, old_value)
@@ -389,13 +472,91 @@ function OnFrameHandler()
     ScriptHost:RemoveOnFrameHandler("load handler")
     -- stuff
     ScriptHost:AddWatchForCode("StateChanged", "*", StateChanged)
-    ScriptHost:AddOnLocationSectionChangedHandler("location_section_change_handler", ForceUpdate)
+    ScriptHost:AddOnLocationSectionChangedHandler("location_section_change_handler", LocationHandler)
+    CreateLuaManualLocationStorage("manual_location_storage")
     ForceUpdate()
 end
 require("scripts/watches")
 ScriptHost:AddOnFrameHandler("load handler", OnFrameHandler)
 """
             )
+    if not os.path.exists(path + "/scripts/luaitems.lua"):
+        with open(path + "/scripts/luaitems.lua", "w", encoding="utf-8") as init_lua:
+            init_lua.write(
+                """
+local function CanProvideCodeFunc(self, code)
+    return code == self.Name
+end
+
+local function OnLeftClickFunc(self)
+    -- your custom handling for clicks here
+    -- return true
+end
+
+local function OnRightClickFunc(self)
+    -- your custom handling for clicks here
+    -- return true
+end
+
+local function OnMiddleClickFunc(self)
+    -- your custom handling for clicks here
+    -- return true
+end
+
+local function ProvidesCodeFunc(self, code)
+    if CanProvideCodeFunc(self, code) then
+    
+            return 1
+        end
+    return 0
+end
+
+local function SaveManualLocationStorageFunc(self)
+    return {
+        -- save everything from ItemState in here separately
+        MANUAL_LOCATIONS = self.ItemState.MANUAL_LOCATIONS,
+        MANUAL_LOCATIONS_ORDER = self.ItemState.MANUAL_LOCATIONS_ORDER,
+        Target = self.ItemState.Target,
+        Name = self.Name,
+        Icon = self.Icon
+    }
+end
+
+local function LoadManualLocationStorageFunc(self, data)
+    if data ~= nil and self.Name == data.Name then
+        -- load everything from ItemState in here separately
+        self.ItemState.MANUAL_LOCATIONS = data.MANUAL_LOCATIONS
+        self.ItemState.MANUAL_LOCATIONS_ORDER = data.MANUAL_LOCATIONS_ORDER
+        self.Icon = ImageReference:FromPackRelativePath(data.Icon)
+    else
+    end
+end
+
+function CreateLuaManualLocationStorage(name)
+    local self = ScriptHost:CreateLuaItem()
+    -- self.Type = "custom"
+    self.Name = name --code --
+    self.Icon = ImageReference:FromPackRelativePath("/images/items/closed_Chest.png")
+    self.ItemState = {
+        MANUAL_LOCATIONS = {
+            ["default"] = {}
+        },
+        MANUAL_LOCATIONS_ORDER = {}
+        -- you can add many more custom stuff in here
+    }
+   
+    self.CanProvideCodeFunc = CanProvideCodeFunc
+    self.OnLeftClickFunc = OnLeftClickFunc -- your_custom_leftclick_function_here
+    self.OnRightClickFunc = OnRightClickFunc -- your_custom_rightclick_function_here
+    self.OnMiddleClickFunc = OnMiddleClickFunc -- your_custom_middleclick_function_here
+    self.ProvidesCodeFunc = ProvidesCodeFunc
+    self.SaveFunc = SaveManualLocationStorageFunc
+    self.LoadFunc = LoadManualLocationStorageFunc
+    return self
+end
+"""
+            )
+
     if not os.path.exists(path + "scripts/items_import.lua"):
         with open(path + "/scripts/items_import.lua", "w", encoding="utf-8") as items_lua:
             items_lua.write(
@@ -955,6 +1116,7 @@ def _write_mapping(path: str, file_name: str, data: dict[str, int], type: str, t
 
 
 if __name__ == "__main__":
+    import argparse
     root = tk.Tk()
     root.withdraw()
 
