@@ -171,7 +171,7 @@ function onClear(slot_data)
     MANUAL_CHECKED = false
     local storage_item = Tracker:FindObjectForCode("manual_location_storage")
     if storage_item == nil then
-        CreateLuaManualLocationStorage("manual_location_storage")
+        CreateLuaManualStorageItem("manual_location_storage")
         storage_item = Tracker:FindObjectForCode("manual_location_storage")
     end
     preOnClear()
@@ -473,7 +473,7 @@ function OnFrameHandler()
     -- stuff
     ScriptHost:AddWatchForCode("StateChanged", "*", StateChanged)
     ScriptHost:AddOnLocationSectionChangedHandler("location_section_change_handler", LocationHandler)
-    CreateLuaManualLocationStorage("manual_location_storage")
+    CreateLuaManualStorageItem("manual_location_storage")
     ForceUpdate()
 end
 require("scripts/luaitems")
@@ -533,7 +533,7 @@ local function LoadManualLocationStorageFunc(self, data)
     end
 end
 
-function CreateLuaManualLocationStorage(name)
+function CreateLuaManualStorageItem(name)
     local self = ScriptHost:CreateLuaItem()
     -- self.Type = "custom"
     self.Name = name --code --
