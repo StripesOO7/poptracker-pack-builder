@@ -476,6 +476,7 @@ function OnFrameHandler()
     CreateLuaManualLocationStorage("manual_location_storage")
     ForceUpdate()
 end
+require("scripts/luaitems")
 require("scripts/watches")
 ScriptHost:AddOnFrameHandler("load handler", OnFrameHandler)
 """
