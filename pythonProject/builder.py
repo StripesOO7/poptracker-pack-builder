@@ -41,8 +41,7 @@ if __name__ == "__main__":
         read_file_path = tk.filedialog.askdirectory()
     else:
         read_file_path = cmd_args.home
-    if not "/datapackage" in cmd_args.source:
-        datapackage_path = f"{cmd_args.source}/datapackage"
+    datapackage_path = cmd_args.source
     if not os.path.exists(read_file_path + "/datapackage_url.json"):
         with open(read_file_path + "/datapackage_url.json", "w", encoding="utf-8") as base_file:
             url = (
@@ -59,6 +58,8 @@ if __name__ == "__main__":
             base_file.write(json.dumps(dp_json, indent=4))
     if cmd_args.source and cmd_args.game:
         datapackage_path = cmd_args.source
+        if not "/datapackage" in datapackage_path:
+            datapackage_path = f"{datapackage_path}/datapackage"
         game_name = cmd_args.game
     else:
         with open(f"{read_file_path}/datapackage_url.json") as args_json:
