@@ -67,27 +67,30 @@ end
 
 function LocationHandler(location)
     if MANUAL_CHECKED then
-        local storage_item = Tracker:FindObjectForCode("manual_location_storage")
+        local custom_storage_item = Tracker:FindObjectForCode("manual_location_storage").ItemState
+        if not custom_storage_item then
+            return
+        end
         if Archipelago.PlayerNumber == -1 then -- not connected
             if ROOM_SEED ~= "default" then -- seed is from previous connection
                 ROOM_SEED = "default"
-                storage_item.ItemState.MANUAL_LOCATIONS["default"] = {}
+                custom_storage_item.MANUAL_LOCATIONS["default"] = {}
             else -- seed is default
             end
         end
         local full_path = location.FullID
-        if storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][full_path] then --not in list for curretn seed
-            if location.AvailableChestCount < location.ChestCount then --add to list
-                storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][full_path] = location.AvailableChestCount
-            else --remove from list of set back to max chestcount
-                storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][full_path] = nil
-            end
-        elseif location.AvailableChestCount < location.ChestCount then -- not in list and not set back to its max chest count
-            storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][full_path] = location.AvailableChestCount
-        else
+        if not custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED] then
+            custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED] = {}
+        end
+        if location.AvailableChestCount < location.ChestCount then --add to list
+            -- print("add to list")
+            custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][full_path] = location.AvailableChestCount
+        else --remove from list of set back to max chestcount
+            -- print("remove from list")
+            custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][full_path] = nil
         end
     end
-    local storage_item = Tracker:FindObjectForCode("manual_location_storage")
+    -- local custom_storage_item = Tracker:FindObjectForCode("manual_location_storage").ItemState
     -- print(dump_table(storage_item.ItemState.MANUAL_LOCATIONS))
     ForceUpdate() -- 
 end
@@ -130,7 +133,7 @@ end
 
 function preOnClear()
     PLAYER_ID = Archipelago.PlayerNumber or -1
-    TEAM_NUMBER = Archipelago.TeamNumber or 0
+	TEAM_NUMBER = Archipelago.TeamNumber or 0
     if Archipelago.PlayerNumber > -1 then
         if #ALL_LOCATIONS > 0 then
             ALL_LOCATIONS = {}
@@ -142,39 +145,46 @@ function preOnClear()
         for _, value in pairs(Archipelago.CheckedLocations) do
             table.insert(ALL_LOCATIONS, #ALL_LOCATIONS + 1, value)
         end
-        -- HINTS_ID = "_read_hints_"..TEAM_NUMBER.."_"..PLAYER_ID
-        -- Archipelago:SetNotify({HINTS_ID})
-        -- Archipelago:Get({HINTS_ID})
+        HINTS_ID = "_read_hints_"..TEAM_NUMBER.."_"..PLAYER_ID
+        Archipelago:SetNotify({HINTS_ID})
+        Archipelago:Get({HINTS_ID})
     end
 
 
     -- print(Archipelago.Seed)
-    local storage_item = Tracker:FindObjectForCode("manual_location_storage")
-    local SEED_BASE = (Archipelago.Seed or tostring(#ALL_LOCATIONS)).."_"..Archipelago.TeamNumber.."_"..Archipelago.PlayerNumber
+    local seed_base = (Archipelago.Seed or tostring(#ALL_LOCATIONS)).."_"..Archipelago.TeamNumber.."_"..Archipelago.PlayerNumber
+    if ROOM_SEED == "default" or ROOM_SEED ~= seed_base then -- seed is default or from previous connection
 
-    if ROOM_SEED == "default" or ROOM_SEED ~= SEED_BASE then -- seed is default or from previous connection
-
-        ROOM_SEED = SEED_BASE
-        if #storage_item.ItemState.MANUAL_LOCATIONS > 10 then
-            storage_item.ItemState.MANUAL_LOCATIONS[storage_item.ItemState.MANUAL_LOCATIONS_ORDER[1]] = nil
-            table.remove(storage_item.ItemState.MANUAL_LOCATIONS_ORDER, 1)
-        end
-        if storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED] == nil then
-            storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED] = {}
-            table.insert(storage_item.ItemState.MANUAL_LOCATIONS_ORDER, ROOM_SEED)
+        ROOM_SEED = seed_base --something like 2345_0_12
+        for _, custom_item_code in pairs({"manual_location_storage"}) do -- add more to the table if you created more storage cache items
+            local custom_storage_item = Tracker:FindObjectForCode(custom_item_code).ItemState
+            if custom_storage_item then
+                if #custom_storage_item.MANUAL_LOCATIONS > 10 then
+                    custom_storage_item.MANUAL_LOCATIONS[custom_storage_item.MANUAL_LOCATIONS_ORDER[1]] = nil
+                    table.remove(custom_storage_item.MANUAL_LOCATIONS_ORDER, 1)
+                end
+                if custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED] == nil then
+                    custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED] = {}
+                    table.insert(custom_storage_item.MANUAL_LOCATIONS_ORDER, ROOM_SEED)
+                end
+            end
         end
     else -- seed is from previous connection
+        -- do nothing
     end
 end
 
 function onClear(slot_data)
     MANUAL_CHECKED = false
-    local storage_item = Tracker:FindObjectForCode("manual_location_storage")
-    if storage_item == nil then
+    local custom_storage_item = Tracker:FindObjectForCode("manual_location_storage").ItemState
+    if custom_storage_item == nil then
         CreateLuaManualStorageItem("manual_location_storage")
-        storage_item = Tracker:FindObjectForCode("manual_location_storage")
+        custom_storage_item = Tracker:FindObjectForCode("manual_location_storage").ItemState
     end
+    -- repeat that here for every cache-storage item you create just to be save
+    
     preOnClear()
+    
     ScriptHost:RemoveWatchForCode("StateChanged")
     ScriptHost:RemoveOnLocationSectionHandler("location_section_change_handler")
     --SLOT_DATA = slot_data
@@ -186,8 +196,8 @@ function onClear(slot_data)
                 local location_obj = Tracker:FindObjectForCode(location)
                 if location_obj then
                     if location:sub(1, 1) == "@" then
-                        if storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID] then
-                            location_obj.AvailableChestCount = storage_item.ItemState.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID]
+                        if custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID] then
+                            location_obj.AvailableChestCount = custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID]
                         else
                             location_obj.AvailableChestCount = location_obj.ChestCount
                         end
