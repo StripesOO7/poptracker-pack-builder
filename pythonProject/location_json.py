@@ -394,6 +394,7 @@ def preparations(path):
     return lvl
 
 if __name__ == "__main__":
+    import argparse
     """
     - Askes for the root folder of the Trackerpack.
     - Loades the location_mapping.lua file that should have been created previously.

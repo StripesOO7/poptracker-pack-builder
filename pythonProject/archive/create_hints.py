@@ -7,8 +7,8 @@ from item_json import _item_toggle_preset
 
 hint_item_list = []
 
-def _collect_hint_item_names(hint_item_name):
-    hint_item_list.append(hint_item_name)
+# def _collect_hint_item_names(hint_item_name):
+#     hint_item_list.append(hint_item_name)
 
 def traverse_json(json_dict, offset:dict[str:int], fullpath:str):
     keys = json_dict.keys()
@@ -43,7 +43,7 @@ def traverse_json(json_dict, offset:dict[str:int], fullpath:str):
     if not ("children" in keys) or not ("sections" in keys):
         fullpath = fullpath.replace("'", ' ').replace("'", ' ')
         final_fullpath = f"{fullpath.replace(' ', '_')}_hint"
-        _collect_hint_item_names(final_fullpath)
+        # _collect_hint_item_names(final_fullpath)
         json_dict["visibility_rules"] = final_fullpath
     return json_dict
 

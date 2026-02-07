@@ -127,7 +127,7 @@ def create_items(path: str):
     """
     file = "item_mapping"
     read_input = []
-    item_names = {}
+    # item_names = {}
     item_list = []
     first_open = 0
     last_close = 0
@@ -147,19 +147,19 @@ def create_items(path: str):
                         read_input.append(inputs.split("="))
             else:
                 pass
-    with open(path + rf"/scripts/autotracking/item_names.lua", encoding="utf-8") as item_to_names_mapping:
-        while inputs := item_to_names_mapping.readline():
-            if "]" in inputs:
-                if not (
-                        inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"
-                ):
-                    if "--" in inputs and inputs.rindex("--") > inputs.rindex("}"):
-                        inputs = inputs[: inputs.rindex("--")]
-                        item_names[inputs.split("=")[0][3:-3]] = (inputs.split("=")[1][2:-3])
-                    else:
-                        item_names[inputs.split("=")[0][3:-3]] = (inputs.split("=")[1][2:-3])
-            else:
-                pass
+    # with open(path + rf"/scripts/autotracking/item_names.lua", encoding="utf-8") as item_to_names_mapping:
+    #     while inputs := item_to_names_mapping.readline():
+    #         if "]" in inputs:
+    #             if not (
+    #                     inputs.strip()[0:2] == "--" or inputs.strip()[0:2] == "//"
+    #             ):
+    #                 if "--" in inputs and inputs.rindex("--") > inputs.rindex("}"):
+    #                     inputs = inputs[: inputs.rindex("--")]
+    #                     item_names[inputs.split("=")[0][3:-3]] = (inputs.split("=")[1][2:-3])
+    #                 else:
+    #                     item_names[inputs.split("=")[0][3:-3]] = (inputs.split("=")[1][2:-3])
+    #         else:
+    #             pass
     for k, _ in enumerate(read_input):
         print(read_input[k][0], read_input[k][1])
         first_open = read_input[k][1].index("{{") or 0
@@ -179,7 +179,7 @@ def create_items(path: str):
     # if file == "item_mapping":
     name = "items"
     item_list.append(("update", "toggle"))
-    item_names["update"] = "Update"
+    # item_names["update"] = "Update"
 
     with open(path + rf"/items/{name}.json", "w", encoding="utf-8") as items_file:
         item_json_obj = []
@@ -187,21 +187,26 @@ def create_items(path: str):
         for item_name, item_types in item_list:
             match item_types:
                 case "toggle":
-                    item_json_obj.append(_item_toggle_preset(item_name, item_names[item_name]))
+                    item_json_obj.append(_item_toggle_preset(item_name, item_name))
+                    # item_json_obj.append(_item_toggle_preset(item_name, item_names[item_name]))
                 case "progressive":
-                    item_json_obj.append(_item_progressive_preset(item_name, item_names[item_name]))
+                    item_json_obj.append(_item_progressive_preset(item_name, item_name))
+#                     item_json_obj.append(_item_progressive_preset(item_name, item_names[item_name]))
                 case "progressive_toggle":
-                    item_json_obj.append(_item_progressive_toggle_preset(item_name, item_names[item_name]))
+                    item_json_obj.append(_item_progressive_toggle_preset(item_name, item_name))
+#                     item_json_obj.append(_item_progressive_toggle_preset(item_name, item_names[item_name]))
                 case "consumable":
-                    item_json_obj.append(_item_consumable_preset(item_name, item_names[item_name]))
+                    item_json_obj.append(_item_consumable_preset(item_name, item_name))
+#                     item_json_obj.append(_item_consumable_preset(item_name, item_names[item_name]))
                 case "static":
-                    item_json_obj.append(_item_static_preset(item_name, item_names[item_name]))
+                    item_json_obj.append(_item_static_preset(item_name, item_name))
+#                     item_json_obj.append(_item_static_preset(item_name, item_names[item_name]))
                 case "composite_toggle":
                     pass
                 case "toggle_badged":
                     pass
                 case _:
-                    item_json_obj.append(_item_toggle_preset(item_name, item_names[item_name]))
+                    item_json_obj.append(_item_toggle_preset(item_name, item_name))
 
         items_file.write(f"{json.dumps(item_json_obj, indent=4)}")
 
@@ -210,6 +215,7 @@ def create_items(path: str):
 
 
 if __name__ == "__main__":
+    import argparse
     root = tk.Tk()
     root.withdraw()
     #
