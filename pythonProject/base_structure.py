@@ -576,7 +576,6 @@ end
             items_lua.write(
                 """
 Tracker:AddItems("items/items.json")
-Tracker:AddItems("items/location_items.json")
 Tracker:AddItems("items/labels.json")
                 """
             )
@@ -584,14 +583,12 @@ Tracker:AddItems("items/labels.json")
         with open(path + "/scripts/layouts_import.lua", "w", encoding="utf-8") as layouts_lua:
             layouts_lua.write(
                 """
-Tracker:AddLayouts("layouts/events.json")
 Tracker:AddLayouts("layouts/settings_popup.json")
 Tracker:AddLayouts("layouts/items.json")
 Tracker:AddLayouts("layouts/tabs.json")
 Tracker:AddLayouts("layouts/tracker.json")
 Tracker:AddLayouts("layouts/broadcast.json")
-Tracker:AddLayouts("layouts/dungeon_items.json")
--- Tracker:AddLayouts("layouts/dungeon_items_keydrop.json")"""
+"""
             )
     if not os.path.exists(path + "/scripts/settings.lua"):
         with open(path + "/scripts/settings.lua", "w", encoding="utf-8") as settings_lua:

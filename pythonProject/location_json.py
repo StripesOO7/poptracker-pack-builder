@@ -213,7 +213,7 @@ def create_locations(path: str):  # , logic: dict[str, str]):
             for location in read_input[k][1]:
                 if "@" in location:
                     location_list.append(
-                        location.replace("@", "").replace('"', "").split("/")
+                        location.replace("@", "").strip().replace('"', "").split("/")
                     )
                 else:
                     hosted_item_list.append(
@@ -222,7 +222,7 @@ def create_locations(path: str):  # , logic: dict[str, str]):
         else:
             if "@" in read_input[k][1]:
                 location_list.append(
-                    read_input[k][1].replace("@", "").replace('"', "").split("/")
+                    read_input[k][1].replace("@", "").strip().replace('"', "").split("/")
                 )
             else:
                 hosted_item_list.append(
@@ -233,13 +233,13 @@ def create_locations(path: str):  # , logic: dict[str, str]):
     for index, item in enumerate(hosted_item_list):
         hosted_item_list[index] = [item, "consumable"]
 
-    with open(path + "/items/location_items.json", "w", encoding="utf-8") as location_items:
-        item_json_obj = []
-
-        for item_name, item_types in hosted_item_list:
-            item_json_obj.append(_item_consumable_preset(item_name))
-
-        location_items.write(f"{json.dumps(item_json_obj, indent=4)}")
+    # with open(path + "/items/location_items.json", "w", encoding="utf-8") as location_items:
+    #     item_json_obj = []
+    #
+    #     for item_name, item_types in hosted_item_list:
+    #         item_json_obj.append(_item_consumable_preset(item_name))
+    #
+    #     location_items.write(f"{json.dumps(item_json_obj, indent=4)}")
     for i, _ in enumerate(location_list):
         if len(location_list[i][0]) > 1:
             temp.append(location_list[i][0])

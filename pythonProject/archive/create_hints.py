@@ -5,7 +5,7 @@ from tkinter import filedialog
 from item_json import _item_toggle_preset
 
 
-hint_item_list = []
+# hint_item_list = []
 
 # def _collect_hint_item_names(hint_item_name):
 #     hint_item_list.append(hint_item_name)

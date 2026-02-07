@@ -207,6 +207,7 @@ def create_items(path: str):
                     pass
                 case _:
                     item_json_obj.append(_item_toggle_preset(item_name, item_name))
+                    # item_json_obj.append(_item_toggle_preset(item_name, item_names[item_name]))
 
         items_file.write(f"{json.dumps(item_json_obj, indent=4)}")
 
