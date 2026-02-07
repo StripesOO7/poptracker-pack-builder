@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import tkinter as tk
+from sys import exception
 from tkinter import filedialog
 import requests
 
@@ -58,8 +59,10 @@ if __name__ == "__main__":
             base_file.write(json.dumps(dp_json, indent=4))
     if cmd_args.source and cmd_args.game:
         datapackage_path = cmd_args.source
-        if not "/datapackage" in datapackage_path:
+        if "http" in datapackage_path and not "/datapackage" in datapackage_path:
             datapackage_path = f"{datapackage_path}/datapackage"
+        elif "\\" in datapackage_path:
+            datapackage_path = datapackage_path.replace("\\", "/")
         game_name = cmd_args.game
     else:
         with open(f"{read_file_path}/datapackage_url.json") as args_json:
@@ -70,8 +73,17 @@ if __name__ == "__main__":
         #     dp_json = json.load(read_file_path + "/datapackage_url.txt")
         #     # open(read_file_path + "/datapackage_url.txt").readline().split(", ")
         # )
+    # if "http" in datapackage_path:
+    try:
+        games_dict = requests.get(datapackage_path).json()["games"]
+    except:
+        with open(rf"{datapackage_path}") as datapackage_export:
+            loaded_json = json.load(datapackage_export)
+            games_dict = loaded_json["games"]
+    finally:
+        if games_dict is None:
+            raise(exception())
 
-    games_dict = requests.get(datapackage_path).json()["games"]
 
     base_structure.create_base_structure(
         path=read_file_path, game_name=game_name, game_dict=games_dict, test_state=cmd_args.test
