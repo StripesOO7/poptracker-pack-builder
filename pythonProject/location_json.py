@@ -45,7 +45,7 @@ def _write_locations(
     nesting of locations or gets "sections" added if this is the final stage for this specific location
     :param dict logic_dict: currently unused thus empty. will contain a full dict containing the special access rules for each location
     :param dict overworld: contains the dict for the overworld.json file to get filled with references
-    :param str top_most_region: containes the Name of the topmost Region so the check will be displayed when a Map is created with the same name
+    :param str top_most_region: contains the Name of the topmost Region so the check will be displayed when a Map is created with the same name
     :param str fullpath: contains the full path to the specific location that's needed for the reference in the
     overworld.json to work
     :return: none

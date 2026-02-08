@@ -94,6 +94,7 @@ if __name__ == "__main__":
     item_json.create_items(path=read_file_path)
     read_input = []
     location_list = []
+    hosted_item_list = []
     temp = []
     lvls = set()
     locations_dict = dict()
@@ -104,13 +105,36 @@ if __name__ == "__main__":
                     read_input.append(inputs.split("="))
             else:
                 pass
+
     for k, _ in enumerate(read_input):
-        read_input[k][1] = read_input[k][1][
-            read_input[k][1].index("{") + 1 : read_input[k][1].index("}")
-        ]
-        location_list.append(
-            read_input[k][1].replace("@", "").replace('"', "").split("/")
-        )
+        if '",' in read_input[k][1]:
+            read_input[k][1] = read_input[k][1][
+                read_input[k][1].index("{") + 1: read_input[k][1].rindex("}")
+            ].split('",')
+        else:
+            read_input[k][1] = read_input[k][1][
+                read_input[k][1].index("{") + 1: read_input[k][1].rindex("}")
+            ]
+
+    if isinstance(read_input[k][1], list):
+        for location in read_input[k][1]:
+            if "@" in location:
+                location_list.append(
+                    location.replace("@", "").strip().replace('"', "").split("/")
+                )
+            else:
+                hosted_item_list.append(
+                    location.replace('"', "").strip().replace(" ", "")
+                )
+    else:
+        if "@" in read_input[k][1]:
+            location_list.append(
+                read_input[k][1].replace("@", "").strip().replace('"', "").split("/")
+            )
+        else:
+            hosted_item_list.append(
+                read_input[k][1].replace('"', "").strip().replace(" ", "")
+            )
     for i, _ in enumerate(location_list):
         if len(location_list[i][0]) > 1:
             temp.append(location_list[i][0])
