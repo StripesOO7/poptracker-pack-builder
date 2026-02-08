@@ -19,6 +19,7 @@ def create_base_structure(path: str, game_name: str, game_dict: dict, test_state
         os.mkdir(path + "/scripts")
         os.mkdir(path + "/scripts/autotracking")
         os.mkdir(path + "/scripts/logic")
+        os.mkdir(path + "/scripts/logic/graph_logic")
     if not os.path.exists(path + "/scripts/autotracking/archipelago.lua"):
         with open(path + "/scripts/autotracking/archipelago.lua", "w", encoding="utf-8") as ap_lua:
             ap_lua.write(
@@ -454,7 +455,8 @@ require("scripts/items_import")
 
 -- Logic
 require("scripts/logic/logic_helper")
-require("scripts/logic/logic_main")
+require("scripts/logic/base_logic")
+require("scripts/logic/graph_logic/logic_main")
 
 -- Maps
 if Tracker.ActiveVariantUID == "maps-u" then
@@ -659,10 +661,32 @@ Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
             # manifest["platform"] = "snes"
             # manifest["versions_url"] = "https://raw.githubusercontent.com/<username>/<repo_name>/versions/versions.json"
             manifest.write(json.dumps(manifest_json, indent=4))
-    if not os.path.exists(path + "/scripts/logic/logic_main.lua"):
-        with open(path + "/scripts/logic/logic_main.lua", "w", encoding="utf-8") as logic_lua:
+    if not os.path.exists(path + "/scripts/logic/base_logic.lua"):
+        with open(path + "/scripts/logic/base_logic.lua", "w", encoding="utf-8") as logic_lua:
             logic_lua.write(
                 f"""
+-- this is the file to put all your custom logic functions into.
+-- if you dont want to use the json based logic you can switch to a graph-based logic method.
+-- the needed functions for that are in `/scripts/logic/graph_logic/logic_main.lua`.
+
+
+
+-- function <name> (<parameters if needed>)
+--     <actual code>
+--     <indentations are just for readability>
+-- end
+--
+                """)
+    if not os.path.exists(path + "/scripts/logic/graph_logic/logic_main.lua"):
+        with open(path + "/scripts/logic/graph_logic/logic_main.lua", "w", encoding="utf-8") as logic_lua:
+            logic_lua.write(
+                f"""
+-- if you want to use the graph based logic you need to create lua representations of your region/connectors/location wit the `.new()` function
+-- connect multiple of these representations with the provided one_way/two_ways() methods.
+-- this will build a graph that gets traveres via the :discover() method.
+
+--To-Do: add a tutorial for the grpah absed logic into the README
+
 -- ScriptHost:AddWatchForCode("ow_dungeon details handler", "ow_dungeon_details", owDungeonDetails)
 
 

@@ -159,6 +159,17 @@ def _location_dict_builder(
     return dict(sorted(location_dict.items()))
 
 
+def _split_locations_from_mapping(location, location_list, hosted_item_list):
+    if "@" in location:
+        location_list.append(
+            location.replace("@", "").strip().replace('"', "").split("/")
+        )
+    else:
+        hosted_item_list.append(
+            location.replace('"', "").strip().replace(" ", "")
+        )
+
+
 def create_locations(path: str):  # , logic: dict[str, str]):
     """
     creates the singled out location files according to the names found in the location_mapping file.
@@ -200,34 +211,41 @@ def create_locations(path: str):  # , logic: dict[str, str]):
                 read_input[k][0].find("[") + 1 : read_input[k][0].rfind("]")
             ]
         )
+        read_input[k][1] = read_input[k][1][
+            read_input[k][1].index("{") + 1: read_input[k][1].rindex("}")
+        ]
         if '",' in read_input[k][1]:
-            read_input[k][1] = read_input[k][1][
-                read_input[k][1].index("{") + 1 : read_input[k][1].rindex("}")
-            ].split('",')
+            read_input[k][1] = read_input[k][1].split('",')
+            # read_input[k][1] = read_input[k][1][
+            #     read_input[k][1].index("{") + 1 : read_input[k][1].rindex("}")
+            # ]
         else:
-            read_input[k][1] = read_input[k][1][
-                read_input[k][1].index("{") + 1 : read_input[k][1].rindex("}")
-            ]
+            pass
+            # read_input[k][1] = read_input[k][1][
+            #     read_input[k][1].index("{") + 1 : read_input[k][1].rindex("}")
+            # ]
 
         if isinstance(read_input[k][1], list):
             for location in read_input[k][1]:
-                if "@" in location:
-                    location_list.append(
-                        location.replace("@", "").strip().replace('"', "").split("/")
-                    )
-                else:
-                    hosted_item_list.append(
-                        location.replace('"', "").strip().replace(" ", "")
-                    )
+                _split_locations_from_mapping(location, location_list, hosted_item_list)
+                # if "@" in location:
+                #     location_list.append(
+                #         location.replace("@", "").strip().replace('"', "").split("/")
+                #     )
+                # else:
+                #     hosted_item_list.append(
+                #         location.replace('"', "").strip().replace(" ", "")
+                #     )
         else:
-            if "@" in read_input[k][1]:
-                location_list.append(
-                    read_input[k][1].replace("@", "").strip().replace('"', "").split("/")
-                )
-            else:
-                hosted_item_list.append(
-                    read_input[k][1].replace('"', "").strip().replace(" ", "")
-                )
+            _split_locations_from_mapping(location, location_list, hosted_item_list)
+            # if "@" in read_input[k][1]:
+            #     location_list.append(
+            #         read_input[k][1].replace("@", "").strip().replace('"', "").split("/")
+            #     )
+            # else:
+            #     hosted_item_list.append(
+            #         read_input[k][1].replace('"', "").strip().replace(" ", "")
+            #     )
 
     hosted_item_list = list(set(hosted_item_list))
     for index, item in enumerate(hosted_item_list):
