@@ -90,6 +90,7 @@ def _gimp_png(save_path: str, name: str, length: int = 28):
 #     bg_img.save(path)
 
 if __name__ == "__main__":
+    import argparse
     """
     You are about to create images from a file containing a list of strings where each line is separated by a \\n (
     newline character)

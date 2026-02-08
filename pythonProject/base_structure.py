@@ -36,16 +36,16 @@ MANUAL_CHECKED = true
 ROOM_SEED = "default"
 
 if Highlight then
-    HIGHTLIGHT_LEVEL= {
+    HIGHLIGHT_LEVEL= {
         [0] = Highlight.Unspecified,
         [10] = Highlight.NoPriority,
         [20] = Highlight.Avoid,
         [30] = Highlight.Priority,
         [40] = Highlight.None,
-        [100] = Highlight.Avoid,
-        [101] = Highlight.Priority,
-        [102] = Highlight.NoPriority,
-        [104] = Highlight.Avoid,
+        [100] = Highlight.None, --Filler
+        [101] = Highlight.Priority, --Progression
+        [102] = Highlight.NoPriority, --Useful
+        [104] = Highlight.Avoid, --Trap
     }
 end
 
@@ -408,7 +408,7 @@ function updateHints(locationID, status) -->
                 local obj = Tracker:FindObjectForCode(location)
 
                 if obj then
-                    obj.Highlight = HIGHTLIGHT_LEVEL[status]
+                    obj.Highlight = HIGHLIGHT_LEVEL[status]
                 else
                     print(string.format("No object found for code: %s", location))
                 end
@@ -946,7 +946,7 @@ function ALL(...)
         if type(v) == "function" then
             v = v()
         elseif type(v) == "string" then
-            v = Has(v)
+            v = HAS(v)
         end
         if type(v) == "boolean" then
             v = bool_to_accesslvl[v]
@@ -968,7 +968,7 @@ function ANY(...)
         if type(v) == "function" then
             v = v()
         elseif type(v) == "string" then
-            v = Has(v)
+            v = HAS(v)
         end
         if type(v) == "boolean" then
             v = bool_to_accesslvl[v]
@@ -984,7 +984,7 @@ function ANY(...)
     return max
 end
 
-function Has(item, amount, amountInLogic)
+function HAS(item, amount, amountInLogic)
     local count = Tracker:ProviderCountForCode(item)
 
     -- print(item, count, amount, amountInLogic)
@@ -1010,7 +1010,7 @@ function Has(item, amount, amountInLogic)
 end
 
 
--- ANy function added here and used in access rules should try to return an Accessibility Level if it is used inside 
+-- ANY function added here and used in access rules should try to return an Accessibility Level if it is used inside 
 -- the ANY() and ALL() functions
 --
 --"""
