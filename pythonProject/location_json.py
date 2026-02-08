@@ -237,7 +237,7 @@ def create_locations(path: str):  # , logic: dict[str, str]):
                 #         location.replace('"', "").strip().replace(" ", "")
                 #     )
         else:
-            _split_locations_from_mapping(location, location_list, hosted_item_list)
+            _split_locations_from_mapping(read_input[k][1], location_list, hosted_item_list)
             # if "@" in read_input[k][1]:
             #     location_list.append(
             #         read_input[k][1].replace("@", "").strip().replace('"', "").split("/")
