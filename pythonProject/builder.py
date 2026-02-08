@@ -83,7 +83,9 @@ if __name__ == "__main__":
     finally:
         if games_dict is None:
             raise(exception())
-
+    assert isinstance(read_file_path, str)
+    assert isinstance(game_name, str)
+    assert isinstance(games_dict, str)
 
     base_structure.create_base_structure(
         path=read_file_path, game_name=game_name, game_dict=games_dict, test_state=cmd_args.test
