@@ -42,6 +42,10 @@ if Highlight then
         [20] = Highlight.Avoid,
         [30] = Highlight.Priority,
         [40] = Highlight.None,
+        [100] = Highlight.Avoid,
+        [101] = Highlight.Priority,
+        [102] = Highlight.NoPriority,
+        [104] = Highlight.Avoid,
     }
 end
 
@@ -328,14 +332,6 @@ function onLocation(location_id, location_name)
     MANUAL_CHECKED = true
 end
 
-function onEvent(key, value, old_value)
-    updateEvents(value)
-end
-
-function onEventsLaunch(key, value)
-    updateEvents(value)
-end
-
 -- this Autofill function is meant as an example on how to do the reading from slotdata and mapping the values to 
 -- your own settings
 -- function autoFill()
@@ -376,9 +372,9 @@ function onNotify(key, value, old_value)
         Tracker.BulkUpdate = true
         for _, hint in ipairs(value) do
             if hint.finding_player == Archipelago.PlayerNumber then
-                if not hint.found then
-                    updateHints(hint.location, hint.status)
-                elseif hint.found then
+                if hint.status == 0 then
+                    updateHints(hint.location, 100+hint.item_flags)
+                else
                     updateHints(hint.location, hint.status)
                 end
             end
@@ -392,11 +388,11 @@ function onNotifyLaunch(key, value)
         Tracker.BulkUpdate = true
         for _, hint in ipairs(value) do
             if hint.finding_player == Archipelago.PlayerNumber then
-                if not hint.found then
+                if hint.status == 0 then
+                    updateHints(hint.location, 100+hint.item_flags)
+                else
                     updateHints(hint.location, hint.status)
-                else if hint.found then
-                    updateHints(hint.location, hint.status)
-                end end
+                end
             end
         end
         Tracker.BulkUpdate = false
@@ -440,7 +436,8 @@ end
 --     ["finding_player"] = 1,
 --     ["location"] = 67361,
 --     ["found"] = false,
---     ["item_flags"] = 2,
+--     ["item_flags"] = 2, --bitflag --> 0=filler, 1=progression, 2=useful, 4=trap
+--     ["status"] = 40, --bitflag --> 0=Unspecified, 10=NoPriority, 20=Avoid, 30=Priority, 40=None
 --     ["entrance"] = ,
 --     ["item"] = 66062,
 -- } 
