@@ -570,7 +570,7 @@ end
 """
             )
 
-    if not os.path.exists(path + "scripts/items_import.lua"):
+    if not os.path.exists(path + "/scripts/items_import.lua"):
         with open(path + "/scripts/items_import.lua", "w", encoding="utf-8") as items_lua:
             items_lua.write(
                 """
@@ -643,7 +643,7 @@ Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
 
         """
             )
-    if not os.path.exists(path + "manifest.json"):
+    if not os.path.exists(path + "/manifest.json"):
         game_name_lua = game_name.lower().replace(' ', '_')
         with open(path + "/manifest.json", "w", encoding="utf-8") as manifest:
             manifest_json = {
@@ -661,6 +661,31 @@ Archipelago:AddRetrievedHandler("notify launch handler", onNotifyLaunch)
             # manifest["platform"] = "snes"
             # manifest["versions_url"] = "https://raw.githubusercontent.com/<username>/<repo_name>/versions/versions.json"
             manifest.write(json.dumps(manifest_json, indent=4))
+    if not os.path.exists(path + "/LICENSE"):
+        with open(path + "/LICENSE", "w", encoding="utf-8") as LICENSE:
+            LICENSE.write(f"""
+MIT License
+
+Copyright (c) 2025 Stripes007
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+        """)
     if not os.path.exists(path + "/scripts/logic/base_logic.lua"):
         with open(path + "/scripts/logic/base_logic.lua", "w", encoding="utf-8") as logic_lua:
             logic_lua.write(
