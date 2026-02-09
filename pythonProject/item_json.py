@@ -11,7 +11,7 @@ def _stages(item_name: str, full_name: str):
         # "img_mods": "",
         # "disabled_img": "",
         # "disabled_img_mods": "",
-        "codes": f"{item_name.replace(' ', '')}_stage1",
+        "codes": f"{item_name.replace(' ', '')}, {item_name.replace(' ', '')}_stage1",
         # "secondary_codes": "",
     }
 
