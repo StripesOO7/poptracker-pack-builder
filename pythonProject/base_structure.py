@@ -35,6 +35,7 @@ SLOT_DATA = {}
 
 MANUAL_CHECKED = true
 ROOM_SEED = "default"
+TROLL_PLAYER = false
 
 if Highlight then
     HIGHLIGHT_LEVEL= {
@@ -49,6 +50,11 @@ if Highlight then
         [104] = Highlight.Avoid, --Trap
     }
 end
+
+Troll_Lookup = {
+    ["solarcell"] = true,
+    ["earthor"] = true,
+}
 
 function dump_table(o, depth)
     if depth == nil then
@@ -140,6 +146,12 @@ function preOnClear()
     PLAYER_ID = Archipelago.PlayerNumber or -1
 	TEAM_NUMBER = Archipelago.TeamNumber or 0
     if Archipelago.PlayerNumber > -1 then
+        for key, _ in pairs(Troll_Lookup) do
+            if string.find((Archipelago:GetPlayerAlias(PLAYER_ID)).lower(), key, 1, true) ~= nil then
+                TROLL_PLAYER = true
+                break
+            end
+        end
         if #ALL_LOCATIONS > 0 then
             ALL_LOCATIONS = {}
         end
@@ -402,14 +414,18 @@ end
 
 function updateHints(locationID, status) -->
     if Highlight then
-        print(locationID, status)
+        -- print(locationID, status)
         local location_table = LOCATION_MAPPING[locationID]
         for _, location in ipairs(location_table) do
             if location:sub(1, 1) == "@" then
                 local obj = Tracker:FindObjectForCode(location)
 
                 if obj then
-                    obj.Highlight = HIGHLIGHT_LEVEL[status]
+                    if TROLL_PLAYER then
+                        obj.Highlight = HIGHLIGHT_LEVEL[30]
+                    else
+                        obj.Highlight = HIGHLIGHT_LEVEL[status]
+                    end
                 else
                     print(string.format("No object found for code: %s", location))
                 end
