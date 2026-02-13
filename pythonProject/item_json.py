@@ -171,9 +171,11 @@ def create_items(path: str):
 
         if "},{" in read_input[k][1]:
             for item_tuple in read_input[k][1].split("},{"):
-                item_list.append(item_tuple.replace('"', "").rsplit(",", 1))
+                tmp = item_tuple.replace('"', "").split(",")
+                item_list.append((item_tuple.replace('"', "").split(","))[0:2])
         else:
-            item_list.append(read_input[k][1].replace('"', "").rsplit(",", 1))
+            tmp = read_input[k][1].replace('"', "").split(",")
+            item_list.append((read_input[k][1].replace('"', "").split(","))[0:2])
 
     item_list = list(set(tuple(sub) for sub in item_list))
     # if file == "item_mapping":
