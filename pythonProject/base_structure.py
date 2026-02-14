@@ -4,6 +4,7 @@ import random
 import tkinter as tk
 from tkinter import filedialog
 import requests
+import re
 
 
 def create_base_structure(path: str, game_name: str, game_dict: dict, test_state: bool = False):
@@ -661,6 +662,9 @@ Archipelago:AddRetrievedHandler("notify launch handler", OnNotifyLaunch)
             )
     if not os.path.exists(path + "/manifest.json"):
         game_name_lua = game_name.lower().replace(' ', '_')
+        for char in ("(", ")", ".", "%", "+", "–", "*", "?", "[", "^", "$", "~"):
+            game_name_lua = game_name_lua.replace(char, "_")
+        game_name_lua = re.sub(r'(_)\1+', r'\1', game_name_lua)
         with open(path + "/manifest.json", "w", encoding="utf-8") as manifest:
             manifest_json = {
                 "name": f"{game_name} Archipelago",
@@ -719,6 +723,8 @@ SOFTWARE.
 --
                 """)
     if not os.path.exists(path + "/scripts/logic/graph_logic/logic_main.lua"):
+        for char in ():
+            game_name_lua
         with open(path + "/scripts/logic/graph_logic/logic_main.lua", "w", encoding="utf-8") as logic_lua:
             logic_lua.write(
                 f"""
