@@ -49,8 +49,11 @@ if __name__ == "__main__":
                 cmd_args.source or input("datapackage source (url): ")
                 or "https://archipelago.gg"
             )
-            if not "/datapackage" in url:
-                url = f"{url}/datapackage"
+            if "http" in url:
+                if not "/datapackage" in url:
+                    url = f"{url}/datapackage"
+            elif "\\" in url:
+                url = url.replace("\\", "/")
             game_name = cmd_args.game or input("Game name from Datapackage: ")
             dp_json = {
                 "url" : f"{url}",
