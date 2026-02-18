@@ -36,6 +36,8 @@ jobs:
           python pythonProject/builder.py --home tmp/pack
           # stop server
           kill $SERVER_PID
+          # run pack-checker from within builder
+          python pythonProject/builder.py --check
 
       - name: Validate pack
         uses: PopTracker/pack-checker-action@v1
