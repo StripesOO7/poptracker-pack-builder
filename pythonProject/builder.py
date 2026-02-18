@@ -34,7 +34,7 @@ if __name__ == "__main__":
     cmd_parser.add_argument("-G", "--game", type=str)
     cmd_parser.add_argument("-S", "--source", type=str)
     cmd_parser.add_argument("-T", "--test", action="store_true", default=False)
-    cmd_parser.add_argument("-p", "--check", action="store_true", default=False)
+    cmd_parser.add_argument("-C", "--check", action="store_true", default=False)
     # cmd_parser.add_argument("", "")
     # cmd_parser.add_argument("", "", )
     cmd_args = cmd_parser.parse_args()
