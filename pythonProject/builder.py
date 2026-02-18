@@ -21,6 +21,7 @@ close_chest = "close.png"
 
 if __name__ == "__main__":
     import pack_checker.cli as pack_check
+    from pathlib import Path
     from argparse import ArgumentParser, Namespace
     cmd_parser = ArgumentParser(
         prog="PopTracker Builder.py",
@@ -37,18 +38,27 @@ if __name__ == "__main__":
     # cmd_parser.add_argument("", "")
     # cmd_parser.add_argument("", "", )
     cmd_args = cmd_parser.parse_args()
+    if cmd_args.home is None:
+        root = tk.Tk()
+        root.withdraw()
+
+        read_file_path = tk.filedialog.askdirectory()
+    else:
+        read_file_path = cmd_args.home
     if cmd_args.check:
         # Namespace(strict=True)
         # pack_check.run(Namespace(strict=False))
-        pack_check.run(Namespace(strict=True))
+        pc_args = Namespace(
+            path=Path(read_file_path),
+            schema="",
+            strict=True,
+            legacy_compat=True,
+            interactive=False,
+            batch=False
+        )
+        pack_check.run(pc_args)
+        # pack_check.run()
     else:
-        if cmd_args.home is None:
-            root = tk.Tk()
-            root.withdraw()
-
-            read_file_path = tk.filedialog.askdirectory()
-        else:
-            read_file_path = cmd_args.home
         datapackage_path = cmd_args.source
         if not os.path.exists(read_file_path + "/datapackage_url.json"):
             with open(read_file_path + "/datapackage_url.json", "w", encoding="utf-8") as base_file:
