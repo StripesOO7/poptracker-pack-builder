@@ -68,7 +68,7 @@ if __name__ == "__main__":
                 )
                 if "http" in url:
                     if not "/datapackage" in url:
-                        url = f"{url}/datapackage"
+                        url = url+("datapackage" if url[-1] == "/" else "/datapackage")
                 elif "\\" in url:
                     url = url.replace("\\", "/")
                 game_name = cmd_args.game or input("Game name from Datapackage: ")
