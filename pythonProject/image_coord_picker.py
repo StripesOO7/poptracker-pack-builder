@@ -93,22 +93,30 @@ def save():
 
 
 def resize_image(event):
+    if event.width < 10 or event.height < 10:
+        return
     print("start run resize image")
-    global image, scaling_factor, canvas_id, new_data
+    # canvas = event.widget()
+    global image, scaling_factor, canvas_img_id, new_data
     # new_data = {}
     if event.width / og_img_width < event.height / og_img_height:
         scaling_factor = event.width / og_img_width
     else:
         scaling_factor = event.height / og_img_height
+
     new_width = round(og_img_width * scaling_factor)
     new_height = round(og_img_height * scaling_factor)
+
+
     image = copy_of_image.resize((new_width, new_height))
     photo = ImageTk.PhotoImage(image)
-    canvas.delete(canvas_id)
+    canvas.delete(canvas_img_id)
     # for id in rectangle_id:
     #     canvas.delete(id)
     # rectangle_id.clear()
-    canvas.create_image(0, 0, image=photo, anchor="nw")
+    canvas_img_id = canvas.create_image(0, 0, image=photo, anchor="nw")
+
+    canvas.image = photo  # avoid garbage collection
     for location in new_data.keys():
         canvas.delete(new_data[location][1])
         canvas.delete(new_data[location][2])
@@ -129,7 +137,7 @@ def resize_image(event):
                 f"size:{new_data[location][0]['size']}"
             )
         )
-    canvas.image = photo  # avoid garbage collection
+
     print("end run resize image")
 
 def place_location(event):
@@ -352,7 +360,8 @@ if __name__ == "__main__":
 
 
         canvas = tk.Canvas(frame_map_image, name="map image test", width=img.width(), height=img.height())
-
+        canvas_img_id = canvas.create_image(500, 550, image=img, anchor="nw")
+        canvas.image = img
 
         location_section_json = json.load(open(f'{base_path}/locations/{locations_json_selected}'))
         location_list = []
@@ -362,8 +371,8 @@ if __name__ == "__main__":
             traverse_json(region, path, location_list)
 
         # window.resizable(True, True)
-        canvas = tk.Canvas(frame_map_image, name="map image test", width=img.width(), height=img.height())
-        canvas_id = canvas.create_image(0, 0, image=img, anchor="nw")
+        # canvas = tk.Canvas(frame_map_image, name="map image test", width=img.width(), height=img.height())
+
         canvas.pack(expand=True, fill="both")
         # canvas.pack(expand=True, fill="both")
         canvas.bind("<Configure>", resize_image)
