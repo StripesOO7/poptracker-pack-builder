@@ -42,16 +42,17 @@ def write_json_partially(path, location_section_json, changed_part):
         location_section_json[path[0]] = write_json_partially(path[1:], location_section_json[path[0]], changed_part)
         return location_section_json
     else:
-        return changed_part
+        location_section_json[path[0]] = changed_part
+        return location_section_json
     pass
 
 def save_to_new_file():
-    with open(f'{base_path}/locations/{locations_json_selected.replace(".json", "_new.json")}') as new_json:
+    with open(f'{base_path}/locations/{locations_json_selected.replace(".json", "_new.json")}', "w") as new_json:
         save()
         new_json.write(json.dumps(location_section_json, indent=4))
 
 def save_to_old_file():
-    with open(f'{base_path}/locations/{locations_json_selected}') as old_json:
+    with open(f'{base_path}/locations/{locations_json_selected}', "w") as old_json:
         save()
         old_json.write(json.dumps(location_section_json, indent=4))
 
@@ -61,22 +62,25 @@ def save():
     for location in location_list:
         path = []
         tmp = location_section_json
-        map = {}
-        for index, step in enumerate((location.split("/"))):
-            tmp = traverse_json_back(step, tmp, path)
-            if index+1 == len(location.split("/")):
-                path.append("map_locations")
-                tmp = tmp["map_locations"]
-            else:
-                path.append("children")
-                tmp = tmp["children"]
-                continue
-            print(index ,step, tmp)
-            for index, map in enumerate(tmp): #iterate over the existing map locations
-                if map["map"] == map_json_selected:
-                    path.append(index)
-                    map = new_data[location]
-        location_section_json[path[0]] = write_json_partially(path[1:], location_section_json[path[0]], map)
+        if location in new_data.keys():
+            for index, step in enumerate((location.split("/"))):
+                tmp = traverse_json_back(step, tmp, path)
+                if index+1 == len(location.split("/")):
+                    path.append("map_locations")
+                    tmp = tmp["map_locations"]
+                else:
+                    path.append("children")
+                    tmp = tmp["children"]
+                    continue
+                print(index ,step, tmp)
+                for index, map in enumerate(tmp): #iterate over the existing map locations
+                    if map["map"] == map_json_selected:
+                        path.append(index)
+                        break # exit loop after finding correct map and replace data
+                break
+            location_section_json[path[0]] = write_json_partially(path[1:], location_section_json[path[0]], new_data[location])
+        else:
+            pass
 
 
 def resize_image(event):
@@ -101,12 +105,12 @@ def callback(event):
     print("clicked at", event.x, event.y)
     print("scaling factor", scaling_factor)
     print("actual image coords", event.x//scaling_factor, event.y//scaling_factor)
-    new_data[window.focus_get().selection_get()] = build_map_dict(
-                    x = event.x//scaling_factor,
-                    y = event.y//scaling_factor,
+    new_data[frame_location_selection.focus_get().selection_get()] = build_map_dict(
+                    x = int(event.x//scaling_factor),
+                    y = int(event.y//scaling_factor),
                     map_name = map_json_selected,
-                    size = size_button.current(),
-                    shape = shape_button.current()
+                    size = size_button['values'][size_button.current()],
+                    shape = shape_button['values'][shape_button.current()],
                 )
     # new_data[window.focus_get().selection_get()] = {
     #     "x" : event.x // scaling_factor,
@@ -121,7 +125,7 @@ def callback(event):
     rectangle_id.append(shape_id)
     text_id = canvas.create_text(event.x, event.y, text=(
             f"x:{event.x//scaling_factor}, y: {event.y//scaling_factor}\n"
-            f"{window.focus_get().selection_get()},\n"
+            f"{frame_location_selection.focus_get().selection_get()},\n"
             f"shape:{shape_button['values'][shape_button.current()]}\n"
             f"size:{size_button['values'][size_button.current()]}")
             )
@@ -259,7 +263,7 @@ if __name__ == "__main__":
         frame_settings.grid(row=0, column=2, sticky="nsew")
 
         #settings
-        shape_button = ttk.Combobox(frame_settings, state="readonly", values=("square", "diamond", "trapezoid"))
+        shape_button = ttk.Combobox(frame_settings, state="readonly", values=("rect", "diamond", "trapezoid"))
         shape_button.set(shape_button["values"][0])
         shape_button.pack()
 
@@ -270,8 +274,8 @@ if __name__ == "__main__":
         save_new_button = tk.Button(frame_settings, text="Save to new file", command=save_to_new_file)
         save_new_button.pack()
 
-        save_old_button = tk.Button(frame_settings, text="Overwrite existing file", command=save_to_old_file)
-        save_old_button.pack()
+        # save_old_button = tk.Button(frame_settings, text="Overwrite existing file", command=save_to_old_file)
+        # save_old_button.pack()
 
         ttk.Sizegrip(frame_settings)
         # menu_shape.pack()
