@@ -42,7 +42,10 @@ def write_json_partially(path, location_section_json, changed_part):
         location_section_json[path[0]] = write_json_partially(path[1:], location_section_json[path[0]], changed_part)
         return location_section_json
     else:
-        location_section_json[path[0]] = changed_part
+        if path[0] == len(location_section_json):
+            location_section_json.append(changed_part)
+        else:
+            location_section_json[path[0]] = changed_part
         return location_section_json
     pass
 
@@ -59,24 +62,29 @@ def save_to_old_file():
 def save():
     # location_section_json
     # filled with the split names in the location list intersected with integers for list traversal
+    found_map = False
     for location in location_list:
         path = []
         tmp = location_section_json
         if location in new_data.keys():
             for index, step in enumerate((location.split("/"))):
                 tmp = traverse_json_back(step, tmp, path)
-                if index+1 == len(location.split("/")):
+                if index+1 == len(location.split("/")): # reached last stage of dict
                     path.append("map_locations")
                     tmp = tmp["map_locations"]
-                else:
+                else: #not last stage reached
                     path.append("children")
                     tmp = tmp["children"]
                     continue
                 print(index ,step, tmp)
-                for index, map in enumerate(tmp): #iterate over the existing map locations
+                # we are at the last stage of of the dict aka inside map_locations
+                for index, map in enumerate(tmp): # iterate over the existing map_locations
                     if map["map"] == map_json_selected:
+                        found_map = True
                         path.append(index)
                         break # exit loop after finding correct map and replace data
+                if not found_map: # # never found the map key to replace so we create a new entry
+                    path.append(index+1)
                 break
             location_section_json[path[0]] = write_json_partially(path[1:], location_section_json[path[0]],
                                                                   new_data[location][0])
@@ -128,8 +136,9 @@ def place_location(event):
     print("clicked at", event.x, event.y)
     print("scaling factor", scaling_factor)
     print("actual image coords", event.x//scaling_factor, event.y//scaling_factor)
-    canvas.delete(new_data[frame_location_selection.focus_get().selection_get()][1])
-    canvas.delete(new_data[frame_location_selection.focus_get().selection_get()][2])
+    if frame_location_selection.focus_get().selection_get() in new_data.keys():
+        canvas.delete(new_data[frame_location_selection.focus_get().selection_get()][1])
+        canvas.delete(new_data[frame_location_selection.focus_get().selection_get()][2])
     canvas.pack()
     shape_id = canvas.create_rectangle(event.x - 5, event.y - 5, event.x + 5, event.y + 5, fill="red")
     text_id = canvas.create_text(event.x, event.y, text=(
