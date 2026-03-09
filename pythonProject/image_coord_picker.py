@@ -54,6 +54,8 @@ def create_scrollbar(widget_ref:Any, position:Optional[Tuple[int, int] | None] =
     scrollbar = tk.Scrollbar(widget_ref, orient=orientation)
     if position:
         scrollbar.grid_configure(row=position[0], column=position[1], sticky=sticky_direction)
+    # else:
+    #     scrollbar.pack()
     return scrollbar
 
 def create_button(widget_ref:Any , text:str, command_ref:Any , position:Optional[Tuple[int, int] | None] = None,
@@ -68,6 +70,8 @@ def create_button(widget_ref:Any , text:str, command_ref:Any , position:Optional
     btn = tk.Button(widget_ref, text=text, command=command_ref)
     if position:
         btn.grid_configure(row=position[0], column=position[1], padx=5, pady=5, sticky=sticky_direction)
+    # else:
+    #     btn.pack()
     # btn.pack(pady=10, padx=10)
     return btn
 
@@ -82,6 +86,8 @@ def create_listbox(widget_ref:Any , name, position:Optional[Tuple[int, int] | No
     listbox = tk.Listbox(widget_ref , name=name)
     if position:
         listbox.grid_configure(row=position[0], column=position[1], sticky=sticky_direction)
+    # else:
+    #     listbox.pack()
     return listbox
 
 def create_canvas(widget_ref, name:str, img_ref, anchor:str):
@@ -94,9 +100,12 @@ def create_label(widget_ref:Any, text:str, position:Optional[Tuple[int, int] | N
     label = tk.Label(widget_ref, text=text)
     if position:
         label.grid_configure(row=position[0], column=position[1], sticky=sticky_direction)
+    # else:
+    #     label.pack()
     return label
 
-def create_combobox(widget_ref, state:str, value_list:List[str], default:str, name:str):
+def create_combobox(widget_ref, state:str, value_list:List[str], default:str, name:str,
+                    position:Optional[Tuple[int, int] | None] = None, sticky_direction:str="nswe"):
     combobox = ttk.Combobox(
         widget_ref,
         state=state,
@@ -109,8 +118,10 @@ def create_combobox(widget_ref, state:str, value_list:List[str], default:str, na
         default_index = combobox["values"].index(default)
     except ValueError:
         pass
+    if position:
+        combobox.grid_configure(row=position[0], column=position[1], sticky=sticky_direction)
     combobox.set(combobox["values"][default_index])
-    combobox.pack(pady=10, padx=10)
+    # combobox.pack(pady=10, padx=10)
     return combobox
 
 def combine_scrollbar_with_widget(scrollbar_ref:Any , widget_ref:Any , scrollbar_command_ref:Any, 
@@ -273,7 +284,7 @@ def save_new_base_image():
 def resize_image(event):
     if event.width < 10 or event.height < 10:
         return
-    print("start run resize image")
+    # print("start run resize image")
     # canvas = event.widget()
     global image, scaling_factor, canvas_img_id, new_data
     # new_data = {}
@@ -289,7 +300,7 @@ def resize_image(event):
     image = copy_of_image.resize((new_width, new_height))
     photo = ImageTk.PhotoImage(image)
 
-    canvas = get_entity(tk.Canvas, "map image canvas")
+    canvas, _ = get_entity(window, tk.Canvas, "map image canvas")
 
     if isinstance(canvas, tk.Canvas):
         canvas.delete(canvas_img_id)
@@ -321,47 +332,64 @@ def resize_image(event):
                 )
             )
 
-    print("end run resize image")
+    # print("end run resize image")
 
-def get_entity(entity_type:Any, name:str):
+def get_entity(widget_ref:Any, entity_type:Any, name:str):
     entity_found = False
     entity = None
-    for children in window.winfo_children():
+    for child in widget_ref.winfo_children():
         if entity_found:
             break
-        if isinstance(children, entity_type) and children.__getattribute__("name") == name:
-            entity = children
-            entity_found = True
-            break
+        if isinstance(child, entity_type):
+            for key in ("name", "_name"):
+                try:
+                    value = getattr(child, key)
+                    if value == name:
+                        entity = child
+                        entity_found = True
+                        break
+                    else:
+                        continue
+                except NameError as e:
+                    print(e)
+                    continue
+                except AttributeError as e:
+                    print(e)
+                    continue
+        elif len(child.winfo_children()) > 0:
+            entity, entity_found = get_entity(child, entity_type, name)
+            if entity_found:
+                break
         else:
-            for child in children.winfo_children():
-                if isinstance(child, entity_type) and child.__getattribute__("_name") == name:
-                    entity = child
-                    entity_found = True
-                    break
-    return entity
+            continue
+    return entity, entity_found
 
 
 def place_location(event):
     print("clicked at", event.x, event.y)
     print("scaling factor", scaling_factor)
     print("actual image coords", event.x//scaling_factor, event.y//scaling_factor)
-    canvas = get_entity(tk.Canvas, "map image canvas")
-    shape_selection = get_entity(ttk.Combobox, "shape_selection")
-    size_selection = get_entity(ttk.Combobox, "size_selection")
+    canvas, _ = get_entity(window, tk.Canvas, "map image canvas")
+    shape_selection, _ = get_entity(window, ttk.Combobox, "shape_selection")
+    size_selection, _ = get_entity(window, ttk.Combobox, "size_selection")
+    unplaced_locations, _ = get_entity(window, tk.Listbox, "unplaced_locations")
+    placed_locations, _ = get_entity(window, tk.Listbox, "placed_locations")
     if isinstance(canvas, tk.Canvas) and isinstance(shape_selection, ttk.Combobox) and isinstance(size_selection, ttk.Combobox):
-        if frame_location_selection.focus_get().selection_get() in new_data.keys():
-            canvas.delete(new_data[frame_location_selection.focus_get().selection_get()][1])
-            canvas.delete(new_data[frame_location_selection.focus_get().selection_get()][2])
-        canvas.pack()
+        selected_unplaced_location = unplaced_locations.get(unplaced_locations.curselection())
+        selected_placed_location = placed_locations.get(placed_locations.curselection())
+        selected_location = selected_unplaced_location or selected_placed_location
+        if selected_location in new_data.keys():
+            canvas.delete(new_data[selected_location][1])
+            canvas.delete(new_data[selected_location][2])
+        # canvas.pack()
         shape_id = canvas.create_rectangle(event.x - 5, event.y - 5, event.x + 5, event.y + 5, fill="red")
         text_id = canvas.create_text(event.x, event.y, text=(
             f"x:{event.x // scaling_factor}, y: {event.y // scaling_factor}\n"
-            f"location name: {frame_location_selection.focus_get().selection_get()},\n"
+            f"location name: {selected_location},\n"
             f"shape:{shape_selection['values'][shape_selection.current()]}\n"
             f"size:{size_selection['values'][size_selection.current()]}")
                                      )
-        new_data[frame_location_selection.focus_get().selection_get()] = [
+        new_data[selected_location] = [
             build_map_dict(
                 x = int(event.x//scaling_factor),
                 y = int(event.y//scaling_factor),
@@ -382,10 +410,15 @@ def update_coords(x, y):
 
 def dialog():
     global locations_json_selected, map_json_selected
-    if window.focus_get().master.name == "location_selection":
-        locations_json_selected = window.focus_get().selection_get()
-    if window.focus_get().master.name == "map_selection":
-        map_json_selected = window.focus_get().selection_get()
+    list_of_locations, _ = get_entity(window, tk.Listbox, "list_of_locations")
+    list_of_maps, _ = get_entity(window, tk.Listbox, "list_of_maps")
+
+
+    if isinstance(list_of_locations, tk.Listbox) :
+        locations_json_selected = list_of_locations.get((list_of_locations.curselection()))
+    if isinstance(list_of_maps, tk.Listbox) :
+        map_json_selected = list_of_maps.get((list_of_maps.curselection()))
+
     if not locations_json_selected == "" and not map_json_selected == "":
         window.quit()
     # return messagebox.showinfo('Selection', 'Your Choice: ' + \
@@ -470,6 +503,9 @@ def start_selection_screen(window_red:Any, base_path:str, map_list):
     window_list_of_locations = create_listbox(frame_location_selection, name="list_of_locations", position=(1, 0),
                                               sticky_direction="nsew")
 
+    window_list_of_maps.configure(exportselection=False)
+    window_list_of_locations.configure(exportselection=False)
+
 
     combine_scrollbar_with_widget(scrollbar_maps, window_list_of_maps,
                                   scrollbar_command_ref=window_list_of_maps.yview,
@@ -534,10 +570,10 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     frame_settings = create_frame(window, name="settings", position=(0, 2), sticky_direction="nsew")
 
     # settings
-    shape_selection = create_combobox(frame_settings, state="readonly",
+    shape_selection = create_combobox(frame_settings, state="readonly", position=(0,0),
                                       value_list=["rect", "diamond", "trapezoid"], default="rect", name="shape_selection")
 
-    size_selection = create_combobox(frame_settings, state="readonly",
+    size_selection = create_combobox(frame_settings, state="readonly", position=(1,0),
                                      value_list=[str(i) for i in range(10, 41, 2)], default="10", name="size_selection")
 
     save_new_button = create_button(frame_settings, text="Save to new file", command_ref=save_to_new_file)
@@ -547,42 +583,13 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     go_back_to_selection_button = create_button(frame_settings, text="Go back to selection",
                                            command_ref=go_back_to_selection)
     exit_loop_button = create_button(frame_settings, text="Exit", command_ref=exit_loop)
-    save_new_button.pack()
+    # save_new_button.pack()
     # save_old_button.pack()
-    load_new_image_button.pack()
-    go_back_to_selection_button.pack()
-    exit_loop_button.pack()
-    # save_old_button = tk.Button(frame_settings, text="Overwrite existing file", command=save_to_old_file)
-    # save_old_button.pack()
-
-    # load_new_image_button = tk.Button(
-    #     frame_settings,
-    #     text="Load new BaseImage",
-    #     command=load_new_base_image
-    # )
-    # load_new_image_button.bind("<Button-1>", load_new_base_image)
-    # load_new_image_button.pack(pady=10, padx=10)
-
-    # save_new_image_button = tk.Button(
-    #     frame_settings,
-    #     text="Save new BaseImage",
-    #     command=save_new_base_image
-    # )
-    # save_new_image_button.bind("<Button-1>", save_new_base_image)
-    # save_new_image_button.pack(pady=10, padx=10)
-
-    # ttk.Sizegrip(frame_settings)
-    # menu_shape.pack()
-    # img = cv2.imread(map_image_path)
-
-    # image to display
-    # image = Image.open(fr"{map_image_path}")
-    # og_img_size = image.size
-    # og_img_width = og_img_size[0]
-    # og_img_height = og_img_size[1]
-    # copy_of_image = image.copy()
-    # img = ImageTk.PhotoImage(image=image, name="map image")
-
+    # load_new_image_button.pack()
+    # go_back_to_selection_button.pack()
+    # exit_loop_button.pack()
+    frame_map_image.columnconfigure(0, weight=5, minsize=500)
+    frame_map_image.rowconfigure(0, weight=5, minsize=500)
     canvas, canvas_img_id = create_canvas(frame_map_image, name="map image canvas", img_ref=img, anchor="nw")
     # canvas = tk.Canvas(frame_map_image, name="map image test", width=img.width(), height=img.height())
     # canvas_img_id = canvas.create_image(500, 550, image=img, anchor="nw")
@@ -596,33 +603,56 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
 
     # window.resizable(True, True)
     # canvas = tk.Canvas(frame_map_image, name="map image test", width=img.width(), height=img.height())
-
-    canvas.pack(expand=True, fill="both")
+    canvas.grid(row=0, column=0, sticky="nsew")
     # canvas.pack(expand=True, fill="both")
     canvas.bind("<Configure>", resize_image)
-    # canvas.bind("<Button-1>", callback)
-    # canvas.bind("<Button-4>", zoom_in)
-    # canvas.bind("<Button-5>", zoom_out)
+    # canvas.bind("<Button-1>", resize_image)
+    # canvas.bind("<Button-4>", resize_image)
+    # canvas.bind("<Button4>", resize_image)
     # canvas.bind("<MouseWheel>", resize_image)
-    # canvas.bind("<B1-Motion>", callback)
+    # canvas.bind("<B1-Motion>", resize_image)
     canvas.bind("<ButtonRelease-1>", place_location)
 
-    # btn_map = tk.Button(frame, text='Select Location', command=select_location)
-    scrollbar_location_section_y = tk.Scrollbar(frame_location_selection, orient="vertical")
-    location_section_list = tk.Listbox(frame_location_selection, name="locations",
-                                       yscrollcommand=scrollbar_location_section_y.set)  # , exportselection=False)
-    # location_section_list.bind("<<ListboxSelect>>", callback)
-    scrollbar_location_section_y.config(command=location_section_list.yview)
 
-    scrollbar_canvas_y = tk.Scrollbar(frame_map_image, orient="vertical")
-    scrollbar_canvas_x = tk.Scrollbar(frame_map_image, orient="horizontal")
-    canvas.config(yscrollcommand=scrollbar_canvas_y.set, xscrollcommand=scrollbar_canvas_x.set)
+
+    # create_label(frame_location_selection)
+    scrollbar_unplaced_location_section_y = create_scrollbar(frame_location_selection, position=(0,1) ,
+                                            orientation="vertical", sticky_direction="ns")
+    unplaced_location_section_list = create_listbox(frame_location_selection, position=(0,0),
+                                            name="unplaced_locations", sticky_direction="")# , exportselection=False)
+    unplaced_location_section_list.configure(exportselection=False)
+    combine_scrollbar_with_widget(scrollbar_unplaced_location_section_y,
+                                  unplaced_location_section_list,
+                                  unplaced_location_section_list.yview,
+                                  widget_command_ref=scrollbar_unplaced_location_section_y.set,
+                                  widget_command_direction="yscrollcommand")
+
+
+    # create_label(frame_location_selection)
+    scrollbar_placed_location_section_y = create_scrollbar(frame_location_selection, position=(1,1),
+                                            orientation="vertical", sticky_direction="")
+    placed_location_section_list = create_listbox(frame_location_selection, position=(1,0),
+                                            name="placed_locations", sticky_direction="")  # , exportselection=False)
+    placed_location_section_list.configure(exportselection=False)
+    combine_scrollbar_with_widget(scrollbar_placed_location_section_y,
+                                  placed_location_section_list,
+                                  placed_location_section_list.yview,
+                                  widget_command_ref=scrollbar_placed_location_section_y.set,
+                                  widget_command_direction="yscrollcommand")
+
+    scrollbar_canvas_y = create_scrollbar(frame_map_image, position=(0,1), orientation="vertical",
+                                          sticky_direction="ns")
+    scrollbar_canvas_x = create_scrollbar(frame_map_image, position=(1,0), orientation="horizontal",
+                                          sticky_direction="ew")
+    # btn_map = tk.Button(frame, text='Select Location', command=select_location)
+
     scrollbar_canvas_y.config(command=canvas.yview)
     scrollbar_canvas_x.config(command=canvas.xview)
 
     for location in location_list:
-        location_section_list.insert(tk.END, location)
-    location_section_list.pack(expand=True, fill="both")
+        unplaced_location_section_list.insert(tk.END, location)
+    unplaced_location_section_list.grid(row=0, column=0, sticky="nsew")
+    # unplaced_location_section_list.pack(expand=True, fill="both")
 
 
 if __name__ == "__main__":
@@ -640,14 +670,16 @@ if __name__ == "__main__":
     window.rowconfigure(0, weight=1)
 
     base_path = tk.filedialog.askdirectory()
+    if base_path == "":
+        exit()
     while loop:
         start_selection_screen(window, base_path, map_list)
         window.deiconify()
         window.mainloop()
 
-        frame_map_selection = get_entity(tk.Frame, "map_selection")
-        frame_location_selection = get_entity(tk.Frame, "location_selection")
-        window_list_of_locations = get_entity(tk.Listbox, "list_of_locations")
+        frame_map_selection, _ = get_entity(window, tk.Frame, "map_selection")
+        frame_location_selection, _ = get_entity(window, tk.Frame, "location_selection")
+        window_list_of_locations, _ = get_entity(window, tk.Listbox, "list_of_locations")
         # print(window)
         # frame_map_selection = window.children.get("map_selection")
         # frame_location_selection = window.children.get("location_selection")
