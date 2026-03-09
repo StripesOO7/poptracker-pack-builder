@@ -488,7 +488,8 @@ def start_selection_screen(window_red:Any, base_path:str, map_list):
     return frame_map_selection, frame_location_selection, window_list_of_locations
 
 
-def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, selected_location):
+def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, selected_location,
+                      location_section_json, location_list):
     map_name = selected_map
     img = load_new_base_image(img_path=map_list[map_json_selected])
     # map_image_path = map_list[map_json_selected]
@@ -556,7 +557,6 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     # canvas.image = img
 
     location_section_json = json.load(open(f'{base_path}/locations/{locations_json_selected}'))
-    location_list = []
     for region in location_section_json:
         path = ""
         print(region["name"])
@@ -625,7 +625,10 @@ if __name__ == "__main__":
 
     print(map_json_selected, locations_json_selected)
     if not map_json_selected == "" and not locations_json_selected == "":
-        start_edit_screen(window, base_path, map_list, map_json_selected, locations_json_selected)
+        location_section_json = {}
+        location_list = []
+        start_edit_screen(window, base_path, map_list, map_json_selected, locations_json_selected,
+                          location_section_json, location_list)
 
 
 
