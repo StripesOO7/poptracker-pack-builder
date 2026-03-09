@@ -18,6 +18,9 @@ og_img_height = og_img_size[1]
 new_data = {}
 rectangle_id = []
 canvas_img_id = 0
+loop = True
+
+
 def create_frame(window_ref:Any,
                  name:str,
                  row_config:Optional[List[Tuple[int, int]]] | None = None,
@@ -65,6 +68,7 @@ def create_button(widget_ref:Any , text:str, command_ref:Any , position:Optional
     btn = tk.Button(widget_ref, text=text, command=command_ref)
     if position:
         btn.grid_configure(row=position[0], column=position[1], padx=5, pady=5, sticky=sticky_direction)
+    # btn.pack(pady=10, padx=10)
     return btn
 
 def create_listbox(widget_ref:Any , name, position:Optional[Tuple[int, int] | None] = None, sticky_direction:str="nswe"):
@@ -133,6 +137,22 @@ def build_map_dict(x, y, map_name, size, shape):
         "size": size,
         "shape": shape,
     }
+
+
+def go_back_to_selection():
+    global locations_json_selected, map_json_selected, new_data
+    map_json_selected = ""
+    locations_json_selected = ""
+    new_data = {}
+
+    for child in window.winfo_children():
+        child.destroy()
+    window.quit()
+
+def exit_loop():
+    global loop
+    loop=False
+    window.quit()
 
 def write_json_partially(path, location_section_json, changed_part):
     if len(path) > 1:
@@ -304,16 +324,22 @@ def resize_image(event):
     print("end run resize image")
 
 def get_entity(entity_type:Any, name:str):
-    canvas_found = False
+    entity_found = False
+    entity = None
     for children in window.winfo_children():
-        if canvas_found:
+        if entity_found:
             break
-        for child in children.winfo_children():
-            if isinstance(child, entity_type):
-                entity = child
-                canvas_found = True
-                break
-    return entity or None
+        if isinstance(children, entity_type) and children.__getattribute__("name") == name:
+            entity = children
+            entity_found = True
+            break
+        else:
+            for child in children.winfo_children():
+                if isinstance(child, entity_type) and child.__getattribute__("_name") == name:
+                    entity = child
+                    entity_found = True
+                    break
+    return entity
 
 
 def place_location(event):
@@ -355,12 +381,10 @@ def update_coords(x, y):
 
 
 def dialog():
-
-    if window.focus_get().__str__().split(".")[-1] == "json":
-        global locations_json_selected
+    global locations_json_selected, map_json_selected
+    if window.focus_get().master.name == "location_selection":
         locations_json_selected = window.focus_get().selection_get()
-    if window.focus_get().__str__().split(".")[-1] == "maps":
-        global map_json_selected
+    if window.focus_get().master.name == "map_selection":
         map_json_selected = window.focus_get().selection_get()
     if not locations_json_selected == "" and not map_json_selected == "":
         window.quit()
@@ -438,12 +462,12 @@ def start_selection_screen(window_red:Any, base_path:str, map_list):
     # Maps side
     scrollbar_maps = create_scrollbar(frame_map_selection, orientation="vertical", position=(1, 1),
                                       sticky_direction="ns")
-    window_list_of_maps = create_listbox(frame_map_selection, name="maps", position=(1, 0),
+    window_list_of_maps = create_listbox(frame_map_selection, name="list_of_maps", position=(1, 0),
                                          sticky_direction="nsew")
     # location side
     scrollbar_locations = create_scrollbar(frame_location_selection, orientation="vertical", position=(1, 1),
                                            sticky_direction="ns")
-    window_list_of_locations = create_listbox(frame_location_selection, name="json", position=(1, 0),
+    window_list_of_locations = create_listbox(frame_location_selection, name="list_of_locations", position=(1, 0),
                                               sticky_direction="nsew")
 
 
@@ -490,7 +514,9 @@ def start_selection_screen(window_red:Any, base_path:str, map_list):
 
 def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, selected_location,
                       location_section_json, location_list):
+
     map_name = selected_map
+
     img = load_new_base_image(img_path=map_list[map_json_selected])
     # map_image_path = map_list[map_json_selected]
     # locations_json = json.load(open(f"{base_path}/locations/{map_json_selected}"))
@@ -517,9 +543,15 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     save_new_button = create_button(frame_settings, text="Save to new file", command_ref=save_to_new_file)
     # save_old_button = create_button(frame_settings,text="Overwrite existing file",command_ref=save_to_old_file)
     load_new_image_button = create_button(frame_settings, text="Load new BaseImage", command_ref=save_to_new_file)
+
+    go_back_to_selection_button = create_button(frame_settings, text="Go back to selection",
+                                           command_ref=go_back_to_selection)
+    exit_loop_button = create_button(frame_settings, text="Exit", command_ref=exit_loop)
     save_new_button.pack()
     # save_old_button.pack()
     load_new_image_button.pack()
+    go_back_to_selection_button.pack()
+    exit_loop_button.pack()
     # save_old_button = tk.Button(frame_settings, text="Overwrite existing file", command=save_to_old_file)
     # save_old_button.pack()
 
@@ -580,13 +612,13 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     location_section_list = tk.Listbox(frame_location_selection, name="locations",
                                        yscrollcommand=scrollbar_location_section_y.set)  # , exportselection=False)
     # location_section_list.bind("<<ListboxSelect>>", callback)
-    scrollbar_location_section_y.config(command=window_list_of_locations.yview)
+    scrollbar_location_section_y.config(command=location_section_list.yview)
 
     scrollbar_canvas_y = tk.Scrollbar(frame_map_image, orient="vertical")
     scrollbar_canvas_x = tk.Scrollbar(frame_map_image, orient="horizontal")
     canvas.config(yscrollcommand=scrollbar_canvas_y.set, xscrollcommand=scrollbar_canvas_x.set)
-    scrollbar_canvas_y.config(command=window_list_of_locations.yview)
-    scrollbar_canvas_x.config(command=window_list_of_locations.xview)
+    scrollbar_canvas_y.config(command=canvas.yview)
+    scrollbar_canvas_x.config(command=canvas.xview)
 
     for location in location_list:
         location_section_list.insert(tk.END, location)
@@ -597,6 +629,7 @@ if __name__ == "__main__":
     locations_json_selected=""
     map_json_selected=""
     map_list = {}
+    loop = True
 
 
 
@@ -607,31 +640,35 @@ if __name__ == "__main__":
     window.rowconfigure(0, weight=1)
 
     base_path = tk.filedialog.askdirectory()
-
-    frame_map_selection, frame_location_selection, window_list_of_locations = start_selection_screen(window, base_path, map_list)
-    window.deiconify()
-    window.mainloop()
-
-
-    # print(window)
-    # frame_map_selection = window.children.get("map_selection")
-    # frame_location_selection = window.children.get("location_selection")
-
-    frame_map_selection.destroy()
-    frame_location_selection.destroy()
-    # frame_map_selection.grid_forget()
-    # frame_location_selection.grid_forget()
-
-
-    print(map_json_selected, locations_json_selected)
-    if not map_json_selected == "" and not locations_json_selected == "":
-        location_section_json = {}
-        location_list = []
-        start_edit_screen(window, base_path, map_list, map_json_selected, locations_json_selected,
-                          location_section_json, location_list)
-
-
-
+    while loop:
+        start_selection_screen(window, base_path, map_list)
+        window.deiconify()
         window.mainloop()
-    print("etest")
+
+        frame_map_selection = get_entity(tk.Frame, "map_selection")
+        frame_location_selection = get_entity(tk.Frame, "location_selection")
+        window_list_of_locations = get_entity(tk.Listbox, "list_of_locations")
+        # print(window)
+        # frame_map_selection = window.children.get("map_selection")
+        # frame_location_selection = window.children.get("location_selection")
+        assert isinstance(frame_map_selection, tk.Frame), "frame_map_selection not of type tk.Frame"
+        assert isinstance(frame_location_selection, tk.Frame), "frame_location_selection not of type tk.Frame"
+        assert isinstance(window_list_of_locations, tk.Listbox), "window_list_of_locations not of type tk.Listbox"
+        frame_map_selection.destroy()
+        frame_location_selection.destroy()
+        # frame_map_selection.grid_forget()
+        # frame_location_selection.grid_forget()
+
+
+        print(map_json_selected, locations_json_selected)
+        if not map_json_selected == "" and not locations_json_selected == "":
+            location_section_json = {}
+            location_list = []
+            start_edit_screen(window, base_path, map_list, map_json_selected, locations_json_selected,
+                              location_section_json, location_list)
+
+
+
+            window.mainloop()
+        print("etest")
     # window.mainloop()
