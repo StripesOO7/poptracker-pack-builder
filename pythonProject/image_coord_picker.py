@@ -1,10 +1,9 @@
 import os
-from operator import index
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, List, Literal, Optional, Tuple
 
 from PIL import Image, ImageTk
 import tkinter as tk
-from tkinter import filedialog, messagebox, Variable, ttk
+from tkinter import filedialog, ttk
 import json
 
 
@@ -350,11 +349,11 @@ def get_entity(widget_ref:Any, entity_type:Any, name:str):
                         break
                     else:
                         continue
-                except NameError as e:
-                    print(e)
-                    continue
+                # except NameError as e:
+                #     # print(e)
+                #     continue
                 except AttributeError as e:
-                    print(e)
+                    # print(e)
                     continue
         elif len(child.winfo_children()) > 0:
             entity, entity_found = get_entity(child, entity_type, name)
@@ -363,6 +362,20 @@ def get_entity(widget_ref:Any, entity_type:Any, name:str):
         else:
             continue
     return entity, entity_found
+
+
+def restore_default_markings():
+    base_json = json.load(open(f'{base_path}/locations/{locations_json_selected}'))
+    canvas, _ = get_entity(window, tk.Canvas, "map image canvas")
+    for nodes in new_data.keys():
+        canvas.delete(new_data[nodes][1])
+        canvas.delete(new_data[nodes][2])
+    for region in base_json:
+        path = ""
+        print(region["name"])
+        traverse_json(region, path, location_list, canvas)
+
+    pass
 
 
 def place_location(event):
@@ -374,32 +387,38 @@ def place_location(event):
     size_selection, _ = get_entity(window, ttk.Combobox, "size_selection")
     unplaced_locations, _ = get_entity(window, tk.Listbox, "unplaced_locations")
     placed_locations, _ = get_entity(window, tk.Listbox, "placed_locations")
-    if isinstance(canvas, tk.Canvas) and isinstance(shape_selection, ttk.Combobox) and isinstance(size_selection, ttk.Combobox):
-        selected_unplaced_location = unplaced_locations.get(unplaced_locations.curselection())
-        selected_placed_location = placed_locations.get(placed_locations.curselection())
-        selected_location = selected_unplaced_location or selected_placed_location
-        if selected_location in new_data.keys():
-            canvas.delete(new_data[selected_location][1])
-            canvas.delete(new_data[selected_location][2])
-        # canvas.pack()
-        shape_id = canvas.create_rectangle(event.x - 5, event.y - 5, event.x + 5, event.y + 5, fill="red")
-        text_id = canvas.create_text(event.x, event.y, text=(
-            f"x:{event.x // scaling_factor}, y: {event.y // scaling_factor}\n"
-            f"location name: {selected_location},\n"
-            f"shape:{shape_selection['values'][shape_selection.current()]}\n"
-            f"size:{size_selection['values'][size_selection.current()]}")
-                                     )
-        new_data[selected_location] = [
-            build_map_dict(
-                x = int(event.x//scaling_factor),
-                y = int(event.y//scaling_factor),
-                map_name = map_json_selected,
-                size = size_selection['values'][size_selection.current()],
-                shape = shape_selection['values'][shape_selection.current()],
-            ),
-            shape_id,
-            text_id
-        ]
+
+    assert isinstance(canvas, tk.Canvas), "canvas is not of type tk.Canvas"
+    assert isinstance(shape_selection, ttk.Combobox), "shape_selection is not of type ttk.Combobox"
+    assert isinstance(size_selection, ttk.Combobox), "size_selection is not of type ttk.Combobox"
+    assert isinstance(unplaced_locations, tk.Listbox), "unplaced_locations is not of type tk.Listbox"
+    assert isinstance(placed_locations, tk.Listbox), "placed_locations is not of type tk.Listbox"
+
+    selected_unplaced_location = unplaced_locations.get(unplaced_locations.curselection())
+    # selected_placed_location = placed_locations.get(placed_locations.curselection())
+    selected_location = selected_unplaced_location# or selected_placed_location
+    if selected_location in new_data.keys():
+        canvas.delete(new_data[selected_location][1])
+        canvas.delete(new_data[selected_location][2])
+    # canvas.pack()
+    shape_id = canvas.create_rectangle(event.x - 5, event.y - 5, event.x + 5, event.y + 5, fill="red")
+    text_id = canvas.create_text(event.x, event.y, text=(
+        f"x:{event.x // scaling_factor}, y: {event.y // scaling_factor}\n"
+        f"location name: {selected_location},\n"
+        f"shape:{shape_selection['values'][shape_selection.current()]}\n"
+        f"size:{size_selection['values'][size_selection.current()]}")
+                                 )
+    new_data[selected_location] = [
+        build_map_dict(
+            x = int(event.x//scaling_factor),
+            y = int(event.y//scaling_factor),
+            map_name = map_json_selected,
+            size = size_selection['values'][size_selection.current()],
+            shape = shape_selection['values'][shape_selection.current()],
+        ),
+        shape_id,
+        text_id
+    ]
     # print(new_data)
 
 
@@ -429,6 +448,7 @@ def select_location():
 
 def traverse_json(region, path, location_list, canvas_ref):
     new_path = f"{path}/{region['name']}"
+    selected_textcolor= "black"
     if "sections" in region.keys():
         location_list.append(new_path[1:])
         # return
@@ -456,6 +476,7 @@ def traverse_json(region, path, location_list, canvas_ref):
                     canvas_ref.create_text(
                         map["x"]*scaling_factor,
                         map["y"]*scaling_factor,
+                        fill=selected_textcolor,
                         text=(
                             f"x:{map['x']}, y: {map['y']}\n"
                             f"location name: {new_path[1:]},\n"
@@ -481,17 +502,16 @@ def load_list_of_locations(window_list_of_locations, locations_dir):
         window_list_of_locations.insert(tk.END, location)
 
 
-def start_selection_screen(window_red:Any, base_path:str, map_list):
-    window.columnconfigure([0, 1, 2], weight=1)
-    window.rowconfigure(0, weight=1)
+def start_selection_screen(window_ref:Any, base_path:str):
+    window_ref.columnconfigure([0, 1], weight=1)
+    window_ref.rowconfigure(0, weight=1)
 
-    frame_map_selection = create_frame(window_ref=window, name="map_selection", position=(0, 1),
-                                       row_config=[(0, 0), (1, 2), (2, 0)], column_config=[(0, 1)],
+    frame_map_selection = create_frame(window_ref=window_ref, name="map_selection", position=(0, 1),
+                                       row_config=[(0, 0), (1, 2), (2, 0)], column_config=[(0, 1), (1, 0)],
                                        sticky_direction="nsew")
-    frame_location_selection = create_frame(window_ref=window, name="location_selection", position=(0, 0),
-                                            row_config=[(0, 0), (1, 2), (2, 0)], column_config=[(0, 1)],
+    frame_location_selection = create_frame(window_ref=window_ref, name="location_selection", position=(0, 0),
+                                            row_config=[(0, 0), (1, 2), (2, 0)], column_config=[(0, 1), (1, 0)],
                                             sticky_direction="nsew")
-
     # Maps side
     scrollbar_maps = create_scrollbar(frame_map_selection, orientation="vertical", position=(1, 1),
                                       sticky_direction="ns")
@@ -527,6 +547,9 @@ def start_selection_screen(window_red:Any, base_path:str, map_list):
                                     sticky_direction="ew")
     btn_locations = create_button(frame_location_selection, text='select JSON', command_ref=dialog, position=(2, 0),
                                   sticky_direction="ew")
+
+    exit_loop_button = create_button(window, text="Exit", command_ref=exit_loop, sticky_direction="ew")
+    exit_loop_button.grid(row=3, columnspan=2, sticky="ew", padx=5, pady=5)
     # select image to open
     # map_list = {}
     # json_maps = json.load(open(f"{base_path}/maps/maps.json"))
@@ -559,37 +582,48 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     # for map_name, map_image_path in map_list:
     # print(map_name, map_image_path)
 
-    window.columnconfigure(0, weight=1, minsize=200)
-    window.columnconfigure(1, weight=5)
-    window.columnconfigure(2, weight=0)
+    window_ref.columnconfigure(0, weight=1)
+    window_ref.columnconfigure(1, weight=5)
+    window_ref.columnconfigure(2, weight=0)
 
-    frame_location_selection = create_frame(window, name="location_selection", position=(0, 0), sticky_direction="nsew")
+    frame_location_selection = create_frame(window_ref, name="location_selection", position=(0, 0), sticky_direction="nsew",
+                                            # row_config=[(0, 1), (1, 1)],
+                                            column_config=[(0, 1), (1, 0)]
+                                            )
 
-    frame_map_image = create_frame(window, name="map_image", position=(0, 1), sticky_direction="nsew")
+    frame_map_image = create_frame(window_ref, name="map_image", position=(0, 1), sticky_direction="nsew")
 
-    frame_settings = create_frame(window, name="settings", position=(0, 2), sticky_direction="nsew")
+    frame_settings = create_frame(window_ref, name="settings", position=(0, 2), sticky_direction="nsew")
 
     # settings
-    shape_selection = create_combobox(frame_settings, state="readonly", position=(0,0),
+    shape_selection = create_combobox(frame_settings, state="readonly",
                                       value_list=["rect", "diamond", "trapezoid"], default="rect", name="shape_selection")
 
-    size_selection = create_combobox(frame_settings, state="readonly", position=(1,0),
+    size_selection = create_combobox(frame_settings, state="readonly",
                                      value_list=[str(i) for i in range(10, 41, 2)], default="10", name="size_selection")
 
-    save_new_button = create_button(frame_settings, text="Save to new file", command_ref=save_to_new_file)
-    # save_old_button = create_button(frame_settings,text="Overwrite existing file",command_ref=save_to_old_file)
-    load_new_image_button = create_button(frame_settings, text="Load new BaseImage", command_ref=save_to_new_file)
+    save_new_button = create_button(frame_settings, text="Save to new file",
+                                    command_ref=save_to_new_file)
+    # save_old_button = create_button(frame_settin text="Overwrite existing file",
+    # command_ref=save_to_old_file)
+    load_new_image_button = create_button(frame_settings, text="Load new BaseImage",
+                                          command_ref=save_to_new_file)
 
     go_back_to_selection_button = create_button(frame_settings, text="Go back to selection",
                                            command_ref=go_back_to_selection)
     exit_loop_button = create_button(frame_settings, text="Exit", command_ref=exit_loop)
+    restore_defaults_button = create_button(frame_settings, text="Restore Defaults",
+                                           command_ref=restore_default_markings)
+    for i, child in enumerate(frame_settings.winfo_children()):
+        child.grid(row=i, column=0, pady=5)
+        child.columnconfigure(0, weight=0)
     # save_new_button.pack()
     # save_old_button.pack()
     # load_new_image_button.pack()
     # go_back_to_selection_button.pack()
     # exit_loop_button.pack()
     frame_map_image.columnconfigure(0, weight=5, minsize=500)
-    frame_map_image.rowconfigure(0, weight=5, minsize=500)
+    frame_map_image.rowconfigure(0, weight=5)
     canvas, canvas_img_id = create_canvas(frame_map_image, name="map image canvas", img_ref=img, anchor="nw")
     # canvas = tk.Canvas(frame_map_image, name="map image test", width=img.width(), height=img.height())
     # canvas_img_id = canvas.create_image(500, 550, image=img, anchor="nw")
@@ -606,21 +640,22 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     canvas.grid(row=0, column=0, sticky="nsew")
     # canvas.pack(expand=True, fill="both")
     canvas.bind("<Configure>", resize_image)
-    # canvas.bind("<Button-1>", resize_image)
+    canvas.bind("MouseWheel", restore_default_markings)
     # canvas.bind("<Button-4>", resize_image)
     # canvas.bind("<Button4>", resize_image)
     # canvas.bind("<MouseWheel>", resize_image)
-    # canvas.bind("<B1-Motion>", resize_image)
+    # canvas.bind("<Button3-Motion>", restore_default_markings)
     canvas.bind("<ButtonRelease-1>", place_location)
 
 
 
-    # create_label(frame_location_selection)
-    scrollbar_unplaced_location_section_y = create_scrollbar(frame_location_selection, position=(0,1) ,
+    unplaced_location_label = create_label(frame_location_selection, text="unplaced locations", position=(0, 0),
+                                           sticky_direction="ew")
+    scrollbar_unplaced_location_section_y = create_scrollbar(frame_location_selection, position=(1, 1) ,
                                             orientation="vertical", sticky_direction="ns")
-    unplaced_location_section_list = create_listbox(frame_location_selection, position=(0,0),
+    unplaced_location_section_list = create_listbox(frame_location_selection, position=(1, 0),
                                             name="unplaced_locations", sticky_direction="")# , exportselection=False)
-    unplaced_location_section_list.configure(exportselection=False)
+    unplaced_location_section_list.configure(exportselection=False, )
     combine_scrollbar_with_widget(scrollbar_unplaced_location_section_y,
                                   unplaced_location_section_list,
                                   unplaced_location_section_list.yview,
@@ -628,11 +663,13 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
                                   widget_command_direction="yscrollcommand")
 
 
-    # create_label(frame_location_selection)
-    scrollbar_placed_location_section_y = create_scrollbar(frame_location_selection, position=(1,1),
-                                            orientation="vertical", sticky_direction="")
-    placed_location_section_list = create_listbox(frame_location_selection, position=(1,0),
-                                            name="placed_locations", sticky_direction="")  # , exportselection=False)
+    placed_location_label = create_label(frame_location_selection, text="placed locations", position=(2, 0),
+                                         sticky_direction="ew")
+    scrollbar_placed_location_section_y = create_scrollbar(frame_location_selection, position=(3, 1),
+                                            orientation="vertical", sticky_direction="ns")
+    placed_location_section_list = create_listbox(frame_location_selection, position=(3, 0),
+                                            name="placed_locations", sticky_direction="")  # ,
+    # exportselection=False)
     placed_location_section_list.configure(exportselection=False)
     combine_scrollbar_with_widget(scrollbar_placed_location_section_y,
                                   placed_location_section_list,
@@ -640,18 +677,20 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
                                   widget_command_ref=scrollbar_placed_location_section_y.set,
                                   widget_command_direction="yscrollcommand")
 
-    scrollbar_canvas_y = create_scrollbar(frame_map_image, position=(0,1), orientation="vertical",
-                                          sticky_direction="ns")
-    scrollbar_canvas_x = create_scrollbar(frame_map_image, position=(1,0), orientation="horizontal",
-                                          sticky_direction="ew")
+    # scrollbar_canvas_y = create_scrollbar(frame_map_image, position=(0, 1), orientation="vertical",
+    #                                       sticky_direction="ns")
+    # scrollbar_canvas_x = create_scrollbar(frame_map_image, position=(1, 0), orientation="horizontal",
+    #                                       sticky_direction="ew")
     # btn_map = tk.Button(frame, text='Select Location', command=select_location)
 
-    scrollbar_canvas_y.config(command=canvas.yview)
-    scrollbar_canvas_x.config(command=canvas.xview)
+    # scrollbar_canvas_y.config(command=canvas.yview)
+    # scrollbar_canvas_x.config(command=canvas.xview)
 
     for location in location_list:
         unplaced_location_section_list.insert(tk.END, location)
-    unplaced_location_section_list.grid(row=0, column=0, sticky="nsew")
+        placed_location_section_list.insert(tk.END, location)
+    unplaced_location_section_list.grid(row=1, column=0, sticky="nsew")
+    placed_location_section_list.grid(row=3, column=0, sticky="nsew")
     # unplaced_location_section_list.pack(expand=True, fill="both")
 
 
@@ -666,14 +705,14 @@ if __name__ == "__main__":
     window = tk.Tk()
     window.withdraw()
 
-    window.columnconfigure([0,1,2],  weight=1)
+    window.columnconfigure([0, 1],  weight=1)
     window.rowconfigure(0, weight=1)
 
     base_path = tk.filedialog.askdirectory()
     if base_path == "":
         exit()
     while loop:
-        start_selection_screen(window, base_path, map_list)
+        start_selection_screen(window, base_path)
         window.deiconify()
         window.mainloop()
 
