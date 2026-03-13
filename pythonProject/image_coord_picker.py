@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import Any, List, Literal, Optional, Tuple
 
 from PIL import Image, ImageTk
@@ -7,10 +8,10 @@ from tkinter import filedialog, ttk
 import json
 
 
-coords = (0,0)
+coords = (0, 0)
 locations_json_selected = ""
 map_json_selected = ""
-og_img_size = (0,0)
+og_img_size = (0, 0)
 scaling_factor = 1
 og_img_width = og_img_size[0]
 og_img_height = og_img_size[1]
@@ -18,6 +19,8 @@ new_data = {}
 rectangle_id = []
 canvas_img_id = 0
 loop = True
+selected_file_path = ""
+new_map_window = None
 
 
 def create_frame(window_ref:Any,
@@ -123,6 +126,19 @@ def create_combobox(widget_ref, state:str, value_list:List[str], default:str, na
     # combobox.pack(pady=10, padx=10)
     return combobox
 
+def create_input_field(widget_ref, name:str,
+                       position:Optional[Tuple[int, int] | None] = None,
+                       sticky_direction:str="nswe"):
+    input_field = tk.Entry(widget_ref, name=name)
+    if position:
+        input_field.grid_configure(row=position[0], column=position[1])
+    if sticky_direction:
+        input_field.grid_configure(sticky=sticky_direction)
+    if name:
+        input_field.name = name
+    return input_field
+
+
 def combine_scrollbar_with_widget(scrollbar_ref:Any , widget_ref:Any , scrollbar_command_ref:Any, 
                                   widget_command_ref:Any, widget_command_direction:str):
     scrollbar_ref.config(command=scrollbar_command_ref)
@@ -187,6 +203,7 @@ def save_to_old_file():
         old_json.write(json.dumps(location_section_json, indent=4))
 
 def save():
+    global new_data
     # location_section_json
     # filled with the split names in the location list intersected with integers for list traversal
     found_map = False
@@ -283,7 +300,7 @@ def draw_rect_and_text(widget_ref:Any, location_dataset:dict[str, Any], scaling_
     )
     return rect_id, text_id
 
-def load_new_base_image(img_path:str=""):
+def load_new_base_image(window_ref:Any, img_path:str=""):
     global og_img_size, og_img_width, og_img_height, image, copy_of_image
     # canvas.delete(canvas_img_id)
     new_img_path = img_path
@@ -295,8 +312,8 @@ def load_new_base_image(img_path:str=""):
     og_img_height = og_img_size[1] if og_img_size[1] < 700 else 700
     copy_of_image = image.copy()
     if img_path == "":
-        window.geometry(f"{og_img_width}x{og_img_height}")
-        # window.event_generate(sequence="<Configure>", height=og_img_height, width=og_img_width)
+        window_ref.geometry(f"{og_img_width}x{og_img_height}")
+        # window_ref.event_generate(sequence="<Configure>", height=og_img_height, width=og_img_width)
     #     event.widget.event_generate(sequence="<Configure>", width=500, height=500)
         # return resize_image(canvas.event_generate(sequence="<Configure>>", width=500, height=500))
     return ImageTk.PhotoImage(image=image, name="map image")
@@ -549,6 +566,68 @@ def remove_placed_location(event):
                  selected_object=placed_locations_list)
     pass
 
+def choose_file_path():
+    global selected_file_path
+    selected_file_path = filedialog.askopenfilename()
+
+def write_new_map_json_entry():
+    global selected_file_path
+    if new_map_window is None:
+        return
+
+    name_input, _ = get_entity(widget_ref=new_map_window, entity_type=tk.Entry, name="name input")
+    assert isinstance(name_input, tk.Entry)
+
+    if not selected_file_path == "":
+        if not (base_path in selected_file_path):
+            filename = os.path.basename(selected_file_path)
+            shutil.copy(selected_file_path, fr"{base_path}/images/{filename}")
+        filename = os.path.basename(selected_file_path)
+        with open(fr"{base_path}/maps/maps.json", "r+") as maps_json_file:
+            tmp_dict = json.load(maps_json_file)
+            maps_json_file.seek(0)  # 2. move cursor to start
+            maps_json_file.truncate()
+            tmp_dict.append(
+                {
+                    "name": name_input.get(),
+                    "img": f"images/{filename}",
+                    "location_border_thickness": 1,
+                    "location_size": 6,
+                }
+            )
+            maps_json_file.write(json.dumps(tmp_dict))
+        selected_file_path = ""
+        new_map_window.quit()
+
+def add_new_map():
+    global new_map_window
+    new_map_window = tk.Tk(baseName="map selection window")
+    new_map_window.config(bg="yellow")
+    new_map_window.geometry(f"{300}x{300}")
+    text_input_frame = create_frame(window_ref=new_map_window, name="text input frame",
+                                    position=(0, 0), sticky_direction="nsew")
+    name_label = create_label(widget_ref=text_input_frame, text="Map Name", position=(0, 0), sticky_direction="ew")
+    img_label = create_label(widget_ref=text_input_frame, text="Map Image", position=(1, 0), sticky_direction="ew")
+    name_input = create_input_field(widget_ref=text_input_frame, name="name input", position=(0, 1), sticky_direction="nsew")
+    select_image_btn = create_button(widget_ref=text_input_frame, text="Select image",
+                                     command_ref=choose_file_path, position=(1, 1), sticky_direction="nsew")
+    name_input.grid_configure(padx=5, pady=5)
+    select_image_btn.grid_configure(padx=5, pady=5)
+    # new_map_image_path = filedialog.askopenfilename()
+
+    exit_text_input = create_button(widget_ref=new_map_window, text="exit new map selection",
+                                    position=(2, 0), sticky_direction="nsew", command_ref=new_map_window.quit)
+
+    save_map_addition = create_button(widget_ref=new_map_window, text="save new map",
+                                    position=(3, 0), sticky_direction="nsew", command_ref=write_new_map_json_entry)
+
+    new_map_window.mainloop()
+    # tk.forget(new_map_window)
+    try:
+        new_map_window.destroy()
+        new_map_window = None
+    except:
+        pass
 
 def update_coords(x, y):
     global coords
@@ -561,9 +640,9 @@ def dialog():
     list_of_maps, _ = get_entity(window, tk.Listbox, "list_of_maps")
 
 
-    if isinstance(list_of_locations, tk.Listbox) :
+    if isinstance(list_of_locations, tk.Listbox):
         locations_json_selected = list_of_locations.get((list_of_locations.curselection()))
-    if isinstance(list_of_maps, tk.Listbox) :
+    if isinstance(list_of_maps, tk.Listbox):
         map_json_selected = list_of_maps.get((list_of_maps.curselection()))
 
     if not locations_json_selected == "" and not map_json_selected == "":
@@ -612,17 +691,23 @@ def traverse_json(region, path, location_list, canvas_ref):
                 print("placed as square")
 
 def load_list_of_maps(window_list_of_maps, maps_path):
+    tmp_map_list = {}
     for map_json in json.load(open(maps_path)):
-        map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
-        window_list_of_maps.insert(tk.END, map_json["name"])
+        tmp_map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
+    # map_list = (sorted(tmp_map_list.keys()))
+    for key in sorted(tmp_map_list.keys()):
+        map_list[key] = tmp_map_list[key]
+    for map in map_list.keys():
+        window_list_of_maps.insert(tk.END, map)
 
     # select locations json to tp apply the images coords to
-    locations_files = os.listdir(f'{base_path}/locations')
+    # locations_files = os.listdir(f'{base_path}/locations')
 
 def load_list_of_locations(window_list_of_locations, locations_dir):
     # print(locations_files)
-    for location in os.listdir(locations_dir):
-        # print(location)
+    tmp_list = sorted(os.listdir(locations_dir))
+    # tmp_list = tmp_list.sort()
+    for location in tmp_list:
         window_list_of_locations.insert(tk.END, location)
 
 
@@ -669,11 +754,16 @@ def start_selection_screen(window_ref:Any, base_path:str):
 
     header_locations = create_label(frame_location_selection, text="Select location source", position=(0, 0),
                                     sticky_direction="ew")
-    btn_locations = create_button(frame_location_selection, text='select JSON', command_ref=dialog, position=(2, 0),
+    btn_locations = create_button(frame_location_selection, text='Select JSON', command_ref=dialog, position=(2, 0),
                                   sticky_direction="ew")
 
+    create_new_map = create_button(frame_map_selection, text="Add new Map", command_ref=add_new_map,
+                                   position=(3, 0), sticky_direction="ew")
+    # create_new_map = create_button(frame_location_selection, text="Add new Map", command_ref=add_new_location,
+    #                                position=(3, 0), sticky_direction="ew")
+
     exit_loop_button = create_button(window, text="Exit", command_ref=exit_loop, sticky_direction="ew")
-    exit_loop_button.grid(row=3, columnspan=2, sticky="ew", padx=5, pady=5)
+    exit_loop_button.grid(row=4, columnspan=2, sticky="ew", padx=5, pady=5)
     # select image to open
     # map_list = {}
     # json_maps = json.load(open(f"{base_path}/maps/maps.json"))
@@ -700,7 +790,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
 
     map_name = selected_map
 
-    img = load_new_base_image(img_path=map_list[map_json_selected])
+    img = load_new_base_image(window_ref=window_ref, img_path=map_list[map_json_selected])
     # map_image_path = map_list[map_json_selected]
     # locations_json = json.load(open(f"{base_path}/locations/{map_json_selected}"))
     # for map_name, map_image_path in map_list:
@@ -730,7 +820,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     # save_old_button = create_button(frame_settin text="Overwrite existing file",
     # command_ref=save_to_old_file)
     load_new_image_button = create_button(frame_settings, text="Load new BaseImage",
-                                          command_ref=save_to_new_file)
+                                          command_ref=load_new_base_image)
 
     go_back_to_selection_button = create_button(frame_settings, text="Go back to selection",
                                            command_ref=go_back_to_selection)
