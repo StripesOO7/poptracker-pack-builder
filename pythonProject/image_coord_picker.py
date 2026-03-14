@@ -7,6 +7,12 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 import json
 
+class fake_event:
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+
+
 
 coords = (0, 0)
 locations_json_selected = ""
@@ -98,7 +104,7 @@ def create_listbox(widget_ref:Any , name, position:Optional[Tuple[int, int] | No
     #     listbox.pack()
     return listbox
 
-def create_canvas(widget_ref, name:str, img_ref, anchor:str):
+def create_canvas(widget_ref, name:str, img_ref, anchor:str, position:Optional[Tuple[int, int] | None] = None):
     canvas = tk.Canvas(widget_ref, name=name, width=img_ref.width(), height=img_ref.height())
     canvas_img_id = canvas.create_image(500, 550, image=img_ref, anchor=anchor)
     canvas.image = img_ref
@@ -165,7 +171,7 @@ def traverse_json_back(index, json_dict, path):
     else:
         return {}
 
-def build_map_dict(x, y, map_name, size, shape):
+def build_map_dict(x:int, y:int, map_name:str, size:int, shape:str):
     return {
         "map": map_name,
         "x": x,
@@ -269,20 +275,48 @@ def save():
 #         )
 #     return new_data
 
-# def zoom_in(event):
-#     # Increase the image size by a factor (e.g., 1.2)
-#     image = image.resize((int(image.width * 1.2), int(image.height * 1.2)), Image.ANTIALIAS)
-#     tk_image = ImageTk.PhotoImage(image)
-#     canvas.delete("all")
-#     canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
-#
-#
-# def zoom_out(event):
-#     # Decrease the image size by a factor (e.g., 0.8)
-#     image = image.resize((int(image.width * 0.8), int(image.height * 0.8)), Image.ANTIALIAS)
-#     tk_image = ImageTk.PhotoImage(image)
-#     canvas.delete("all")
-#     canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
+def zoom_in():
+    # Increase the image size by a factor (e.g., 1.2)
+    # image = image.resize((int(image.width * 1.2), int(image.height * 1.2)), Image.ANTIALIAS)
+    # tk_image = ImageTk.PhotoImage(image)
+    # canvas.delete("all")
+    # canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
+    canvas_ref, _ = get_entity(window, tk.Canvas, "map image canvas")
+    assert isinstance(canvas_ref, tk.Canvas)
+    try:
+        img = canvas_ref.__getattribute__("image")
+        old_img_size = img.__getattribute__("_PhotoImage__size")
+        new_width = round(old_img_size[0] * 1.2)
+        new_height = round(old_img_size[1] * 1.2)
+        event = fake_event(width=new_width, height=new_height)
+        resize_image(event)
+
+        canvas_ref.configure(scrollregion=(-200, -200, new_width, new_height))
+        # canvas_ref.scale("all", 0, 0, 1.2, 1.2)
+    except:
+        pass
+def zoom_out():
+    # Decrease the image size by a factor (e.g., 0.8)
+    # image = image.resize((int(image.width * 0.8), int(image.height * 0.8)), Image.ANTIALIAS)
+    # tk_image = ImageTk.PhotoImage(image)
+    # canvas.delete("all")
+    # canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
+    canvas_ref, _ = get_entity(window, tk.Canvas, "map image canvas")
+    assert isinstance(canvas_ref, tk.Canvas)
+    try:
+        img = canvas_ref.__getattribute__("image")
+        old_img_size = img.__getattribute__("_PhotoImage__size")
+        new_width = round(old_img_size[0] * 0.8)
+        new_height = round(old_img_size[1] * 0.8)
+        event = fake_event(width=new_width, height=new_height)
+        resize_image(event)
+
+        canvas_ref.configure(scrollregion=(-200, -200, new_width, new_height))
+
+        # canvas_ref.scale("all", 0,0, 0.8, 0.8)
+    except:
+        pass
+
 def draw_rectangle(canvas_ref: Any, x: int, y: int, scaling_factor: float|int, fill_color: str, size:int):
     size_offset = round(size/2)
     adjusted_x = x * scaling_factor
@@ -532,21 +566,21 @@ def place_location(event):
         selected_placed_location = None
     # selected_placed_location = placed_locations.get(placed_locations.curselection())
 
-    selected_location = selected_unplaced_location or selected_placed_location or ""
+    selected_location = selected_unplaced_location or selected_placed_location
 
-
-    if selected_location in new_data.keys():
-        canvas.delete(new_data[selected_location][1])
-        canvas.delete(new_data[selected_location][2])
-    else:
-        if selected_location in unplaced_locations.get(0, tk.END):
-            move_from_to(from_list=unplaced_locations,
-                         to_list=placed_locations,
-                         selected_item_list=unplaced_locations.curselection(),
-                         selected_object=unplaced_locations, )
-        unplaced_locations.selection_clear(0, tk.END)
-        placed_locations.selection_clear(0, tk.END)
-        placed_locations.selection_set(tk.END)
+    if selected_location:
+        if selected_location in new_data.keys():
+            canvas.delete(new_data[selected_location][1])
+            canvas.delete(new_data[selected_location][2])
+        else:
+            if selected_location in unplaced_locations.get(0, tk.END):
+                move_from_to(from_list=unplaced_locations,
+                             to_list=placed_locations,
+                             selected_item_list=unplaced_locations.curselection(),
+                             selected_object=unplaced_locations, )
+            unplaced_locations.selection_clear(0, tk.END)
+            placed_locations.selection_clear(0, tk.END)
+            placed_locations.selection_set(tk.END)
     # canvas.pack()
     # shape_id = canvas.create_rectangle(event.x - 5, event.y - 5, event.x + 5, event.y + 5, fill="red")
     # text_id = canvas.create_text(event.x, event.y, text=(
@@ -555,26 +589,28 @@ def place_location(event):
     #     f"shape:{shape_selection['values'][shape_selection.current()]}\n"
     #     f"size:{size_selection['values'][size_selection.current()]}")
     #                              )
-    new_data[selected_location] = [
-        build_map_dict(
-            x=int(event.x//scaling_factor),
-            y=int(event.y//scaling_factor),
-            map_name=map_json_selected,
-            size=size_selection['values'][size_selection.current()],
-            shape=shape_selection['values'][shape_selection.current()],
+        new_data[selected_location] = [
+            build_map_dict(
+                x=int(event.x//scaling_factor),
+                y=int(event.y//scaling_factor),
+                map_name=map_json_selected,
+                size=int(size_selection['values'][size_selection.current()]),
+                shape=shape_selection['values'][shape_selection.current()],
+            )
+        ]
+        new_data[selected_location].extend(draw_shape_and_text(
+                widget_ref=canvas,
+                location_path=selected_location,
+                location_dataset=new_data[selected_location][0],
+                shape=new_data[selected_location][0]["shape"],
+                selected_size=new_data[selected_location][0]["size"],
+                scaling_factor=scaling_factor,
+                textcolor="black"
+            )
         )
-    ]
-    new_data[selected_location].extend(draw_shape_and_text(
-            widget_ref=canvas,
-            location_path=selected_location,
-            location_dataset=new_data[selected_location][0],
-            shape=new_data[selected_location][0]["shape"],
-            selected_size=new_data[selected_location][0]["size"],
-            scaling_factor=scaling_factor,
-            textcolor="black"
-        )
-    )
     # print(new_data)
+    else:
+        print("nothing selected. that seems odd")
 
 # def unfocus(event):
 #     placed_locations_selection, _ = get_entity(event.widget.master, tk.Listbox, "placed_locations")
@@ -779,7 +815,7 @@ def traverse_json(region, path, location_list, canvas_ref):
                         x=int(map['x']),
                         y=int(map['y']),
                         map_name=map['map'],
-                        size=map['size'] if 'size' in map.keys() else 10,
+                        size=int(map['size']) if 'size' in map.keys() else 10,
                         shape=map['shape'] if 'shape' in map.keys() else 'rect',
                     )
                 ]
@@ -794,7 +830,7 @@ def traverse_json(region, path, location_list, canvas_ref):
                     )
                 )
                 location_list[-1]["placed"] = True
-                print("placed as square")
+                # print(f"placed as {new_data[name_key][0]['shape']}")
 
 def load_list_of_maps(window_list_of_maps, maps_path):
     tmp_map_list = {}
@@ -925,7 +961,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
                                       value_list=["rect", "diamond", "trapezoid"], default="rect", name="shape_selection")
 
     size_selection = create_combobox(frame_settings, state="readonly",
-                                     value_list=[str(i) for i in range(10, 41, 2)], default="10", name="size_selection")
+                                     value_list=[str(i) for i in range(6, 41, 2)], default="10", name="size_selection")
 
     save_new_button = create_button(frame_settings, text="Save to new file",
                                     command_ref=save_to_new_file)
@@ -953,11 +989,12 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
 
     frame_map_image.columnconfigure(0, weight=5, minsize=500)
     frame_map_image.rowconfigure(0, weight=5)
-    canvas, canvas_img_id = create_canvas(frame_map_image, name="map image canvas", img_ref=img, anchor="nw")
+    canvas, canvas_img_id = create_canvas(frame_map_image, name="map image canvas", img_ref=img, anchor="nw", position=(0,0))
     # canvas = tk.Canvas(frame_map_image, name="map image test", width=img.width(), height=img.height())
     # canvas_img_id = canvas.create_image(500, 550, image=img, anchor="nw")
     # canvas.image = img
-
+    zoom_in_btn = create_button(widget_ref=frame_map_image, position=(2,0), sticky_direction="ew", command_ref=zoom_in, text="zoom in")
+    zoom_out_btn = create_button(widget_ref=frame_map_image, position=(2,1), sticky_direction="ew", command_ref=zoom_out, text="zoom out")
     location_section_json = json.load(open(f'{base_path}/locations/{locations_json_selected}'))
     for region in location_section_json:
         path = ""
@@ -1008,12 +1045,23 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
 
     # placed_location_section_list.bind("<FocusIn>", unfocus)
     # unplaced_location_section_list.bind("<FocusIn>", unfocus)
-    # scrollbar_canvas_y = create_scrollbar(frame_map_image, position=(0, 1), orientation="vertical",
-    #                                       sticky_direction="ns")
-    # scrollbar_canvas_x = create_scrollbar(frame_map_image, position=(1, 0), orientation="horizontal",
-    #                                       sticky_direction="ew")
+    scrollbar_canvas_y = create_scrollbar(frame_map_image, position=(0, 1), orientation="vertical",
+                                          sticky_direction="ns")
+    scrollbar_canvas_x = create_scrollbar(frame_map_image, position=(1, 0), orientation="horizontal",
+                                          sticky_direction="ew")
     # btn_map = tk.Button(frame, text='Select Location', command=select_location)
 
+    combine_scrollbar_with_widget(scrollbar_canvas_y,
+                                  canvas,
+                                  canvas.yview,
+                                  widget_command_ref=scrollbar_canvas_y.set,
+                                  widget_command_direction="yscrollcommand")
+    combine_scrollbar_with_widget(scrollbar_canvas_x,
+                                  canvas,
+                                  canvas.xview,
+                                  widget_command_ref=scrollbar_canvas_x.set,
+                                  widget_command_direction="xscrollcommand")
+    canvas.configure(scrollregion=(-200, -200, img.width(), img.height()))
     # scrollbar_canvas_y.config(command=canvas.yview)
     # scrollbar_canvas_x.config(command=canvas.xview)
 
