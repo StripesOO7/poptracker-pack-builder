@@ -283,50 +283,62 @@ def save():
 #     tk_image = ImageTk.PhotoImage(image)
 #     canvas.delete("all")
 #     canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
-def draw_rectangle(canvas_ref: Any, x: int, y: int, scaling_factor: float|int, fill_color: str):
+def draw_rectangle(canvas_ref: Any, x: int, y: int, scaling_factor: float|int, fill_color: str, size:int):
+    size_offset = round(size/2)
+    adjusted_x = x * scaling_factor
+    adjusted_y = y * scaling_factor
+    adjusted_offset = size_offset * scaling_factor
     return canvas_ref.create_polygon(
-        (x * scaling_factor) - 5, (y * scaling_factor) - 5,
-        (x * scaling_factor) + 5, (y * scaling_factor) - 5,
-        (x * scaling_factor) + 5, (y * scaling_factor) + 5,
-        (x * scaling_factor) - 5, (y * scaling_factor) + 5,
+        adjusted_x - adjusted_offset, adjusted_y - adjusted_offset,
+        adjusted_x + adjusted_offset, adjusted_y - adjusted_offset,
+        adjusted_x + adjusted_offset, adjusted_y + adjusted_offset,
+        adjusted_x - adjusted_offset, adjusted_y + adjusted_offset,
         fill="red",
     )
 
-def draw_diamond(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str):
+def draw_diamond(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str, size:int):
+    size_offset = round(size / 2)
+    adjusted_x = x * scaling_factor
+    adjusted_y = y * scaling_factor
+    adjusted_offset = size_offset * scaling_factor
     return canvas_ref.create_polygon(
-        (x * scaling_factor) - 5, (y * scaling_factor),
-        (x * scaling_factor), (y * scaling_factor) - 5,
-        (x * scaling_factor) + 5, (y * scaling_factor),
-        (x * scaling_factor), (y * scaling_factor) + 5,
+        adjusted_x - adjusted_offset , adjusted_y,
+        adjusted_x, adjusted_y - adjusted_offset ,
+        adjusted_x + adjusted_offset , adjusted_y,
+        adjusted_x, adjusted_y + adjusted_offset ,
         fill="red",
     )
 
-def draw_trapezoid(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str):
+def draw_trapezoid(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str, size:int):
+    size_offset = round(size / 2)
+    adjusted_x = x * scaling_factor
+    adjusted_y = y * scaling_factor
+    adjusted_offset = size_offset * scaling_factor
     return canvas_ref.create_polygon(
-        (x * scaling_factor) - 2, (y * scaling_factor) - 5,
-        (x * scaling_factor) + 2, (y * scaling_factor) - 5,
-        (x * scaling_factor) + 5, (y * scaling_factor) + 5,
-        (x * scaling_factor) - 5, (y * scaling_factor) + 5,
+        adjusted_x - round(adjusted_offset/2), adjusted_y - adjusted_offset,
+        adjusted_x + round(adjusted_offset/2), adjusted_y - adjusted_offset,
+        adjusted_x + adjusted_offset, adjusted_y + adjusted_offset,
+        adjusted_x - adjusted_offset, adjusted_y + adjusted_offset,
         fill="red",
     )
 
 
 def draw_shape_and_text(widget_ref:Any, location_dataset:dict[str, Any], shape: str, scaling_factor:float|int,
-                       location_path:str, textcolor:str="black") -> Tuple[int, int]:
+                       location_path:str, selected_size:int, textcolor:str="black") -> Tuple[int, int]:
     assert isinstance(widget_ref, tk.Canvas)
     match shape:
         case "rect":
             rect_id = draw_rectangle(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
-                             scaling_factor=scaling_factor, fill_color="red")
+                             scaling_factor=scaling_factor, size=selected_size, fill_color="red")
         case "diamond":
             rect_id = draw_diamond(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
-                                     scaling_factor=scaling_factor, fill_color="red")
+                                     scaling_factor=scaling_factor, size=selected_size, fill_color="red")
         case "trapezoid":
             rect_id = draw_trapezoid(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
-                                     scaling_factor=scaling_factor, fill_color="red")
+                                     scaling_factor=scaling_factor, size=selected_size, fill_color="red")
         case _:
             rect_id = draw_rectangle(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
-                                     scaling_factor=scaling_factor, fill_color="red")
+                                     scaling_factor=scaling_factor, size=selected_size, fill_color="red")
     text_id = widget_ref.create_text(
         location_dataset["x"] * scaling_factor,
         location_dataset["y"] * scaling_factor,
@@ -405,6 +417,7 @@ def resize_image(event):
                     widget_ref=canvas,
                     location_dataset=new_data[location][0],
                     shape=new_data[location][0]["shape"],
+                    selected_size=new_data[location][0]["size"],
                     scaling_factor=scaling_factor,
                     location_path=location,
                     textcolor="black"
@@ -509,10 +522,19 @@ def place_location(event):
     assert isinstance(size_selection, ttk.Combobox), "size_selection is not of type ttk.Combobox"
     assert isinstance(unplaced_locations, tk.Listbox), "unplaced_locations is not of type tk.Listbox"
     assert isinstance(placed_locations, tk.Listbox), "placed_locations is not of type tk.Listbox"
-
-    selected_unplaced_location = unplaced_locations.get(unplaced_locations.curselection())
+    if len(unplaced_locations.curselection()) > 0:
+        selected_unplaced_location = unplaced_locations.get(unplaced_locations.curselection()[0])
+    else:
+        selected_unplaced_location = None
+    if len(placed_locations.curselection()) > 0 :
+        selected_placed_location = placed_locations.get(placed_locations.curselection()[0])
+    else:
+        selected_placed_location = None
     # selected_placed_location = placed_locations.get(placed_locations.curselection())
-    selected_location = selected_unplaced_location# or selected_placed_location
+
+    selected_location = selected_unplaced_location or selected_placed_location or ""
+
+
     if selected_location in new_data.keys():
         canvas.delete(new_data[selected_location][1])
         canvas.delete(new_data[selected_location][2])
@@ -522,7 +544,9 @@ def place_location(event):
                          to_list=placed_locations,
                          selected_item_list=unplaced_locations.curselection(),
                          selected_object=unplaced_locations, )
-
+        unplaced_locations.selection_clear(0, tk.END)
+        placed_locations.selection_clear(0, tk.END)
+        placed_locations.selection_set(tk.END)
     # canvas.pack()
     # shape_id = canvas.create_rectangle(event.x - 5, event.y - 5, event.x + 5, event.y + 5, fill="red")
     # text_id = canvas.create_text(event.x, event.y, text=(
@@ -545,6 +569,7 @@ def place_location(event):
             location_path=selected_location,
             location_dataset=new_data[selected_location][0],
             shape=new_data[selected_location][0]["shape"],
+            selected_size=new_data[selected_location][0]["size"],
             scaling_factor=scaling_factor,
             textcolor="black"
         )
@@ -762,6 +787,7 @@ def traverse_json(region, path, location_list, canvas_ref):
                         widget_ref=canvas_ref,
                         location_dataset=new_data[name_key][0],
                         shape=new_data[name_key][0]["shape"],
+                        selected_size=new_data[name_key][0]["size"],
                         scaling_factor=scaling_factor,
                         location_path=new_path,
                         textcolor=selected_textcolor
@@ -846,8 +872,9 @@ def start_selection_screen(window_ref:Any, base_path:str):
                                    position=(0, 1), sticky_direction="ew")
     # create_new_map = create_button(frame_location_selection, text="Add new Map", command_ref=add_new_location,
     #                                position=(3, 0), sticky_direction="ew")
-
-    exit_loop_button = create_button(window, text="Exit", command_ref=exit_loop, sticky_direction="ew")
+    button_frame = create_frame(window_ref=window_ref, name="button_space", position=(3, 0),
+                                       sticky_direction="ew")
+    exit_loop_button = create_button(button_frame, text="Exit", command_ref=exit_loop, sticky_direction="ew")
     exit_loop_button.grid(row=4, columnspan=2, sticky="ew", padx=5, pady=5)
     # select image to open
     # map_list = {}
@@ -1029,14 +1056,17 @@ if __name__ == "__main__":
         frame_map_selection, _ = get_entity(window, tk.Frame, "map_selection")
         frame_location_selection, _ = get_entity(window, tk.Frame, "location_selection")
         window_list_of_locations, _ = get_entity(window, tk.Listbox, "list_of_locations")
+        button_frame_ref, _ = get_entity(window, tk.Frame, "button_space")
         # print(window)
         # frame_map_selection = window.children.get("map_selection")
         # frame_location_selection = window.children.get("location_selection")
         assert isinstance(frame_map_selection, tk.Frame), "frame_map_selection not of type tk.Frame"
         assert isinstance(frame_location_selection, tk.Frame), "frame_location_selection not of type tk.Frame"
         assert isinstance(window_list_of_locations, tk.Listbox), "window_list_of_locations not of type tk.Listbox"
+        assert isinstance(button_frame_ref, tk.Frame), "button_frame_ref not of type tk.Frame"
         frame_map_selection.destroy()
         frame_location_selection.destroy()
+        button_frame_ref.destroy()
         # frame_map_selection.grid_forget()
         # frame_location_selection.grid_forget()
 
