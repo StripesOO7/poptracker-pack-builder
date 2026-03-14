@@ -273,17 +273,47 @@ def save():
 #     tk_image = ImageTk.PhotoImage(image)
 #     canvas.delete("all")
 #     canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
-
-def draw_rect_and_text(widget_ref:Any, location_dataset:dict[str, Any], scaling_factor:float|int,
-                       location_path:str, textcolor:str="black") -> Tuple[int, int]:
-    assert isinstance(widget_ref, tk.Canvas)
-    rect_id = widget_ref.create_rectangle(
-        (location_dataset["x"] * scaling_factor) - 5,
-        (location_dataset["y"] * scaling_factor) - 5,
-        (location_dataset["x"] * scaling_factor) + 5,
-        (location_dataset["y"] * scaling_factor) + 5,
+def draw_rectangle(canvas_ref: Any, x: int, y: int, scaling_factor: float|int, fill_color: str):
+    return canvas_ref.create_polygon(
+        (x * scaling_factor) - 5, (y * scaling_factor) - 5,
+        (x * scaling_factor) + 5, (y * scaling_factor) - 5,
+        (x * scaling_factor) + 5, (y * scaling_factor) + 5,
+        (x * scaling_factor) - 5, (y * scaling_factor) + 5,
         fill="red",
     )
+
+def draw_diamond(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str):
+    return canvas_ref.create_polygon(
+        (x * scaling_factor) - 5, (y * scaling_factor),
+        (x * scaling_factor), (y * scaling_factor) - 5,
+        (x * scaling_factor) + 5, (y * scaling_factor),
+        (x * scaling_factor), (y * scaling_factor) + 5,
+        fill="red",
+    )
+
+def draw_trapezoid(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str):
+    return canvas_ref.create_polygon(
+        (x * scaling_factor) - 2, (y * scaling_factor) - 5,
+        (x * scaling_factor) + 2, (y * scaling_factor) - 5,
+        (x * scaling_factor) + 5, (y * scaling_factor) + 5,
+        (x * scaling_factor) - 5, (y * scaling_factor) + 5,
+        fill="red",
+    )
+
+
+def draw_shape_and_text(widget_ref:Any, location_dataset:dict[str, Any], shape: str, scaling_factor:float|int,
+                       location_path:str, textcolor:str="black") -> Tuple[int, int]:
+    assert isinstance(widget_ref, tk.Canvas)
+    match shape:
+        case "rect":
+            rect_id = draw_rectangle(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
+                             scaling_factor=scaling_factor, fill_color="red")
+        case "diamond":
+            rect_id = draw_diamond(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
+                                     scaling_factor=scaling_factor, fill_color="red")
+        case "trapezoid":
+            rect_id = draw_trapezoid(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
+                                     scaling_factor=scaling_factor, fill_color="red")
     text_id = widget_ref.create_text(
         location_dataset["x"] * scaling_factor,
         location_dataset["y"] * scaling_factor,
@@ -358,9 +388,10 @@ def resize_image(event):
             canvas.delete(new_data[location][2])
             del new_data[location][2]
             del new_data[location][1]
-            new_data[location].extend(draw_rect_and_text(
+            new_data[location].extend(draw_shape_and_text(
                     widget_ref=canvas,
                     location_dataset=new_data[location][0],
+                    shape=new_data[location][0]["shape"],
                     scaling_factor=scaling_factor,
                     location_path=location,
                     textcolor="black"
@@ -489,17 +520,18 @@ def place_location(event):
     #                              )
     new_data[selected_location] = [
         build_map_dict(
-            x = int(event.x//scaling_factor),
-            y = int(event.y//scaling_factor),
-            map_name = map_json_selected,
-            size = size_selection['values'][size_selection.current()],
-            shape = shape_selection['values'][shape_selection.current()],
+            x=int(event.x//scaling_factor),
+            y=int(event.y//scaling_factor),
+            map_name=map_json_selected,
+            size=size_selection['values'][size_selection.current()],
+            shape=shape_selection['values'][shape_selection.current()],
         )
     ]
-    new_data[selected_location].extend(draw_rect_and_text(
+    new_data[selected_location].extend(draw_shape_and_text(
             widget_ref=canvas,
             location_path=selected_location,
             location_dataset=new_data[selected_location][0],
+            shape=new_data[selected_location][0]["shape"],
             scaling_factor=scaling_factor,
             textcolor="black"
         )
@@ -619,13 +651,19 @@ def add_new_map():
                                     position=(2, 0), sticky_direction="nsew", command_ref=new_map_window.quit)
 
     save_map_addition = create_button(widget_ref=new_map_window, text="save new map",
-                                    position=(3, 0), sticky_direction="nsew", command_ref=write_new_map_json_entry)
+                                      position=(3, 0), sticky_direction="nsew", command_ref=write_new_map_json_entry)
 
     new_map_window.mainloop()
     # tk.forget(new_map_window)
     try:
         new_map_window.destroy()
         new_map_window = None
+        map_listbox, _ = get_entity(window, tk.Listbox, "list_of_maps")
+        assert isinstance(map_listbox, tk.Listbox)
+
+        map_listbox.delete(0, tk.END)
+        load_list_of_maps(map_listbox, fr"{base_path}/maps/maps.json")
+
     except:
         pass
 
@@ -656,10 +694,11 @@ def select_location():
 def traverse_json(region, path, location_list, canvas_ref):
     new_path = f"{path}/{region['name']}"
     selected_textcolor= "black"
+    name_key = new_path[1:]
     if "sections" in region.keys():
         location_list.append(
             {
-                "location": new_path[1:],
+                "location": name_key,
                 "placed": False,
             }
         )
@@ -670,7 +709,7 @@ def traverse_json(region, path, location_list, canvas_ref):
     if "map_locations" in region.keys():
         for map in region["map_locations"]:
             if map["map"] == map_json_selected:
-                new_data[new_path[1:]] = [
+                new_data[name_key] = [
                     build_map_dict(
                         x=int(map['x']),
                         y=int(map['y']),
@@ -679,9 +718,10 @@ def traverse_json(region, path, location_list, canvas_ref):
                         shape=map['shape'] if 'shape' in map.keys() else 'rect',
                     )
                 ]
-                new_data[new_path[1:]].extend(draw_rect_and_text(
+                new_data[name_key].extend(draw_shape_and_text(
                         widget_ref=canvas_ref,
-                        location_dataset=new_data[new_path[1:]][0],
+                        location_dataset=new_data[name_key][0],
+                        shape=new_data[name_key][0]["shape"],
                         scaling_factor=scaling_factor,
                         location_path=new_path,
                         textcolor=selected_textcolor
@@ -697,8 +737,8 @@ def load_list_of_maps(window_list_of_maps, maps_path):
     # map_list = (sorted(tmp_map_list.keys()))
     for key in sorted(tmp_map_list.keys()):
         map_list[key] = tmp_map_list[key]
-    for map in map_list.keys():
-        window_list_of_maps.insert(tk.END, map)
+    for map_name in map_list.keys():
+        window_list_of_maps.insert(tk.END, map_name)
 
     # select locations json to tp apply the images coords to
     # locations_files = os.listdir(f'{base_path}/locations')
@@ -767,14 +807,14 @@ def start_selection_screen(window_ref:Any, base_path:str):
     # select image to open
     # map_list = {}
     # json_maps = json.load(open(f"{base_path}/maps/maps.json"))
-    load_list_of_maps(window_list_of_maps, f"{base_path}/maps/maps.json")
+    load_list_of_maps(window_list_of_maps, fr"{base_path}/maps/maps.json")
     # for map_json in json_maps:
     #     map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
     #     window_list_of_maps.insert(tk.END, map_json["name"])
 
     # select locations json to tp apply the images coords to
     # locations_files = os.listdir(f'{base_path}/locations')
-    load_list_of_locations(window_list_of_locations, f'{base_path}/locations')
+    load_list_of_locations(window_list_of_locations, fr'{base_path}/locations')
     # # print(locations_files)
     # for location in locations_files:
     #     # print(location)
