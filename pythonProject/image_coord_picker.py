@@ -41,7 +41,9 @@ def create_frame(window_ref:Any,
     if name:
         frame.name = name
     if position:
-        frame.grid(row=position[0], column=position[1], sticky=sticky_direction)
+        frame.grid_configure(row=position[0], column=position[1])
+    if sticky_direction:
+        frame.grid_configure(sticky=sticky_direction)
     if row_config:
         for config in row_config:
             frame.rowconfigure(config[0], weight=config[1])
@@ -55,7 +57,9 @@ def create_scrollbar(widget_ref:Any, position:Optional[Tuple[int, int] | None] =
                      sticky_direction:str="nswe"):
     scrollbar = tk.Scrollbar(widget_ref, orient=orientation)
     if position:
-        scrollbar.grid_configure(row=position[0], column=position[1], sticky=sticky_direction)
+        scrollbar.grid_configure(row=position[0], column=position[1])
+    if sticky_direction:
+        scrollbar.grid_configure(sticky=sticky_direction)
     # else:
     #     scrollbar.pack()
     return scrollbar
@@ -71,7 +75,9 @@ def create_button(widget_ref:Any , text:str, command_ref:Any , position:Optional
     '''
     btn = tk.Button(widget_ref, text=text, command=command_ref)
     if position:
-        btn.grid_configure(row=position[0], column=position[1], padx=5, pady=5, sticky=sticky_direction)
+        btn.grid_configure(row=position[0], column=position[1], padx=5, pady=5)
+    if sticky_direction:
+        btn.grid_configure(sticky=sticky_direction)
     # else:
     #     btn.pack()
     # btn.pack(pady=10, padx=10)
@@ -102,6 +108,8 @@ def create_label(widget_ref:Any, text:str, position:Optional[Tuple[int, int] | N
     label = tk.Label(widget_ref, text=text)
     if position:
         label.grid_configure(row=position[0], column=position[1], sticky=sticky_direction)
+    if sticky_direction:
+        label.grid_configure(sticky=sticky_direction)
     # else:
     #     label.pack()
     return label
@@ -122,6 +130,8 @@ def create_combobox(widget_ref, state:str, value_list:List[str], default:str, na
         pass
     if position:
         combobox.grid_configure(row=position[0], column=position[1], sticky=sticky_direction)
+    if sticky_direction:
+        combobox.grid_configure(sticky=sticky_direction)
     combobox.set(combobox["values"][default_index])
     # combobox.pack(pady=10, padx=10)
     return combobox
@@ -313,6 +323,9 @@ def draw_shape_and_text(widget_ref:Any, location_dataset:dict[str, Any], shape: 
                                      scaling_factor=scaling_factor, fill_color="red")
         case "trapezoid":
             rect_id = draw_trapezoid(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
+                                     scaling_factor=scaling_factor, fill_color="red")
+        case _:
+            rect_id = draw_rectangle(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
                                      scaling_factor=scaling_factor, fill_color="red")
     text_id = widget_ref.create_text(
         location_dataset["x"] * scaling_factor,
@@ -604,32 +617,63 @@ def choose_file_path():
 
 def write_new_map_json_entry():
     global selected_file_path
+    name = ""
+    filename = ""
     if new_map_window is None:
-        return
+        map_selected, _ = get_entity(widget_ref=window, entity_type=tk.Listbox, name="list_of_maps")
+        assert isinstance(map_selected, tk.Listbox), "name_selected is not of type tk.Listbox"
+        name_selection = map_selected.curselection()
+        assert len(name_selection) > 0, "nothing selected"
+        name = map_selected.get(name_selection[0])
 
-    name_input, _ = get_entity(widget_ref=new_map_window, entity_type=tk.Entry, name="name input")
-    assert isinstance(name_input, tk.Entry)
-
-    if not selected_file_path == "":
-        if not (base_path in selected_file_path):
+    else:
+        name_input, _ = get_entity(widget_ref=new_map_window, entity_type=tk.Entry, name="name input")
+        assert isinstance(name_input, tk.Entry), "name_selected is not of type tk.Entry"
+        name = name_input.get()
+        if not selected_file_path == "":
+            if not (base_path in selected_file_path):
+                filename = os.path.basename(selected_file_path)
+                shutil.copy(selected_file_path, fr"{base_path}/images/{filename}")
             filename = os.path.basename(selected_file_path)
-            shutil.copy(selected_file_path, fr"{base_path}/images/{filename}")
-        filename = os.path.basename(selected_file_path)
-        with open(fr"{base_path}/maps/maps.json", "r+") as maps_json_file:
-            tmp_dict = json.load(maps_json_file)
-            maps_json_file.seek(0)  # 2. move cursor to start
-            maps_json_file.truncate()
+        assert not filename == ""
+
+    assert not name == ""
+
+    with open(fr"{base_path}/maps/maps.json", "r+") as maps_json_file:
+        tmp_dict = json.load(maps_json_file)
+        maps_json_file.seek(0)
+        maps_json_file.truncate()
+        if new_map_window is None:
+            for index, map_details in enumerate(tmp_dict):
+                if map_details["name"] == name:
+                    break
+            del tmp_dict[index]
+        else:
             tmp_dict.append(
                 {
-                    "name": name_input.get(),
+                    "name": name,
                     "img": f"images/{filename}",
                     "location_border_thickness": 1,
                     "location_size": 6,
                 }
             )
-            maps_json_file.write(json.dumps(tmp_dict))
-        selected_file_path = ""
+        maps_json_file.write(json.dumps(tmp_dict))
+    selected_file_path = ""
+    if new_map_window is None:
+        pass
+    else:
         new_map_window.quit()
+
+def reload_map_list():
+    map_listbox, _ = get_entity(window, tk.Listbox, "list_of_maps")
+    assert isinstance(map_listbox, tk.Listbox)
+
+    map_listbox.delete(0, tk.END)
+    load_list_of_maps(map_listbox, fr"{base_path}/maps/maps.json")
+
+def remove_map():
+    write_new_map_json_entry()
+    reload_map_list()
 
 def add_new_map():
     global new_map_window
@@ -658,11 +702,7 @@ def add_new_map():
     try:
         new_map_window.destroy()
         new_map_window = None
-        map_listbox, _ = get_entity(window, tk.Listbox, "list_of_maps")
-        assert isinstance(map_listbox, tk.Listbox)
-
-        map_listbox.delete(0, tk.END)
-        load_list_of_maps(map_listbox, fr"{base_path}/maps/maps.json")
+        reload_map_list()
 
     except:
         pass
@@ -732,8 +772,9 @@ def traverse_json(region, path, location_list, canvas_ref):
 
 def load_list_of_maps(window_list_of_maps, maps_path):
     tmp_map_list = {}
-    for map_json in json.load(open(maps_path)):
-        tmp_map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
+    with open(maps_path) as maps_file:
+        for map_json in json.load(maps_file):
+            tmp_map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
     # map_list = (sorted(tmp_map_list.keys()))
     for key in sorted(tmp_map_list.keys()):
         map_list[key] = tmp_map_list[key]
@@ -789,16 +830,20 @@ def start_selection_screen(window_ref:Any, base_path:str):
                                   )
 
     header_maps = create_label(frame_map_selection, text="Select a map", position=(0, 0), sticky_direction="ew")
-    btn_map = create_button(frame_map_selection, text='Select Map', command_ref=dialog, position=(2, 0),
-                            sticky_direction="ew")
+    # btn_map = create_button(frame_map_selection, text='Go with selection', command_ref=dialog, position=(2, 0),
+    #                         sticky_direction="ew")
 
     header_locations = create_label(frame_location_selection, text="Select location source", position=(0, 0),
                                     sticky_direction="ew")
-    btn_locations = create_button(frame_location_selection, text='Select JSON', command_ref=dialog, position=(2, 0),
+    btn_locations = create_button(frame_location_selection, text='Go with selection', command_ref=dialog, position=(2, 0),
                                   sticky_direction="ew")
 
-    create_new_map = create_button(frame_map_selection, text="Add new Map", command_ref=add_new_map,
-                                   position=(3, 0), sticky_direction="ew")
+
+    map_subframe = create_frame(frame_map_selection, name="map_subframe", position=(2, 0), sticky_direction="w")
+    create_new_map = create_button(map_subframe, text="Add new Map", command_ref=add_new_map,
+                                   position=(0, 0), sticky_direction="ew")
+    create_new_map = create_button(map_subframe, text="Remove selected Map", command_ref=remove_map,
+                                   position=(0, 1), sticky_direction="ew")
     # create_new_map = create_button(frame_location_selection, text="Add new Map", command_ref=add_new_location,
     #                                position=(3, 0), sticky_direction="ew")
 
