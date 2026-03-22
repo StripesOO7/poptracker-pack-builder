@@ -399,8 +399,8 @@ def load_new_base_image(window_ref:Any, img_path:str=""):
         new_img_path = filedialog.askopenfilename()
     image = Image.open(fr"{new_img_path}")
     og_img_size = image.size
-    og_img_width = og_img_size[0] if og_img_size[0] < 1000 else 1000
-    og_img_height = og_img_size[1] if og_img_size[1] < 700 else 700
+    og_img_width = og_img_size[0] # if og_img_size[0] < 1000 else 1000
+    og_img_height = og_img_size[1] # if og_img_size[1] < 700 else 700
     copy_of_image = image.copy()
     if img_path == "":
         window_ref.geometry(f"{og_img_width}x{og_img_height}")
@@ -543,7 +543,7 @@ def restore_default_markings():
 def place_location(event):
     print("clicked at", event.x, event.y)
     print("scaling factor", scaling_factor)
-    print("actual image coords", event.x//scaling_factor, event.y//scaling_factor)
+    print("actual image coords", event.x //scaling_factor, event.y // scaling_factor)
 
     canvas, _ = get_entity(window, tk.Canvas, "map image canvas")
     shape_selection, _ = get_entity(window, ttk.Combobox, "shape_selection")
@@ -593,8 +593,8 @@ def place_location(event):
     #                              )
         new_data[selected_location] = [
             build_map_dict(
-                x=int(event.x//scaling_factor),
-                y=int(event.y//scaling_factor),
+                x=int(event.x // scaling_factor),
+                y=int(event.y // scaling_factor),
                 map_name=map_json_selected,
                 size=int(size_selection['values'][size_selection.current()]),
                 shape=shape_selection['values'][shape_selection.current()],
