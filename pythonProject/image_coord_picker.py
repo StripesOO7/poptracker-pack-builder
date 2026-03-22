@@ -15,6 +15,7 @@ class fake_event:
 
 
 coords = (0, 0)
+location_section_json = []
 locations_json_selected = ""
 map_json_selected = ""
 og_img_size = (0, 0)
@@ -223,7 +224,8 @@ def save():
     # location_section_json
     # filled with the split names in the location list intersected with integers for list traversal
     found_map = False
-    for location in location_list:
+    for location_tuple in location_list:
+        location = location_tuple["location"]
         path = []
         tmp = location_section_json
         if location in new_data.keys():
@@ -995,7 +997,8 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     # canvas.image = img
     zoom_in_btn = create_button(widget_ref=frame_map_image, position=(2,0), sticky_direction="ew", command_ref=zoom_in, text="zoom in")
     zoom_out_btn = create_button(widget_ref=frame_map_image, position=(2,1), sticky_direction="ew", command_ref=zoom_out, text="zoom out")
-    location_section_json = json.load(open(f'{base_path}/locations/{locations_json_selected}'))
+    # location_section_json
+    location_section_json.append(*json.load(open(f'{base_path}/locations/{locations_json_selected}')))
     for region in location_section_json:
         path = ""
         print(region["name"])
@@ -1061,7 +1064,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
                                   canvas.xview,
                                   widget_command_ref=scrollbar_canvas_x.set,
                                   widget_command_direction="xscrollcommand")
-    canvas.configure(scrollregion=(-200, -200, img.width(), img.height()))
+    canvas.configure(scrollregion=(0, 0, img.width(), img.height()))
     # scrollbar_canvas_y.config(command=canvas.yview)
     # scrollbar_canvas_x.config(command=canvas.xview)
 
@@ -1121,7 +1124,7 @@ if __name__ == "__main__":
 
         print(map_json_selected, locations_json_selected)
         if not map_json_selected == "" and not locations_json_selected == "":
-            location_section_json = {}
+            location_section_json = []
             location_list = []
             start_edit_screen(window, base_path, map_list, map_json_selected, locations_json_selected,
                               location_section_json, location_list)
