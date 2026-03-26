@@ -107,7 +107,7 @@ def create_listbox(widget_ref:Any , name, position:Optional[Tuple[int, int] | No
 
 def create_canvas(widget_ref, name:str, img_ref, anchor:str, position:Optional[Tuple[int, int] | None] = None):
     canvas = tk.Canvas(widget_ref, name=name, width=img_ref.width(), height=img_ref.height())
-    canvas_img_id = canvas.create_image(500, 550, image=img_ref, anchor=anchor)
+    canvas_img_id = canvas.create_image(0, 0, image=img_ref, anchor=anchor)
     canvas.image = img_ref
     return canvas, canvas_img_id
 
@@ -293,7 +293,7 @@ def zoom_in():
         event = fake_event(width=new_width, height=new_height)
         resize_image(event)
 
-        canvas_ref.configure(scrollregion=(-200, -200, new_width, new_height))
+        canvas_ref.configure(scrollregion=(0, 0, new_width, new_height))
         # canvas_ref.scale("all", 0, 0, 1.2, 1.2)
     except:
         pass
@@ -313,7 +313,7 @@ def zoom_out():
         event = fake_event(width=new_width, height=new_height)
         resize_image(event)
 
-        canvas_ref.configure(scrollregion=(-200, -200, new_width, new_height))
+        canvas_ref.configure(scrollregion=(0, 0, new_width, new_height))
 
         # canvas_ref.scale("all", 0,0, 0.8, 0.8)
     except:
@@ -443,6 +443,7 @@ def resize_image(event):
         canvas_img_id = canvas.create_image(0, 0, image=photo, anchor="nw")
 
         canvas.image = photo  # avoid garbage collection
+        canvas.config(width=new_width, height=new_height)
         # load_already_present_data(new_data, canvas)
         for location in new_data.keys():
             canvas.delete(new_data[location][1])
@@ -946,8 +947,8 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     # for map_name, map_image_path in map_list:
     # print(map_name, map_image_path)
 
-    window_ref.columnconfigure(0, weight=1)
-    window_ref.columnconfigure(1, weight=5)
+    window_ref.columnconfigure(0, weight=1, minsize=300)
+    window_ref.columnconfigure(1, weight=3)
     window_ref.columnconfigure(2, weight=0)
 
     frame_location_selection = create_frame(window_ref, name="location_selection", position=(0, 0), sticky_direction="nsew",
@@ -989,8 +990,8 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     # exit_loop_button.pack()
 
 
-    frame_map_image.columnconfigure(0, weight=5, minsize=500)
-    frame_map_image.rowconfigure(0, weight=5)
+    frame_map_image.columnconfigure(0, weight=1)#, minsize=300)
+    frame_map_image.rowconfigure(0, weight=1)
     canvas, canvas_img_id = create_canvas(frame_map_image, name="map image canvas", img_ref=img, anchor="nw", position=(0,0))
     # canvas = tk.Canvas(frame_map_image, name="map image test", width=img.width(), height=img.height())
     # canvas_img_id = canvas.create_image(500, 550, image=img, anchor="nw")
