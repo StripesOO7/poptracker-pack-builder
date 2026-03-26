@@ -28,6 +28,7 @@ canvas_img_id = 0
 loop = True
 selected_file_path = ""
 new_map_window = None
+zoom_scale = 1.0
 
 
 def create_frame(window_ref:Any,
@@ -277,47 +278,56 @@ def save():
 #         )
 #     return new_data
 
+# def zoom_in():
+#     # Increase the image size by a factor (e.g., 1.2)
+#     # image = image.resize((int(image.width * 1.2), int(image.height * 1.2)), Image.ANTIALIAS)
+#     # tk_image = ImageTk.PhotoImage(image)
+#     # canvas.delete("all")
+#     # canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
+#     canvas_ref, _ = get_entity(window, tk.Canvas, "map image canvas")
+#     assert isinstance(canvas_ref, tk.Canvas)
+#     try:
+#         img = canvas_ref.__getattribute__("image")
+#         old_img_size = img.__getattribute__("_PhotoImage__size")
+#         new_width = round(old_img_size[0] * 1.2)
+#         new_height = round(old_img_size[1] * 1.2)
+#         event = fake_event(width=new_width, height=new_height)
+#         resize_image(event)
+#
+#         canvas_ref.configure(scrollregion=(0, 0, new_width, new_height))
+#         # canvas_ref.scale("all", 0, 0, 1.2, 1.2)
+#     except:
+#         pass
+# def zoom_out():
+#     # Decrease the image size by a factor (e.g., 0.8)
+#     # image = image.resize((int(image.width * 0.8), int(image.height * 0.8)), Image.ANTIALIAS)
+#     # tk_image = ImageTk.PhotoImage(image)
+#     # canvas.delete("all")
+#     # canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
+#     canvas_ref, _ = get_entity(window, tk.Canvas, "map image canvas")
+#     assert isinstance(canvas_ref, tk.Canvas)
+#     try:
+#         img = canvas_ref.__getattribute__("image")
+#         old_img_size = img.__getattribute__("_PhotoImage__size")
+#         new_width = round(old_img_size[0] * 0.8)
+#         new_height = round(old_img_size[1] * 0.8)
+#         event = fake_event(width=new_width, height=new_height)
+#         resize_image(event)
+#
+#         canvas_ref.configure(scrollregion=(0, 0, new_width, new_height))
+#
+#         # canvas_ref.scale("all", 0,0, 0.8, 0.8)
+#     except:
+#         pass
 def zoom_in():
-    # Increase the image size by a factor (e.g., 1.2)
-    # image = image.resize((int(image.width * 1.2), int(image.height * 1.2)), Image.ANTIALIAS)
-    # tk_image = ImageTk.PhotoImage(image)
-    # canvas.delete("all")
-    # canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
-    canvas_ref, _ = get_entity(window, tk.Canvas, "map image canvas")
-    assert isinstance(canvas_ref, tk.Canvas)
-    try:
-        img = canvas_ref.__getattribute__("image")
-        old_img_size = img.__getattribute__("_PhotoImage__size")
-        new_width = round(old_img_size[0] * 1.2)
-        new_height = round(old_img_size[1] * 1.2)
-        event = fake_event(width=new_width, height=new_height)
-        resize_image(event)
+    global zoom_scale
+    zoom_scale *= 1.2
+    redraw_canvas()
 
-        canvas_ref.configure(scrollregion=(0, 0, new_width, new_height))
-        # canvas_ref.scale("all", 0, 0, 1.2, 1.2)
-    except:
-        pass
 def zoom_out():
-    # Decrease the image size by a factor (e.g., 0.8)
-    # image = image.resize((int(image.width * 0.8), int(image.height * 0.8)), Image.ANTIALIAS)
-    # tk_image = ImageTk.PhotoImage(image)
-    # canvas.delete("all")
-    # canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
-    canvas_ref, _ = get_entity(window, tk.Canvas, "map image canvas")
-    assert isinstance(canvas_ref, tk.Canvas)
-    try:
-        img = canvas_ref.__getattribute__("image")
-        old_img_size = img.__getattribute__("_PhotoImage__size")
-        new_width = round(old_img_size[0] * 0.8)
-        new_height = round(old_img_size[1] * 0.8)
-        event = fake_event(width=new_width, height=new_height)
-        resize_image(event)
-
-        canvas_ref.configure(scrollregion=(0, 0, new_width, new_height))
-
-        # canvas_ref.scale("all", 0,0, 0.8, 0.8)
-    except:
-        pass
+    global zoom_scale
+    zoom_scale *= 0.8
+    redraw_canvas()
 
 def draw_rectangle(canvas_ref: Any, x: int, y: int, scaling_factor: float|int, fill_color: str, size:int):
     size_offset = round(size/2)
@@ -413,22 +423,26 @@ def load_new_base_image(window_ref:Any, img_path:str=""):
 def save_new_base_image():
     pass
 
-
 def resize_image(event):
+    global base_scale
+
     if event.width < 10 or event.height < 10:
         return
-    # print("start run resize image")
-    # canvas = event.widget()
-    global image, scaling_factor, canvas_img_id, new_data
-    # new_data = {}
+
     if event.width / og_img_width < event.height / og_img_height:
-        scaling_factor = event.width / og_img_width
+        base_scale = event.width / og_img_width
     else:
-        scaling_factor = event.height / og_img_height
+        base_scale = event.height / og_img_height
+
+    redraw_canvas()
+
+def redraw_canvas():
+    global image, canvas_img_id, scaling_factor
+
+    scaling_factor = base_scale * zoom_scale
 
     new_width = round(og_img_width * scaling_factor)
     new_height = round(og_img_height * scaling_factor)
-
 
     image = copy_of_image.resize((new_width, new_height))
     photo = ImageTk.PhotoImage(image)
@@ -437,48 +451,91 @@ def resize_image(event):
 
     if isinstance(canvas, tk.Canvas):
         canvas.delete(canvas_img_id)
-        # for id in rectangle_id:
-        #     canvas.delete(id)
-        # rectangle_id.clear()
         canvas_img_id = canvas.create_image(0, 0, image=photo, anchor="nw")
+        canvas.image = photo
 
-        canvas.image = photo  # avoid garbage collection
-        canvas.config(width=new_width, height=new_height)
-        # load_already_present_data(new_data, canvas)
+        canvas.configure(scrollregion=(0, 0, new_width, new_height))
+
+        # redraw markers
         for location in new_data.keys():
             canvas.delete(new_data[location][1])
             canvas.delete(new_data[location][2])
             del new_data[location][2]
             del new_data[location][1]
-            new_data[location].extend(draw_shape_and_text(
-                    widget_ref=canvas,
-                    location_dataset=new_data[location][0],
-                    shape=new_data[location][0]["shape"],
-                    selected_size=new_data[location][0]["size"],
-                    scaling_factor=scaling_factor,
-                    location_path=location,
-                    textcolor="black"
-                )
-            )
-            # new_data[location][1] = canvas.create_rectangle(
-            #     (new_data[location][0]["x"]*scaling_factor) - 5,
-            #     (new_data[location][0]["y"]*scaling_factor) - 5,
-            #     (new_data[location][0]["x"]*scaling_factor) + 5,
-            #     (new_data[location][0]["y"]*scaling_factor) + 5,
-            #     fill="red"
-            # )
-            # new_data[location][2] = canvas.create_text(
-            #     new_data[location][0]["x"]*scaling_factor,
-            #     new_data[location][0]["y"]*scaling_factor,
-            #     text=(
-            #         f"x:{new_data[location][0]['x']}, y: {new_data[location][0]['y']}\n"
-            #         f"{new_data[location][0]['map']},\n"
-            #         f"shape:{new_data[location][0]['shape']}\n"
-            #         f"size:{new_data[location][0]['size']}"
-            #     )
-            # )
 
-    # print("end run resize image")
+            new_data[location].extend(draw_shape_and_text(
+                widget_ref=canvas,
+                location_dataset=new_data[location][0],
+                shape=new_data[location][0]["shape"],
+                selected_size=new_data[location][0]["size"],
+                scaling_factor=scaling_factor,
+                location_path=location,
+                textcolor="black"
+            ))
+# def resize_image(event):
+#     if event.width < 10 or event.height < 10:
+#         return
+#     # print("start run resize image")
+#     # canvas = event.widget()
+#     global image, scaling_factor, canvas_img_id, new_data
+#     # new_data = {}
+#     if event.width / og_img_width < event.height / og_img_height:
+#         scaling_factor = event.width / og_img_width
+#     else:
+#         scaling_factor = event.height / og_img_height
+#
+#     new_width = round(og_img_width * scaling_factor)
+#     new_height = round(og_img_height * scaling_factor)
+#
+#
+#     image = copy_of_image.resize((new_width, new_height))
+#     photo = ImageTk.PhotoImage(image)
+#
+#     canvas, _ = get_entity(window, tk.Canvas, "map image canvas")
+#
+#     if isinstance(canvas, tk.Canvas):
+#         canvas.delete(canvas_img_id)
+#         # for id in rectangle_id:
+#         #     canvas.delete(id)
+#         # rectangle_id.clear()
+#         canvas_img_id = canvas.create_image(0, 0, image=photo, anchor="nw")
+#
+#         canvas.image = photo  # avoid garbage collection
+#         # load_already_present_data(new_data, canvas)
+#         for location in new_data.keys():
+#             canvas.delete(new_data[location][1])
+#             canvas.delete(new_data[location][2])
+#             del new_data[location][2]
+#             del new_data[location][1]
+#             new_data[location].extend(draw_shape_and_text(
+#                     widget_ref=canvas,
+#                     location_dataset=new_data[location][0],
+#                     shape=new_data[location][0]["shape"],
+#                     selected_size=new_data[location][0]["size"],
+#                     scaling_factor=scaling_factor,
+#                     location_path=location,
+#                     textcolor="black"
+#                 )
+#             )
+#             # new_data[location][1] = canvas.create_rectangle(
+#             #     (new_data[location][0]["x"]*scaling_factor) - 5,
+#             #     (new_data[location][0]["y"]*scaling_factor) - 5,
+#             #     (new_data[location][0]["x"]*scaling_factor) + 5,
+#             #     (new_data[location][0]["y"]*scaling_factor) + 5,
+#             #     fill="red"
+#             # )
+#             # new_data[location][2] = canvas.create_text(
+#             #     new_data[location][0]["x"]*scaling_factor,
+#             #     new_data[location][0]["y"]*scaling_factor,
+#             #     text=(
+#             #         f"x:{new_data[location][0]['x']}, y: {new_data[location][0]['y']}\n"
+#             #         f"{new_data[location][0]['map']},\n"
+#             #         f"shape:{new_data[location][0]['shape']}\n"
+#             #         f"size:{new_data[location][0]['size']}"
+#             #     )
+#             # )
+#
+#     # print("end run resize image")
 
 def get_entity(widget_ref:Any, entity_type:Any, name:str):
     entity_found = False
@@ -592,10 +649,12 @@ def place_location(event):
     #     f"shape:{shape_selection['values'][shape_selection.current()]}\n"
     #     f"size:{size_selection['values'][size_selection.current()]}")
     #                              )
+        canvas_x = canvas.canvasx(event.x)
+        canvas_y = canvas.canvasy(event.y)
         new_data[selected_location] = [
             build_map_dict(
-                x=int(event.x // scaling_factor),
-                y=int(event.y // scaling_factor),
+                x=int(canvas_x // scaling_factor),
+                y=int(canvas_y // scaling_factor),
                 map_name=map_json_selected,
                 size=int(size_selection['values'][size_selection.current()]),
                 shape=shape_selection['values'][shape_selection.current()],
