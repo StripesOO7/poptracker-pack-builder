@@ -23,7 +23,7 @@ requests package to load the needed Archipelago-Datapackage and PIL for creating
 When you are starting to Build a fresh pack you will need to run `builder.py` which is the Main script for all of this. 
 
 It will ask you so select a folder to create the packs base-structure into. 
-*Idealy this folder is empty to have a clean working area* but preexisting folders and files wont be overwritten unless
+*Ideally this folder is empty to have a clean working area* but preexisting folders and files wont be overwritten unless
 they conflict with the naming scheme for Poptracker.
 Next the Pack askes for a source, an URL, to fetch the needed Datapackage from. This can be
 `https://archipelago.gg/datapackage` for supported Games or i.e `http://localhost/datapackage` if you are locally hosting a copy of the Archipelago Webhost with custom (unsupported/in-development) apworlds.
