@@ -16,7 +16,7 @@ From here on i assume you know how to run scripts with Python.
 ### Very first run
 
 On the very first run the Script will install some needed Python packages listed in the requirements.txt. Mainly the
-requests package to load the needed Archipelago-Datapackage and PIL for creating images for textbased Settings if needed
+requests package to load the needed Archipelago-Datapackage and PIL for creating images for textbased Settings if needed. 
 
 ## How to build a Pack
 
@@ -25,8 +25,16 @@ When you are starting to Build a fresh pack you will need to run `builder.py` wh
 It will ask you so select a folder to create the packs base-structure into. 
 *Ideally this folder is empty to have a clean working area* but preexisting folders and files wont be overwritten unless
 they conflict with the naming scheme for Poptracker.
-Next the Pack askes for a source, an URL, to fetch the needed Datapackage from. This can be
-`https://archipelago.gg/datapackage` for supported Games or i.e `http://localhost/datapackage` if you are locally hosting a copy of the Archipelago Webhost with custom (unsupported/in-development) apworlds.
+Next the Pack askes for a source, an URL or path to a JSON, to fetch the needed Datapackage from. 
+
+For the URL part this can be `https://archipelago.gg/datapackage` for supported Games or i.e
+`http://localhost/datapackage` if you are locally hosting a copy of the Archipelago Webhost with custom
+(unsupported/in-development) apworlds.
+
+For the File Path you need to first to have the apworld for the game you want to make a pack installed and export the
+Datapackage locally via the AP Launcher and clicking "Export Datapackage".
+Next you provide the Script with the full path to the exported .json file inclduing the filename.
+
 After that it will ask for the **exact** name of the game you want to create the Tracker for. It needs to match the one from the Datapackage.  
 After both has been provided these information get stored inside of `datapackage_url.json`
 
@@ -153,6 +161,25 @@ work in the [Poptracker Packs Interface-Guide](https://github.com/black-sliver/P
 The script creates multiple files to make things more readable but in the end they get loaded as nested imports from
 Poptracker. Play around with it to see how things work together but keep an untouched version or run `location_json.py`
 again to restore the default state from the script.
+
+## Placing Section on a map
+
+When running `image_coord_picker.py` you will get first asked again to point the script to your packs root. from there
+it will read your `maps.json` and list the found map entires from there as well as listing your files from the
+`/locations/` folder. 
+
+Select the corresponging map and locations file you want to place the sections from onto the selected map. 
+
+The UI will now load the set map image as well as read the selected location json file and present a list of either
+already placed or unplaced sections. 
+You can now click an item in the lists and then place it on the map where ever you want to. the selected size, shape and
+coordinates will be stored and a visual representation will be drawn on the map.
+
+Already placed locations will have their old entry replaced with the new settings. 
+Unplaced locations will have the new entry added to their `map_locations` list in json. 
+
+Repeat that until you are done. Afterwards hit the save button and your changes will be written into the selected
+locations json file.
 
 ## Generate images for textbased settings
 
