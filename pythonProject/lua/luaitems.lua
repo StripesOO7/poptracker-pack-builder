@@ -8,7 +8,7 @@ local function CanProvideCodeFunc(self, code)
     return code == self.Name
 end
 
----function that get triggered when left clicking a lua items as hosted item or in an itemgrid
+---function that gets triggered when left clicking a lua items as hosted item or in an itemgrid
 ---will do whatever you want it to
 ---@param self LuaItem
 local function OnLeftClickFunc(self)
@@ -16,7 +16,7 @@ local function OnLeftClickFunc(self)
     -- return true
 end
 
----function that get triggered when right clicking a lua items as hosted item or in an itemgrid
+---function that gets triggered when right clicking a lua items as hosted item or in an itemgrid
 ---will do what ever you want it to
 ---@param self LuaItem
 local function OnRightClickFunc(self)
@@ -24,7 +24,7 @@ local function OnRightClickFunc(self)
     -- return true
 end
 
----function that get triggered when middle clicking a lua items as hosted item or in an itemgrid
+---function that gets triggered when middle clicking a lua items as hosted item or in an itemgrid
 ---will dp whatever you want it to
 ---@param self LuaItem
 local function OnMiddleClickFunc(self)
@@ -41,13 +41,12 @@ end
 ---@return integer
 local function ProvidesCodeFunc(self, code)
     if CanProvideCodeFunc(self, code) then
-
-            return 1
-        end
+		return 1
+	end
     return 0
 end
 
----save function triggered on closing popotracker to have a state to restore later on. specific to custom preudo-cache LuaItems
+---save function triggered on closing poptracker to have a state to restore later on. specific to custom pseudo-cache LuaItems
 ---@param self LuaItem
 ---@return table
 local function SaveManualLocationStorageFunc(self)
@@ -61,7 +60,7 @@ local function SaveManualLocationStorageFunc(self)
     }
 end
 
----function triggered on loading the pack to restore the lat saves state. specific to custom preudo-cache LuaItems
+---function triggered on loading the pack to restore the last saved state. specific to custom pseudo-cache LuaItems
 ---@param self LuaItem
 ---@param data table
 local function LoadManualLocationStorageFunc(self, data)
@@ -90,7 +89,7 @@ end
 
 ------
 
----creates an empty pseudo cache item to store various states for up to 10 seeds to restroe when reconncing to those.
+---creates an empty pseudo cache item to store various states for up to 10 seeds to restroe when reconncting to those.
 ---mainly intended for manually marked off locations like shops or inspected locations OR for item states that have been
 ---manually set because they are hard to infer from game/server state
 ---@param name string

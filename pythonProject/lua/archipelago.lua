@@ -38,7 +38,7 @@ Troll_Lookup = {
 ---@param o table
 ---@param depth? integer
 ---@return string
-function Dump_table(o, depth)
+function DumpTable(o, depth)
     if depth == nil then
         depth = 0
     end
@@ -50,7 +50,7 @@ function Dump_table(o, depth)
             if type(k) ~= 'number' then
                 k = '"' .. k .. '"'
             end
-            s = s .. tabs2 .. '[' .. k .. '] = ' .. Dump_table(v, depth + 1) .. ',\n'
+            s = s .. tabs2 .. '[' .. k .. '] = ' .. DumpTable(v, depth + 1) .. ',\n'
         end
         return s .. tabs .. '}'
     else
@@ -58,9 +58,9 @@ function Dump_table(o, depth)
     end
 end
 
----helper function that gets called when a locationSection has changed state.
+---helper function that gets called when a LocationSection has changed state.
 ---checks if the interaction was from the server or manual.
----if manual puts it into a cache for keeping that locationSection toggled when reconnecting
+---if manual, puts it into a cache for keeping that LocationSection toggled when reconnecting
 ---@param location LocationSection
 function LocationHandler(location)
     if MANUAL_CHECKED then
@@ -88,7 +88,7 @@ function LocationHandler(location)
         end
     end
     -- local custom_storage_item = Tracker:FindObjectForCode("manual_location_storage").ItemState
-    -- print(Dump_table(storage_item.ItemState.MANUAL_LOCATIONS))
+    -- print(DumpTable(storage_item.ItemState.MANUAL_LOCATIONS))
     ForceUpdate() --
 end
 
@@ -102,11 +102,11 @@ function ForceUpdate()
 end
 
 
----resets a give item back to default or whats saved for the gives seed in the pseuso-cache LuaItems
+---resets a given item back to default or what's saved for the given seed in the pseuso-cache LuaItems
 ---@param item_type string table of the ItemCode and extra parameters from the Item_Mapping.lau
----@param item_obj JsonItem Tracker:Findobject(item) retrun object
+---@param item_obj JsonItem Tracker:FindObjectForCode(item) return object
 ---@param item_code string Reference for the custom LuaItem CachesItems
-function ItemReset(item_type, item_obj, item_code)
+local function ItemReset(item_type, item_obj, item_code)
     if item_obj.Type == "toggle" then
         item_obj.Active = false
     elseif item_obj.Type == "progressive" then
@@ -125,9 +125,9 @@ end
 
 ---resets a given location back to default or whats saved for the gives seed in the pseuso-cache LuaItems
 ---@param location string String of the Location or LocatioSection to reset
----@param location_obj JsonItem|LocationSection Tracker:Findobject(location)retrun object
+---@param location_obj JsonItem|LocationSection Tracker:FindObjectForCode(location) return object
 ---@param custom_storage_item table Reference for the custom LuaItem CachesItems
-function LocationReset(location, location_obj, custom_storage_item)
+local function LocationReset(location, location_obj, custom_storage_item)
     if location:sub(1, 1) == "@" then
         ---@cast location_obj LocationSection
         if custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID] then
@@ -143,8 +143,8 @@ function LocationReset(location, location_obj, custom_storage_item)
 end
 
 
---- Function for prepare custom LuaItems for caching, check for mischieve/traps, subscribe to datastorage
-function PreOnClear()
+--- Function to prepare custom LuaItems for caching, check for mischieve/traps, subscribe to datastorage
+local function PreOnClear()
     PLAYER_ID = Archipelago.PlayerNumber or -1
 	TEAM_NUMBER = Archipelago.TeamNumber or 0
     if PLAYER_ID > -1 then
@@ -155,10 +155,10 @@ function PreOnClear()
             end
         end
 
-        --- example for how to build a date object and how to check current users date against it
-        --local start_day_range = Build_Time_Obj(nil, 3 , 31)
-        --local end_day_range = Build_Time_Obj(nil, 4 , 5)
-        --DATE_CHECK_PASSED = Check_Date_Range(start_day_range, end_day_range, os.time())
+        --- example for how to build a date object and how to check current user's date against it
+        --local start_day_range = BuildTimeObj(nil, 3 , 31)
+        --local end_day_range = BuildTimeObj(nil, 4 , 5)
+        --DATE_CHECK_PASSED = CheckDateRange(start_day_range, end_day_range, os.time())
         --if TROLL_PLAYER == false and DATE_CHECK_PASSED then
         --    TROLL_PLAYER = true
         --end
@@ -212,7 +212,7 @@ function OnClear(slot_data)
         CreateLuaManualStorageItem("manual_location_storage")
         custom_storage_item = Tracker:FindObjectForCode("manual_location_storage").ItemState
     end
-    -- repeat that here for every cache-storage item you create just to be save
+    -- repeat that here for every cache-storage item you create just to be safe
 
     PreOnClear()
 
@@ -247,7 +247,7 @@ function OnClear(slot_data)
     TEAM_NUMBER = Archipelago.TeamNumber or 0
     SLOT_DATA = slot_data
     -- if Tracker:FindObjectForCode("autofill_settings").Active == true then
-    --     autoFill(slot_data)
+    --     AutoFill(slot_data)
     -- end
     -- print(PLAYER_ID, TEAM_NUMBER)
     if Archipelago.PlayerNumber > -1 then
@@ -270,9 +270,9 @@ function OnClear(slot_data)
     MANUAL_CHECKED = true
 end
 
----Run every time an Item gets send to the connected slot
----@param index integer running index for the items the connected slot has receivied so far
----@param item_id integer itemID from the games datapackage the the send item
+---Run every time an Item gets sent to the connected slot
+---@param index integer running index for the items the connected slot has received so far
+---@param item_id integer ID of the received item, matching then game's datapackage ID
 ---@param item_name string name of the item from the datapackage for the given itemID
 ---@param player_number integer slotnumber of the player who picked up the item
 function OnItem(index, item_id, item_name, player_number)
@@ -320,8 +320,8 @@ function OnItem(index, item_id, item_name, player_number)
     end
 end
 
---called when a location gets cleared
----@param location_id integer ID of the locations cleared from the datapackage
+---called when a location gets cleared
+---@param location_id integer ID of the location cleared from the datapackage
 ---@param location_name string name of the location cleared from the datapackage
 function OnLocation(location_id, location_name)
     MANUAL_CHECKED = false
@@ -332,13 +332,13 @@ function OnLocation(location_id, location_name)
     end
 
     for _, location in pairs(location_array) do
-        local location_obj = Tracker:FindObjectForCode(location)  --[[@as LocationSection]]
+        local location_obj = Tracker:FindObjectForCode(location)
         -- print(location, location_obj)
         if location_obj then
             if location:sub(1, 1) == "@" then
-                location_obj.AvailableChestCount = location_obj.AvailableChestCount - 1
+                (location_obj --[[@as LocationSection]]).AvailableChestCount = location_obj.AvailableChestCount - 1
             else
-                location_obj.Active = true
+                (location_obj --[[@as JsonItem]]).Active = true
             end
         else
             print(string.format("OnLocation: could not find location_object for code %s", location))
@@ -347,14 +347,11 @@ function OnLocation(location_id, location_name)
     MANUAL_CHECKED = true
 end
 
--- this Autofill function is meant as an example on how to do the reading from slotdata and mapping the values to
--- your own settings
--- function autoFill()
---     if SLOT_DATA == nil  then
---         print("its fucked")
---         return
---     end
---     -- print(Dump_table(SLOT_DATA))
+-- this Autofill function is meant as an example on how to do the reading from slot_data
+-- and mapping the values to your own settings
+-- ---@param slot_data table
+-- function AutoFill(slot_data)
+--     -- print(DumpTable(slot_data))
 
 --     mapToggle={[0]=0,[1]=1,[2]=1,[3]=1,[4]=1}
 --     mapToggleReverse={[0]=1,[1]=0,[2]=0,[3]=0,[4]=0}
@@ -363,10 +360,9 @@ end
 --     slotCodes = {
 --         map_name = {code="", mapping=mapToggle...}
 --     }
---     -- print(Dump_table(SLOT_DATA))
 --     -- print(Tracker:FindObjectForCode("autofill_settings").Active)
 --     if Tracker:FindObjectForCode("autofill_settings").Active == true then
---         for settings_name , settings_value in pairs(SLOT_DATA) do
+--         for settings_name, settings_value in pairs(slot_data) do
 --             -- print(k, v)
 --             if slotCodes[settings_name] then
 --                 item = Tracker:FindObjectForCode(slotCodes[settings_name].code)
@@ -381,7 +377,7 @@ end
 --     end
 -- end
 
----@class APhint_message
+---@class APHintMessage
 ---@field receiving_player integer
 ---@field finding_player integer
 ---@field location integer
@@ -391,10 +387,37 @@ end
 ---@field item_flags 0|1|2|3|4|5|6|7
 ---@field status 0|10|20|30|40
 
----used on subsequent updatesfrom the server a given key we subscribed to
----@param key string
----@param value table<integer, APhint_message>
----@param old_value table<integer, APhint_message>
+---function to update the Highlight of a LocationSection to represent the status of the hint that is present
+---for that LocationSection
+---@param locationID integer ID of the locations the hint is being given for
+---@param status 0|10|20|30|40|100|101|102|103|104|105|106|107 status to determine the color of the hint glow
+local function UpdateHints(locationID, status) -->
+    if Highlight then
+        -- print(locationID, status)
+        local location_table = LOCATION_MAPPING[locationID]
+        for _, location in ipairs(location_table) do
+            if location:sub(1, 1) == "@" then
+				---@type LocationSection
+                local obj = Tracker:FindObjectForCode(location)
+
+                if obj then
+                    if TROLL_PLAYER and HIGHLIGHT_LEVEL[status] == Highlight.Avoid then
+                        obj.Highlight = HIGHLIGHT_LEVEL[30]
+                    else
+                        obj.Highlight = HIGHLIGHT_LEVEL[status]
+                    end
+                else
+                    print(string.format("No object found for code: %s", location))
+                end
+            end
+        end
+    end
+end
+
+---triggers as AP sends live updates from the server using a given key we subscribed to in Archipelago:SetNotify
+---@param key string Name of the key that was used to send the message
+---@param value table<integer, APHintMessage>
+---@param old_value table<integer, APHintMessage>
 function OnNotify(key, value, old_value)
     print("OnNotify", key, value, old_value)
     if value ~= old_value and key == HINTS_ID then
@@ -412,9 +435,9 @@ function OnNotify(key, value, old_value)
     end
 end
 
----used the very first time we receive this message from the server after subscribing to a given key
+---triggers on connecting to AP when we receive this message from the server after providing a given key to Archipelago:Get
 ---@param key string Name of the key that was used to send the message
----@param value table<integer, APhint_message>
+---@param value table<integer, APHintMessage>
 function OnNotifyLaunch(key, value)
     if key == HINTS_ID then
         Tracker.BulkUpdate = true
@@ -431,53 +454,27 @@ function OnNotifyLaunch(key, value)
     end
 end
 
----comment function to update the hint statu of a LocationSection to represent the status fo the hint that is present
---for that LocationSection
----@param locationID integer ID of the locations the hint is being given for
----@param status 0|10|20|30|40|100|101|102|103|104|105|106|107 status to determine the color of the hint glow
-function UpdateHints(locationID, status) -->
-    if Highlight then
-        -- print(locationID, status)
-        local location_table = LOCATION_MAPPING[locationID]
-        for _, location in ipairs(location_table) do
-            if location:sub(1, 1) == "@" then
-                local obj = Tracker:FindObjectForCode(location)
-
-                if obj then
-                    if TROLL_PLAYER and HIGHLIGHT_LEVEL[status] == Highlight.Avoid then
-                        obj.Highlight = HIGHLIGHT_LEVEL[30]
-                    else
-                        obj.Highlight = HIGHLIGHT_LEVEL[status]
-                    end
-                else
-                    print(string.format("No object found for code: %s", location))
-                end
-            end
-        end
-    end
-end
-
 -------------------
 ---this section is only for special things that are time of day or day of year dependant if you really want to do stuff
 ---stuff like this
 
----@param start_date number //build_time_obj() return aka unix timestamp
----@param end_date number //build_time_obj() return aka unix timestamp
----@param target_date number //build_time_obj() return aka unix timestamp
-function Check_Date_Range(start_date, end_date, target_date)
+---@param start_date number BuildTimeObj() return aka unix timestamp
+---@param end_date number BuildTimeObj() return aka unix timestamp
+---@param target_date number BuildTimeObj() return aka unix timestamp
+function CheckDateRange(start_date, end_date, target_date)
     local one_day = 86400
     local check_result = false
     for day_obj = start_date, end_date, one_day do
-        check_result = Check_Date(day_obj, target_date)
+        check_result = CheckDate(day_obj, target_date)
         if check_result then
             return true
         end
     end
 end
 
----@param target_date number //build_time_obj() return aka unix timestamp
----@param reference_time number? //build_time_obj() return aka unix timestamp
-function Check_Date(reference_time, target_date)
+---@param target_date number BuildTimeObj() return aka unix timestamp
+---@param reference_time number? BuildTimeObj() return aka unix timestamp
+function CheckDate(reference_time, target_date)
     local today = os.date("*t")
     local reference_day =  os.date("*t", target_date)
     if reference_time then
@@ -488,7 +485,7 @@ function Check_Date(reference_time, target_date)
     today.day == reference_day.day
 end
 
----helperfunctoin to return a date object for the provided day
+---helper function to return a date object for the provided day
 ---@param year number?
 ---@param month number?
 ---@param day number?
@@ -496,7 +493,7 @@ end
 ---@param minute number?
 ---@param second number?
 ---@return integer
-function Build_Time_Obj(year, month, day, hour, minute, second)
+function BuildTimeObj(year, month, day, hour, minute, second)
     local today = os.date("*t", os.time())
     return os.time(
         {
@@ -510,14 +507,6 @@ function Build_Time_Obj(year, month, day, hour, minute, second)
     )
 end
 -------------------
--- ScriptHost:AddWatchForCode("settings autofill handler", "autofill_settings", autoFill)
--- Archipelago:AddClearHandler("clear handler", OnClearHandler)
--- Archipelago:AddItemHandler("item handler", OnItem)
--- Archipelago:AddLocationHandler("location handler", OnLocation)
-
--- Archipelago:AddSetReplyHandler("notify handler", OnNotify)
--- Archipelago:AddRetrievedHandler("notify launch handler", OnNotifyLaunch)
-
 
 
 --doc
