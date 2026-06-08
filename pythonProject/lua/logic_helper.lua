@@ -10,6 +10,9 @@ local bool_to_accesslvl = {
     [false] = ACCESS_NONE
 }
 
+---helper to convert boolean return values to accessibility values for graph evaluation
+---@param result boolean
+---@return integer
 function A(result)
     if result then
         return ACCESS_NORMAL
@@ -17,6 +20,13 @@ function A(result)
     return ACCESS_NONE
 end
 
+---Takes in a arbitrary amount of arguments which themselfes are already evaluated function return values for having a
+---certain item or being able to reach a certain location etc. combines these values and returns the minimum shared
+---accessibility
+---
+---basically evaluates "are all requirements meet?"
+---@param ... unknown
+---@return integer
 function ALL(...)
     local args = { ... }
     local min = ACCESS_NORMAL
@@ -39,6 +49,13 @@ function ALL(...)
     return min
 end
 
+---Takes in a arbitrary amount of arguments which themselfes are already evaluated function return values for having a
+---certain item or being able to reach a certain location etc. combines these values and returns the maximum
+---accessibility of any provided argument
+---
+---basically evaluates "is any 1 of the requirements meet?"
+---@param ... unknown
+---@return integer
 function ANY(...)
     local args = { ... }
     local max = ACCESS_NONE
@@ -62,6 +79,11 @@ function ANY(...)
     return max
 end
 
+---function to determine if a given item has been obtained/is active or has the needed amount
+---@param item string
+---@param amount? integer
+---@param amountInLogic? integer
+---@return integer
 function HAS(item, amount, amountInLogic)
     local count = Tracker:ProviderCountForCode(item)
 
