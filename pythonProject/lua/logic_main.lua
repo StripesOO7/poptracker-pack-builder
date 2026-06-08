@@ -22,6 +22,7 @@ accessLVL= {
 }
 
 -- Table to store named locations
+---@type table<string, {game_name_lua}_new_return>
 NAMED_LOCATIONS = {}
 local stale = true
 local accessibilityCache = {}
@@ -31,7 +32,10 @@ local currentLocation = nil
 local indirectConnections = {}
 
 
---
+---simple helper to insert into tables and create them if not already present
+---@param er_table table table to insert into
+---@param key string|integer|boolean key to use to insert into the table
+---@param value any value to insert into the table
 function Table_insert_at(er_table, key, value)
     if er_table[key] == nil then
         er_table[key] = {}
@@ -39,7 +43,9 @@ function Table_insert_at(er_table, key, value)
     table.insert(er_table[key], value)
 end
 
--- 
+--- checks if a given location is reacable in any way from any of the starting points and returns an accessibilityLevel
+--- @param name string
+--- @return accessibilityLevel
 function CanReach(name)
     -- if type(name) == "table" then
     --     -- print("-----------")
@@ -77,8 +83,31 @@ function CanReach(name)
     return location:accessibility()
 end
 
+
+---@class {game_name_lua}_new_return
+---@field accessibility function
+---@field connect_one_way function
+---@field connect_one_way_entrance function
+---@field connect_two_ways function
+---@field connect_two_ways_entrance function
+---@field connect_two_ways_entrance_door_stuck function
+---@field connect_two_ways_stuck function
+---@field discover function
+---@field name string
+---@field side string?
+---@field baseWorldstate "light"|"dark"|""
+---@field worldstate "light"|"dark"|""
+---@field exits table<integer, {[1]:alttp_location_new_return, [2]:function}>
+---@field keys integer
+--you can add more stuff here for sure
+
 -- creates a lua object for the given name. it acts as a representation of a overworld region or indoor location and
 -- tracks its connected objects via the exit-table
+
+-- creates a lua object for the given name. it acts as a representation of an overworld region or indoor location and tracks its connected objects via the exit-table
+--add as many things as you like, just make sure to fill and use them properly. and maybe typehint it like shown above
+---@param name string
+---@return alttp_location_new_return
 function {game_name_lua}_location.new(name)
     local self = setmetatable({}, {game_name_lua}_location)
     if name then
@@ -88,29 +117,39 @@ function {game_name_lua}_location.new(name)
         NAMED_LOCATIONS[name] = self
         self.name = tostring(self)
     end
+
+
+    -------
+    -- tyes help to denote if its interior or exterior/OW location/region
     if string.find(self.name, "_inside") then
         self.side = "inside"
     elseif string.find(self.name, "_outside") then
         self.side = "outside"
     else
-        self.side = nil
+        self.side = ""
     end
-    -- print("------")
-    -- print(origin)
+
+    --only usefull for ER stuff
+    self.baseWorldstate = origin
     self.worldstate = origin
-    -- print(self.worldstate)
-    -- print("------")
+    -------
+
+
     self.exits = {}
     self.keys = math.huge
 
     return self
 end
 
+---function to give a default value during rule evaluations of no other rule got specified.
+---@return integer
 local function always()
     return ACCESS_NORMAL
 end
 
--- marks a 1-way connections between 2 "locations/regions" in the source "locations" exit-table with rules if provided
+---marks a 1-way connections between 2 "locations/regions" in the source "locations" exit-table with rules if provided
+---@param exit string|alttp_location_new_return alttp_location_new_return or code/name
+---@param rule? function
 function {game_name_lua}_location:connect_one_way(exit, rule)
     if type(exit) == "string" then
         local existing = NAMED_LOCATIONS[exit]
@@ -127,7 +166,9 @@ function {game_name_lua}_location:connect_one_way(exit, rule)
     self.exits[#self.exits + 1] = { exit, rule }
 end
 
--- marks a 2-way connection between 2 locations. acts as a shortcut for 2 connect_one_way-calls 
+---marks a 2-way connection between 2 locations. acts as a shortcut for 2 connect_one_way-calls
+---@param exit string|alttp_location_new_return alttp_location_new_return or code/name
+---@param rule? function
 function {game_name_lua}_location:connect_two_ways(exit, rule)
     self:connect_one_way(exit, rule)
     exit:connect_one_way(self, rule)
@@ -135,6 +176,9 @@ end
 
 -- creates a 1-way connection from a region/location to another one via a 1-way connector like a ledge, hole,
 -- self-closing door, 1-way teleport, ...
+---@param name string arbitrary name for the connection. isnt used anywhere
+---@param exit string|alttp_location_new_return alttp_location_new_return or code/name
+---@param rule? function
 function {game_name_lua}_location:connect_one_way_entrance(name, exit, rule)
     if rule == nil then
         rule = always
@@ -144,6 +188,9 @@ end
 
 -- creates a connection between 2 locations that is traversable in both ways using the same rules both ways
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
+---@param name string arbitrary name for the connection. isnt used anywhere
+---@param exit string|alttp_location_new_return alttp_location_new_return or code/name
+---@param rule? function
 function {game_name_lua}_location:connect_two_ways_entrance(name, exit, rule)
     if exit == nil then -- for ER
         return
@@ -154,6 +201,10 @@ end
 
 -- creates a connection between 2 locations that is traversable in both ways but each connection follow different rules.
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
+---@param name string arbitrary name for the connection. isnt used anywhere
+---@param exit string|alttp_location_new_return alttp_location_new_return or code/name
+---@param rule1? function
+---@param rule2? function
 function {game_name_lua}_location:connect_two_ways_entrance_door_stuck(name, exit, rule1, rule2)
     self:connect_one_way_entrance(name, exit, rule1)
     exit:connect_one_way_entrance(name, self, rule2)
@@ -162,12 +213,16 @@ end
 -- technically redundant but well
 -- creates a connection between 2 locations that is traversable in both ways but each connection follow different rules.
 -- acts as a shortcut for 2 connect_one_way-calls
+---@param exit string|alttp_location_new_return alttp_location_new_return or code/name
+---@param rule1? function
+---@param rule2? function
 function {game_name_lua}_location:connect_two_ways_stuck(exit, rule1, rule2)
     self:connect_one_way(exit, rule1)
     exit:connect_one_way(self, rule2)
 end
 
--- checks for the accessibility of a region/location given its own exit requirements
+---checks for the accessibility of a regino/location given its own exit requirements
+---@return 0|1|2|3|4|5|6|7
 function {game_name_lua}_location:accessibility()
     -- only executed when run from a rules within a connection
     if currentLocation ~= nil and currentParent ~= nil then
@@ -185,7 +240,9 @@ function {game_name_lua}_location:accessibility()
     return res
 end
 
--- 
+---function to start walking the graph them this location
+---@param accessibility 0|1|2|3|4|5|6|7
+---@param keys integer
 function {game_name_lua}_location:discover(accessibility, keys)
     -- checks if given Accessbibility is higer then last stored one
     -- prevents walking in circles
@@ -246,9 +303,9 @@ function {game_name_lua}_location:discover(accessibility, keys)
     end
 end
 
-entry_point = {game_name_lua}_location.new("entry_point")
+Entry_point = {game_name_lua}_location.new("Entry_point")
 
--- 
+---helperfunction that is used to force a grpah update on every state change within poptracker.
 function StateChanged()
     stale = true
     -- entry_point:discover(AccessibilityLevel.Normal, 0)

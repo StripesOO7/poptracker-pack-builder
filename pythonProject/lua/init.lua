@@ -9,15 +9,7 @@ require("scripts/logic/base_logic")
 require("scripts/logic/graph_logic/logic_main")
 
 -- Maps
-if Tracker.ActiveVariantUID == "maps-u" then
-    Tracker:AddMaps("maps/maps-u.json")
-else
-    Tracker:AddMaps("maps/maps.json")
-end
-
-if PopVersion and PopVersion >= "0.23.0" then
-    Tracker:AddLocations("locations/dungeons.json")
-end
+Tracker:AddMaps("maps/maps.json")
 
 -- Layout
 require("scripts/layouts_import")

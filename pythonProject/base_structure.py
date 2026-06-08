@@ -19,6 +19,7 @@ def create_base_structure(path: str, game_name: str, game_dict: dict, test_state
     """
     internal_cwd = os.path.dirname(os.path.realpath(__file__))
     game_name_lua = game_name.lower().replace(' ', '_')
+    game_name_lua = game_name_lua.replace(' ', '_').capitalize()
     if not os.path.exists(path + "/scripts"):
         os.mkdir(path + "/scripts")
         os.mkdir(path + "/scripts/autotracking")
