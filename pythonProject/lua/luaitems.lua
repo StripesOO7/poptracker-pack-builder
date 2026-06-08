@@ -97,15 +97,18 @@ end
 function CreateLuaManualStorageItem(name)
     local self = ScriptHost:CreateLuaItem()
     -- self.Type = "custom"
-    self.Name = name --code --
+    self.Name = name -- code
     self.Icon = ImageReference:FromPackRelativePath("/images/items/closed_Chest.png")
+	---@type table<string, any>
     self.ItemState = {
+		---@type table<string, string[]>
         MANUAL_LOCATIONS = {
             ["default"] = {}
-        }, --[[@as table<string, string[]>]]
+        },
+		---@type string[]
         MANUAL_LOCATIONS_ORDER = {}
         -- you can add many more custom stuff in here
-    } --[[@as table<string, any>]]
+    }
 
     self.CanProvideCodeFunc = CanProvideCodeFunc
     self.OnLeftClickFunc = OnLeftClickFunc -- your_custom_leftclick_function_here

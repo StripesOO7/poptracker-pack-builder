@@ -224,7 +224,8 @@ function OnClear(slot_data)
     for _, location_array in pairs(LOCATION_MAPPING) do
         for _, location in pairs(location_array) do
             if location then
-                local location_obj = Tracker:FindObjectForCode(location) --[[@as LocationSection]]
+				---@type LocationSection
+                local location_obj = Tracker:FindObjectForCode(location)
                 if location_obj then
                     LocationReset(location, location_obj, custom_storage_item)
                 end
@@ -237,7 +238,8 @@ function OnClear(slot_data)
             local item_code = item_pair[1]
             local item_type = item_pair[2]
             -- print("on clear", item_code, item_type)
-            local item_obj = Tracker:FindObjectForCode(item_code) --[[@as JsonItem]]
+			---@type JsonItem
+            local item_obj = Tracker:FindObjectForCode(item_code)
             if item_obj then
                 ItemReset(item_type, item_obj, item_code)
             end
