@@ -274,7 +274,7 @@ end
 
 ---Run every time an Item gets sent to the connected slot
 ---@param index integer running index for the items the connected slot has received so far
----@param item_id integer ID of the received item, matching then game's datapackage ID
+---@param item_id integer ID of the received item, matching the game's datapackage ID
 ---@param item_name string name of the item from the datapackage for the given itemID
 ---@param player_number integer slotnumber of the player who picked up the item
 function OnItem(index, item_id, item_name, player_number)
