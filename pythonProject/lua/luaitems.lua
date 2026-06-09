@@ -101,7 +101,7 @@ function CreateLuaManualStorageItem(name)
     self.Icon = ImageReference:FromPackRelativePath("/images/items/closed_Chest.png")
 	---@type table<string, any>
     self.ItemState = {
-		---@type table<string, string[]>
+		---@type table<string, table<string, integer>>
         MANUAL_LOCATIONS = {
             ["default"] = {}
         },
