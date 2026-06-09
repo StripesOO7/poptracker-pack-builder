@@ -12,7 +12,7 @@ local bool_to_accesslvl = {
 
 ---helper to convert boolean return values to accessibility values for graph evaluation
 ---@param result boolean
----@return integer
+---@return accessibilityLevel
 function A(result)
     if result then
         return ACCESS_NORMAL
@@ -20,13 +20,12 @@ function A(result)
     return ACCESS_NONE
 end
 
----Takes in a arbitrary amount of arguments which themselfes are already evaluated function return values for having a
----certain item or being able to reach a certain location etc. combines these values and returns the minimum shared
----accessibility
----
----basically evaluates "are all requirements meet?"
----@param ... unknown
----@return integer
+---Takes in an arbitrary amount of arguments which are accessibilityLevels, booleans, item codes,
+---or functions that will return one of the previous three, and combines these values and
+---returns the minimum shared accessibility</br>
+---basically evaluates "are all requirements met?"
+---@param ... function|string|boolean|accessibilityLevel
+---@return accessibilityLevel
 function ALL(...)
     local args = { ... }
     local min = ACCESS_NORMAL
@@ -49,13 +48,12 @@ function ALL(...)
     return min
 end
 
----Takes in a arbitrary amount of arguments which themselfes are already evaluated function return values for having a
----certain item or being able to reach a certain location etc. combines these values and returns the maximum
----accessibility of any provided argument
----
----basically evaluates "is any 1 of the requirements meet?"
----@param ... unknown
----@return integer
+---Takes in an arbitrary amount of arguments which are accessibilityLevels, booleans, item codes,
+---or functions that will return one of the previous three, and combines these values and
+---returns the maximum accessibility of any provided argument</br>
+---basically evaluates "is any 1 of the requirements met?"
+---@param ... function|string|boolean|accessibilityLevel
+---@return accessibilityLevel
 function ANY(...)
     local args = { ... }
     local max = ACCESS_NONE
@@ -83,7 +81,7 @@ end
 ---@param item string
 ---@param amount? integer
 ---@param amountInLogic? integer
----@return integer
+---@return accessibilityLevel
 function HAS(item, amount, amountInLogic)
     local count = Tracker:ProviderCountForCode(item)
 
@@ -108,9 +106,3 @@ function HAS(item, amount, amountInLogic)
         return ACCESS_NONE
     end
 end
-
-
--- ANY function added here and used in access rules should try to return an Accessibility Level if it is used inside
--- the ANY() and ALL() functions
---
---

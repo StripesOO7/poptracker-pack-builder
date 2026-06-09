@@ -1,8 +1,8 @@
--- if you want to use the graph based logic you need to create lua representations of your region/connectors/location wit the `.new()` function
+-- if you want to use the graph based logic you need to create lua representations of your region/connectors/location with the `.new()` function
 -- connect multiple of these representations with the provided one_way/two_ways() methods.
 -- this will build a graph that gets traveres via the :discover() method.
 
---To-Do: add a tutorial for the grpah absed logic into the README
+--To-Do: add a tutorial for the grpah based logic into the README
 
 -- ScriptHost:AddWatchForCode("ow_dungeon details handler", "ow_dungeon_details", owDungeonDetails)
 
@@ -33,17 +33,17 @@ local indirectConnections = {}
 
 
 ---simple helper to insert into tables and create them if not already present
----@param er_table table table to insert into
+---@param tbl table table to insert into
 ---@param key string|integer|boolean key to use to insert into the table
 ---@param value any value to insert into the table
-function Table_insert_at(er_table, key, value)
-    if er_table[key] == nil then
-        er_table[key] = {}
+function TableInsertAt(tbl, key, value)
+    if tbl[key] == nil then
+        tbl[key] = {}
     end
-    table.insert(er_table[key], value)
+    table.insert(tbl[key], value)
 end
 
---- checks if a given location is reacable in any way from any of the starting points and returns an accessibilityLevel
+--- checks if a given location is reachable in any way from any of the starting points and returns an accessibilityLevel
 --- @param name string
 --- @return accessibilityLevel
 function CanReach(name)
@@ -61,7 +61,7 @@ function CanReach(name)
         indirectConnections = {}
         while not accessibilityCacheComplete do
             accessibilityCacheComplete = true
-            entry_point:discover(ACCESS_NORMAL, 0, nil)
+            Entry_Point:discover(ACCESS_NORMAL, 0, nil)
             for dst, parents in pairs(indirectConnections) do
                 if dst:accessibility() < ACCESS_NORMAL then
                     for parent, src in pairs(parents) do
@@ -71,12 +71,12 @@ function CanReach(name)
                 end
             end
         end
-        --entry_point:discover(ACCESS_NORMAL, 0) -- since there is no code to track indirect connections, we run it twice here
-        --entry_point:discover(ACCESS_NORMAL, 0)
+        --Entry_Point:discover(ACCESS_NORMAL, 0) -- since there is no code to track indirect connections, we run it twice here
+        --Entry_Point:discover(ACCESS_NORMAL, 0)
     end
-    
+
     location = NAMED_LOCATIONS[name]
-    
+
     if location == nil then
         return ACCESS_NONE
     end
@@ -97,7 +97,7 @@ end
 ---@field side string?
 ---@field baseWorldstate "light"|"dark"|""
 ---@field worldstate "light"|"dark"|""
----@field exits table<integer, {[1]:alttp_location_new_return, [2]:function}>
+---@field exits table<integer, {[1]:{game_name_lua}_new_return, [2]:fun(): accessibilityLevel}>
 ---@field keys integer
 --you can add more stuff here for sure
 
@@ -107,20 +107,17 @@ end
 -- creates a lua object for the given name. it acts as a representation of an overworld region or indoor location and tracks its connected objects via the exit-table
 --add as many things as you like, just make sure to fill and use them properly. and maybe typehint it like shown above
 ---@param name string
----@return alttp_location_new_return
+---@return {game_name_lua}_new_return
 function {game_name_lua}_location.new(name)
+	if name == nil then
+		error("{game_name_lua}_location name cannot be nil")
+	end
     local self = setmetatable({}, {game_name_lua}_location)
-    if name then
-        NAMED_LOCATIONS[name] = self
-        self.name = name
-    else
-        NAMED_LOCATIONS[name] = self
-        self.name = tostring(self)
-    end
+	self.name = name
 
 
     -------
-    -- tyes help to denote if its interior or exterior/OW location/region
+    -- this helps to denote if it's an interior or exterior/OW location/region
     if string.find(self.name, "_inside") then
         self.side = "inside"
     elseif string.find(self.name, "_outside") then
@@ -129,9 +126,9 @@ function {game_name_lua}_location.new(name)
         self.side = ""
     end
 
-    --only usefull for ER stuff
-    self.baseWorldstate = origin
-    self.worldstate = origin
+    --only useful for ER stuff
+    -- self.baseWorldstate = origin
+    -- self.worldstate = origin
     -------
 
 
@@ -141,15 +138,15 @@ function {game_name_lua}_location.new(name)
     return self
 end
 
----function to give a default value during rule evaluations of no other rule got specified.
+---function to give a default value during rule evaluations if no other rule got specified.
 ---@return integer
 local function always()
     return ACCESS_NORMAL
 end
 
 ---marks a 1-way connections between 2 "locations/regions" in the source "locations" exit-table with rules if provided
----@param exit string|alttp_location_new_return alttp_location_new_return or code/name
----@param rule? function
+---@param exit string|{game_name_lua}_new_return {game_name_lua}_new_return or code/name
+---@param rule? fun(): accessibilityLevel|boolean
 function {game_name_lua}_location:connect_one_way(exit, rule)
     if type(exit) == "string" then
         local existing = NAMED_LOCATIONS[exit]
@@ -167,8 +164,8 @@ function {game_name_lua}_location:connect_one_way(exit, rule)
 end
 
 ---marks a 2-way connection between 2 locations. acts as a shortcut for 2 connect_one_way-calls
----@param exit string|alttp_location_new_return alttp_location_new_return or code/name
----@param rule? function
+---@param exit string|{game_name_lua}_new_return {game_name_lua}_new_return or code/name
+---@param rule? fun(): accessibilityLevel|boolean
 function {game_name_lua}_location:connect_two_ways(exit, rule)
     self:connect_one_way(exit, rule)
     exit:connect_one_way(self, rule)
@@ -177,8 +174,8 @@ end
 -- creates a 1-way connection from a region/location to another one via a 1-way connector like a ledge, hole,
 -- self-closing door, 1-way teleport, ...
 ---@param name string arbitrary name for the connection. isnt used anywhere
----@param exit string|alttp_location_new_return alttp_location_new_return or code/name
----@param rule? function
+---@param exit string|{game_name_lua}_new_return {game_name_lua}_new_return or code/name
+---@param rule? fun(): accessibilityLevel|boolean
 function {game_name_lua}_location:connect_one_way_entrance(name, exit, rule)
     if rule == nil then
         rule = always
@@ -189,8 +186,8 @@ end
 -- creates a connection between 2 locations that is traversable in both ways using the same rules both ways
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
 ---@param name string arbitrary name for the connection. isnt used anywhere
----@param exit string|alttp_location_new_return alttp_location_new_return or code/name
----@param rule? function
+---@param exit string|{game_name_lua}_new_return {game_name_lua}_new_return or code/name
+---@param rule? fun(): accessibilityLevel|boolean
 function {game_name_lua}_location:connect_two_ways_entrance(name, exit, rule)
     if exit == nil then -- for ER
         return
@@ -202,9 +199,9 @@ end
 -- creates a connection between 2 locations that is traversable in both ways but each connection follow different rules.
 -- acts as a shortcut for 2 connect_one_way_entrance-calls
 ---@param name string arbitrary name for the connection. isnt used anywhere
----@param exit string|alttp_location_new_return alttp_location_new_return or code/name
----@param rule1? function
----@param rule2? function
+---@param exit string|{game_name_lua}_new_return {game_name_lua}_new_return or code/name
+---@param rule1? fun(): accessibilityLevel|boolean
+---@param rule2? fun(): accessibilityLevel|boolean
 function {game_name_lua}_location:connect_two_ways_entrance_door_stuck(name, exit, rule1, rule2)
     self:connect_one_way_entrance(name, exit, rule1)
     exit:connect_one_way_entrance(name, self, rule2)
@@ -213,16 +210,16 @@ end
 -- technically redundant but well
 -- creates a connection between 2 locations that is traversable in both ways but each connection follow different rules.
 -- acts as a shortcut for 2 connect_one_way-calls
----@param exit string|alttp_location_new_return alttp_location_new_return or code/name
----@param rule1? function
----@param rule2? function
+---@param exit string|{game_name_lua}_new_return {game_name_lua}_new_return or code/name
+---@param rule1? fun(): accessibilityLevel|boolean
+---@param rule2? fun(): accessibilityLevel|boolean
 function {game_name_lua}_location:connect_two_ways_stuck(exit, rule1, rule2)
     self:connect_one_way(exit, rule1)
     exit:connect_one_way(self, rule2)
 end
 
 ---checks for the accessibility of a regino/location given its own exit requirements
----@return 0|1|2|3|4|5|6|7
+---@return accessibilityLevel
 function {game_name_lua}_location:accessibility()
     -- only executed when run from a rules within a connection
     if currentLocation ~= nil and currentParent ~= nil then
@@ -241,16 +238,16 @@ function {game_name_lua}_location:accessibility()
 end
 
 ---function to start walking the graph them this location
----@param accessibility 0|1|2|3|4|5|6|7
+---@param accessibility accessibilityLevel
 ---@param keys integer
 function {game_name_lua}_location:discover(accessibility, keys)
-    -- checks if given Accessbibility is higer then last stored one
+    -- checks if given Accessibility is higher then last stored one
     -- prevents walking in circles
-    
+
     if accessibility > self:accessibility() then
         self.keys = math.huge -- resets keys used up to this point
         accessibilityCache[self] = accessibility
-        accessibilityCacheComplete = false -- forces CanReach tu run again/further
+        accessibilityCacheComplete = false -- forces CanReach to run again/further
     end
     if keys < self.keys then
         self.keys = keys -- sets current amout of keys used
@@ -264,13 +261,13 @@ function {game_name_lua}_location:discover(accessibility, keys)
             local location_name = self.name
 
             if location == nil then
-                location = exit[1] or empty_location-- exit name
+                location = exit[1] or empty_location -- exit name
             end
-            
+
             local oldAccess = location:accessibility() -- get most recent accessibilty level for exit
             local oldKey = location.keys or 0
-            
-            if oldAccess < accessibility then -- if new accessibility from above is higher then currently stored one, so is more accessible then before
+
+            if oldAccess < accessibility then -- if new accessibility from above is higher than the currently stored one, it is more accessible then before
                 local rule = exit[2] -- get rules to check
 
                 currentParent, currentLocation = self, location -- just set for ":accessibilty()" check within rules
@@ -289,7 +286,7 @@ function {game_name_lua}_location:discover(accessibility, keys)
                     print("Warning: " .. self.name .. " -> " .. location.name .. " rule returned nil")
                     access = ACCESS_NONE
                 end
-               
+
                 if key == nil then
                     key = keys
                 end
@@ -303,12 +300,12 @@ function {game_name_lua}_location:discover(accessibility, keys)
     end
 end
 
-Entry_point = {game_name_lua}_location.new("Entry_point")
+Entry_Point = {game_name_lua}_location.new("Entry_Point")
 
----helperfunction that is used to force a grpah update on every state change within poptracker.
+---helper function that is used to force a graph update on every state change within poptracker.
 function StateChanged()
     stale = true
-    -- entry_point:discover(AccessibilityLevel.Normal, 0)
+    -- Entry_Point:discover(AccessibilityLevel.Normal, 0)
 end
 
 ScriptHost:AddWatchForCode("StateChanged", "*", StateChanged)

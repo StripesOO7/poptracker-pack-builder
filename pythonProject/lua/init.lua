@@ -1,25 +1,25 @@
 local variant = Tracker.ActiveVariantUID
 
 -- Items
-require("scripts/items_import")
+require("scripts.items_import")
 
 -- Logic
-require("scripts/logic/logic_helper")
-require("scripts/logic/base_logic")
-require("scripts/logic/graph_logic/logic_main")
+require("scripts.logic.logic_helper")
+require("scripts.logic.base_logic")
+require("scripts.logic.graph_logic.logic_main")
 
 -- Maps
 Tracker:AddMaps("maps/maps.json")
 
 -- Layout
-require("scripts/layouts_import")
+require("scripts.layouts_import")
 
 -- Locations
-require("scripts/locations_import")
+require("scripts.locations_import")
 
--- AutoTracking for Poptracker
+-- AutoTracking for PopTracker
 if PopVersion and PopVersion >= "0.26.0" then
-    require("scripts/autotracking")
+    require("scripts.autotracking")
 end
 
 function OnFrameHandler()
@@ -30,6 +30,6 @@ function OnFrameHandler()
     CreateLuaManualStorageItem("manual_location_storage")
     ForceUpdate()
 end
-require("scripts/luaitems")
-require("scripts/watches")
+require("scripts.luaitems")
+require("scripts.watches")
 ScriptHost:AddOnFrameHandler("load handler", OnFrameHandler)

@@ -1,12 +1,12 @@
-# Poptracker Packbuilder-Script
+# PopTracker Packbuilder-Script
 
-This set of scripts is build to make it easier to start making a trackerpack for [Poptracker](https://github.com/black-sliver/PopTracker)
-Its builds the base file- and folder-structure expected from Poptracker from scratch based on the [Archipelago](https://archipelago.gg/)-Datapackages
+This set of scripts is build to make it easier to start making a trackerpack for [PopTracker](https://github.com/black-sliver/PopTracker)
+Its builds the base file- and folder-structure expected from PopTracker from scratch based on the [Archipelago](https://archipelago.gg/)-Datapackages
 
 
 ## Getting started
 
-This script is still work in progress but already creates packs working with Poptracker version from 0.27.0 onwards (as
+This script is still work in progress but already creates packs working with PopTracker version from 0.27.0 onwards (as
 of Aug 2024)
 
 To use this script you need to have [Python](https://www.python.org/downloads/) installed. tested with 3.11+ earlier
@@ -24,7 +24,7 @@ When you are starting to Build a fresh pack you will need to run `builder.py` wh
 
 It will ask you so select a folder to create the packs base-structure into. 
 *Ideally this folder is empty to have a clean working area* but preexisting folders and files wont be overwritten unless
-they conflict with the naming scheme for Poptracker.
+they conflict with the naming scheme for PopTracker.
 Next the Pack askes for a source, an URL or path to a JSON, to fetch the needed Datapackage from. 
 
 For the URL part this can be `https://archipelago.gg/datapackage` for supported Games or i.e
@@ -48,7 +48,7 @@ After creating these 2 files alongeside the folder-basestructure and some other 
 
 ### Manual editing of the 2 main files
 
-For a better explanaition of the terminology used here reference the [Poptracker Packs Interface-Guide](https://github.com/black-sliver/PopTracker/blob/master/doc/PACKS.md)
+For a better explanaition of the terminology used here reference the [PopTracker Packs Interface-Guide](https://github.com/black-sliver/PopTracker/blob/master/doc/PACKS.md)
 
 These 2 main files follow a relativly strict form that need to be maintained if you want to use this script any further
 or later on to reset/redo parts of the pack.
@@ -57,15 +57,15 @@ or later on to reset/redo parts of the pack.
 each line in `item_mapping.lua` looks like this:
 ```[<AP_item_ID>] = {{"<itemcode/-name>"}, "<item_type>"},```
 - AP_item_ID --> the ID send out by Archipelago for this specific item
-- itemcode/-name --> the code used to reference the item inside of Poptracker
-- item_type --> the type you want to classify the item as inside Poptracker. Possible types are:
+- itemcode/-name --> the code used to reference the item inside of PopTracker
+- item_type --> the type you want to classify the item as inside PopTracker. Possible types are:
 `"progressive", "toggle, "progressive_toggle", "static", "consumable" , "composite_toggle", and "composite_toggle"`
 although the last 2 (`"composite_toggle", and "composite_toggle"`) are ignored for the sake of simplicity in this script
 
 ##### To-Do's for Manual editing:
 - change the itemname/-code to something readable but ommit annotations like an amount. i.e from `money(500)` to just
   `money`, or `arrows(10)` to `arrows`. 
-- change the type to the one you want to use inside Poptracker to represent this item.
+- change the type to the one you want to use inside PopTracker to represent this item.
 
 all brackets need to stay the way they are!
 
@@ -91,7 +91,7 @@ happens if you dont group them at all.
 ##### To-Do's for Manual editing:
 
 - change the `AP_location_name` to a path you think best describes the location of the path inside your games world.
-  Poptracker calles them sections and if you will need to separate the differen layers of sections with `/`. 
+  PopTracker calles them sections and if you will need to separate the differen layers of sections with `/`. 
 Therese is no limit on how many separations you can make but at some points readablity __WILL__ suffer
 
 __caution__ : have a location names the same as section in the same place will cause the script to cause an error. so
@@ -132,11 +132,11 @@ After you are finished with editing both of these files you can run the script (
 It will ask again for the root folder of your pack. the same folder you selected previously and where all the folders
 and files already got created.
 This time the script will read the 2 mapping.lua files and create a bunch of json files containing all the needed
-information for Poptracker to know how to handle the items and how to structure the locations fully according to your
+information for PopTracker to know how to handle the items and how to structure the locations fully according to your
 manually edited structre. 
 __Items__
 When the script is finished you will have 1 files called items.json located in `items/items.json` containing all the
-information for your items ready for Poptracker to use. here you can now edit item-specific information such as the
+information for your items ready for PopTracker to use. here you can now edit item-specific information such as the
 imagename (defaults to `itemname.png`), the starting amount for consumables, and more.
 Images need to be provided separatety. the picture names dont need to match the autogenerated ones BUT they do need to
 match in the end....So rename the pictures AND/OR alter the paths in `items.json` 
@@ -156,10 +156,10 @@ for lvl in lvls:
         maps_names.append(lvl)
 ```
 __Layouts__
-Layout define you things are visibly structured in Poptracker. It is strongly recommendet to read about how structures
-work in the [Poptracker Packs Interface-Guide](https://github.com/black-sliver/PopTracker/blob/master/doc/PACKS.md).
+Layout define you things are visibly structured in PopTracker. It is strongly recommendet to read about how structures
+work in the [PopTracker Packs Interface-Guide](https://github.com/black-sliver/PopTracker/blob/master/doc/PACKS.md).
 The script creates multiple files to make things more readable but in the end they get loaded as nested imports from
-Poptracker. Play around with it to see how things work together but keep an untouched version or run `location_json.py`
+PopTracker. Play around with it to see how things work together but keep an untouched version or run `location_json.py`
 again to restore the default state from the script.
 
 ## Placing Section on a map
