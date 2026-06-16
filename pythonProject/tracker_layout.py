@@ -232,7 +232,7 @@ def create_item_layout(path: str):
         for data in json_data:
             if not data == {}:
                 if data["type"] in ["progressive", "progressive_toggle"]:
-                    item_codes.append(data["stages"][0]["codes"])
+                    item_codes.append(data["stages"][0]["codes"].split(',')[0])
                 else:
                     item_codes.append(data["codes"])
     with open(path + "/layouts/items.json", "w", encoding="utf-8") as item_layout:
