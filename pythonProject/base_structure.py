@@ -20,6 +20,19 @@ def create_base_structure(path: str, game_name: str, game_dict: dict, test_state
     internal_cwd = os.path.dirname(os.path.realpath(__file__))
     game_name_lua = game_name.lower().replace(' ', '_')
     game_name_lua = game_name_lua.replace(' ', '_').capitalize()
+    if not os.path.exists(path + "/.luarc.json"):
+        poptracker_path = tk.filedialog.askdirectory(title="select the poptracker root folder")
+        if "\\" in poptracker_path:
+            poptracker_path_list = poptracker_path.split("\\")
+        else:
+            poptracker_path_list = poptracker_path.split("/")
+        with open(path + "/.luarc.json", "w", encoding="utf-8") as luarc_json:
+            luarc_raw_json = {
+                "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+                "workspace.library": ['\\'.join([*poptracker_path_list, 'api', 'lua', 'definition'])],
+                "runtime.version": "Lua 5.4"
+            }
+            luarc_json.write(json.dumps(luarc_raw_json, indent=4))
     if not os.path.exists(path + "/scripts"):
         os.mkdir(path + "/scripts")
         os.mkdir(path + "/scripts/autotracking")
