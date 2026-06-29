@@ -35,6 +35,7 @@ if __name__ == "__main__":
     cmd_parser.add_argument("-S", "--source", type=str)
     cmd_parser.add_argument("-T", "--test", action="store_true", default=False)
     cmd_parser.add_argument("-C", "--check", action="store_true", default=False)
+    cmd_parser.add_argument("-P", "--poptracker", type=str)
     # cmd_parser.add_argument("", "")
     # cmd_parser.add_argument("", "", )
     cmd_args = cmd_parser.parse_args()
@@ -94,6 +95,25 @@ if __name__ == "__main__":
             #     # open(read_file_path + "/datapackage_url.txt").readline().split(", ")
             # )
         # if "http" in datapackage_path:
+        if not os.path.exists(read_file_path + "/.luarc.json"):
+            if cmd_args.poptracker:
+                poptracker_path = cmd_args.poptracker
+            else:
+                poptracker_path = tk.filedialog.askdirectory(title="select the poptracker root folder")
+
+            if "\\" in poptracker_path:
+                poptracker_path_list = poptracker_path.split("\\")
+            else:
+                poptracker_path_list = poptracker_path.split("/")
+
+            with open(read_file_path + "/.luarc.json", "w", encoding="utf-8") as luarc_json:
+                luarc_raw_json = {
+                    "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+                    "workspace.library": ['\\'.join([*poptracker_path_list, 'api', 'lua', 'definition'])],
+                    "runtime.version": "Lua 5.4"
+                }
+                luarc_json.write(json.dumps(luarc_raw_json, indent=4))
+
         try:
             games_dict = requests.get(datapackage_path).json()["games"]
         except:
