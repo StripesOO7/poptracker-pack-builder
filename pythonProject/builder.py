@@ -109,7 +109,7 @@ if __name__ == "__main__":
             with open(read_file_path + "/.luarc.json", "w", encoding="utf-8") as luarc_json:
                 luarc_raw_json = {
                     "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
-                    "workspace.library": ['\\'.join([*poptracker_path_list, 'api', 'lua', 'definition'])],
+                    "workspace.library": ['/'.join([*poptracker_path_list, 'api', 'lua', 'definition'])],
                     "runtime.version": "Lua 5.4"
                 }
                 luarc_json.write(json.dumps(luarc_raw_json, indent=4))
