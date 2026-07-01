@@ -11,6 +11,7 @@ import location_json
 import tracker_layout
 import base_structure
 import logic
+import platform
 
 lvls = set()
 locations_dict = dict()
@@ -96,6 +97,10 @@ if __name__ == "__main__":
             # )
         # if "http" in datapackage_path:
         if not os.path.exists(read_file_path + "/.luarc.json"):
+            static_api_path = ['api', 'lua', 'definition']
+            if platform.system() == "Darwin":
+                static_api_path .insert(0, "Contents/resources")
+
             if cmd_args.poptracker:
                 poptracker_path = cmd_args.poptracker
             else:
@@ -109,7 +114,7 @@ if __name__ == "__main__":
             with open(read_file_path + "/.luarc.json", "w", encoding="utf-8") as luarc_json:
                 luarc_raw_json = {
                     "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
-                    "workspace.library": ['/'.join([*poptracker_path_list, 'api', 'lua', 'definition'])],
+                    "workspace.library": ['/'.join([*poptracker_path_list, *static_api_path])],
                     "runtime.version": "Lua 5.4"
                 }
                 luarc_json.write(json.dumps(luarc_raw_json, indent=4))
