@@ -61,12 +61,12 @@ function CanReach(name)
         indirectConnections = {}
         while not accessibilityCacheComplete do
             accessibilityCacheComplete = true
-            Entry_Point:discover(ACCESS_NORMAL, 0, nil)
+            Entry_Point:discover(ACCESS_NORMAL, 0)
             for dst, parents in pairs(indirectConnections) do
                 if dst:accessibility() < ACCESS_NORMAL then
                     for parent, src in pairs(parents) do
                         -- print("Checking indirect " .. src.name .. " for " .. parent.name .. " -> " .. dst.name)
-                        parent:discover(parent:accessibility(), parent.keys, parent.worldstate)
+                        parent:discover(parent:accessibility(), parent.keys)
                     end
                 end
             end
@@ -95,8 +95,6 @@ end
 ---@field discover function
 ---@field name string
 ---@field side string?
----@field baseWorldstate "light"|"dark"|""
----@field worldstate "light"|"dark"|""
 ---@field exits table<integer, {[1]:{game_name_lua}_new_return, [2]:fun(): accessibilityLevel}>
 ---@field keys integer
 --you can add more stuff here for sure
@@ -128,10 +126,6 @@ function {game_name_lua}_location.new(name)
     else
         self.side = ""
     end
-
-    --only useful for ER stuff
-    -- self.baseWorldstate = origin
-    -- self.worldstate = origin
     -------
 
 
