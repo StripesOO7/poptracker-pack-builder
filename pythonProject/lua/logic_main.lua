@@ -114,7 +114,7 @@ function {game_name_lua}_location.new(name)
 	end
     local self = setmetatable({}, {game_name_lua}_location)
 	self.name = name
-
+    NAMED_LOCATIONS[name] = self
 
     -------
     -- this helps to denote if it's an interior or exterior/OW location/region
