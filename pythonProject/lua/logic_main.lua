@@ -110,7 +110,7 @@ function {game_name_lua}_location.new(name)
 	if name == nil then
 		error("{game_name_lua}_location name cannot be nil")
 	end
-	if NAMED_LOCATION[name] then
+	if NAMED_LOCATIONS[name] then
 		print("{game_name_lua}_location " .. name .. " already exists")
 	end
     local self = setmetatable({}, {game_name_lua}_location)
