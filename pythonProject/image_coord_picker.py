@@ -372,18 +372,19 @@ def draw_trapezoid(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_
 def draw_shape_and_text(widget_ref:Any, location_dataset:dict[str, Any], shape: str, scaling_factor:float|int,
                        location_path:str, selected_size:int, textcolor:str="black") -> Tuple[int, int]:
     assert isinstance(widget_ref, tk.Canvas)
+    shape_id = -1
     match shape:
         case "rect":
-            rect_id = draw_rectangle(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
+            shape_id = draw_rectangle(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
                              scaling_factor=scaling_factor, size=selected_size, fill_color="red")
         case "diamond":
-            rect_id = draw_diamond(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
+            shape_id = draw_diamond(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
                                      scaling_factor=scaling_factor, size=selected_size, fill_color="red")
         case "trapezoid":
-            rect_id = draw_trapezoid(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
+            shape_id = draw_trapezoid(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
                                      scaling_factor=scaling_factor, size=selected_size, fill_color="red")
         case _:
-            rect_id = draw_rectangle(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
+            shape_id = draw_rectangle(canvas_ref=widget_ref, x=location_dataset["x"], y=location_dataset["y"],
                                      scaling_factor=scaling_factor, size=selected_size, fill_color="red")
     text_id = widget_ref.create_text(
         location_dataset["x"] * scaling_factor,
@@ -399,7 +400,8 @@ def draw_shape_and_text(widget_ref:Any, location_dataset:dict[str, Any], shape: 
         ),
         # anchor="nw",
     )
-    return rect_id, text_id
+    assert shape_id != -1
+    return shape_id, text_id
 
 def load_new_base_image(window_ref:Any, img_path:str=""):
     global og_img_size, og_img_width, og_img_height, image, copy_of_image
@@ -762,7 +764,10 @@ def write_new_map_json_entry():
 
     assert not name == ""
 
-    with open(fr"{base_path}/maps/maps.json", "r+") as maps_json_file:
+    maps_path = fr"{base_path}/maps/maps.json"
+    if not os.path.exists(maps_path):
+        maps_path = map_json_path
+    with open(maps_path, "r+") as maps_json_file:
         tmp_dict = json.load(maps_json_file)
         maps_json_file.seek(0)
         maps_json_file.truncate()
@@ -896,6 +901,8 @@ def traverse_json(region, path, location_list, canvas_ref):
 
 def load_list_of_maps(window_list_of_maps, maps_path):
     tmp_map_list = {}
+    if not os.path.exists(maps_path):
+        maps_path = map_json_path
     with open(maps_path) as maps_file:
         for map_json in json.load(maps_file):
             tmp_map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
@@ -1027,8 +1034,8 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
 
     save_new_button = create_button(frame_settings, text="Save to new file",
                                     command_ref=save_to_new_file)
-    # save_old_button = create_button(frame_settin text="Overwrite existing file",
-    # command_ref=save_to_old_file)
+    save_old_button = create_button(frame_settings, text="Overwrite existing file",
+                                    command_ref=save_to_old_file)
     load_new_image_button = create_button(frame_settings, text="Load new BaseImage",
                                           command_ref=load_new_base_image)
 
@@ -1058,7 +1065,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     zoom_in_btn = create_button(widget_ref=frame_map_image, position=(2,0), sticky_direction="ew", command_ref=zoom_in, text="zoom in")
     zoom_out_btn = create_button(widget_ref=frame_map_image, position=(2,1), sticky_direction="ew", command_ref=zoom_out, text="zoom out")
     # location_section_json
-    location_section_json.append(*json.load(open(f'{base_path}/locations/{locations_json_selected}')))
+    location_section_json.extend( json.load( open(f'{base_path}/locations/{locations_json_selected}') ) )
     for region in location_section_json:
         path = ""
         print(region["name"])
@@ -1155,7 +1162,8 @@ if __name__ == "__main__":
     window.columnconfigure([0, 1],  weight=1)
     window.rowconfigure(0, weight=1)
 
-    base_path = tk.filedialog.askdirectory()
+    base_path = tk.filedialog.askdirectory(title="select the base folder for the pack")
+    map_json_path = tk.filedialog.askopenfilename(title="select the map json file", initialdir=base_path+"/maps/")
     if base_path == "":
         exit()
     while loop:
