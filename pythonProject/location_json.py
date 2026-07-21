@@ -424,7 +424,7 @@ if __name__ == "__main__":
     root.withdraw()
     #
     print("Select the base-folder of the pack:")
-    base_path = tk.filedialog.askdirectory()
+    base_path = tk.filedialog.askdirectory(title="Select the base-folder of the pack")
     print("Path to base-folder of the pack: ", base_path)
     locations_dict = dict()
     # maps_names = []

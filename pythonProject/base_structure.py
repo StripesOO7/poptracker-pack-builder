@@ -230,7 +230,7 @@ if __name__ == "__main__":
     If there is no file called 'datapackage_url.json' already present please provide the requested information.
     """
     )
-    read_file_path = tk.filedialog.askdirectory()
+    read_file_path = tk.filedialog.askdirectory(title="select the Directory the pack should be created in")
     if not os.path.exists(read_file_path + "/datapackage_url.json"):
         with open(read_file_path + "/datapackage_url.json", "w", encoding="utf-8") as base_file:
             url = (

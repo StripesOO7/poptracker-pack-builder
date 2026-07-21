@@ -53,7 +53,7 @@ if __name__ == "__main__":
     x_offset = 0
     y_offset = 0
     print("Select the folder of the locations to have hint_locations created for: ")
-    path = tk.filedialog.askdirectory()
+    path = tk.filedialog.askdirectory(title="Select the folder of the locations to have hint_locations created for")
     print("where do you want your hints to be places?\n"
           "valid options:\n"
           "- left\n"

@@ -69,11 +69,11 @@ if __name__ == "__main__":
     root.withdraw()
 
     print("Select the base-folder of the pack:")
-    base_path = tk.filedialog.askdirectory()
+    base_path = tk.filedialog.askdirectory(title="Select the base-folder of the pack")
     print("Path to base-folder of the pack: ", base_path)
 
     print("Select the ER.json file path:")
-    er_json_file_path = tk.filedialog.askopenfilename()
+    er_json_file_path = tk.filedialog.askopenfilename(title="Select the ER.json file path")
     print("Path to ER.json file: ", er_json_file_path)
 
     create_lua_entrances(er_json_file_path, base_path)

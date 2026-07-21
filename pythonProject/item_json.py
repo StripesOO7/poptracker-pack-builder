@@ -222,6 +222,6 @@ if __name__ == "__main__":
     root.withdraw()
     #
     print("Select the base-folder of the pack:")
-    save_file_path = tk.filedialog.askdirectory()
+    save_file_path = tk.filedialog.askdirectory(title="Select the base-folder of the pack")
     print("Path to base-folder of the pack: ", save_file_path)
     create_items(save_file_path)

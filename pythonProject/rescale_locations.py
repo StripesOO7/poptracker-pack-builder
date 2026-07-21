@@ -21,12 +21,12 @@ if __name__ == '__main__':
     root.withdraw()
 
     print("Select the json to be recalculated. first choose directory second the file itself: ")
-    save_file_name = tk.filedialog.askopenfilename()
+    save_file_name = tk.filedialog.askopenfilename(title="Select the json to be recalculated")
     print("Path to location json-file: ", save_file_name)
     print("Select old image:")
-    old_img = tk.filedialog.askopenfilename()
+    old_img = tk.filedialog.askopenfilename(title="Select old image")
     print("Select new image:")
-    new_img = tk.filedialog.askopenfilename()
+    new_img = tk.filedialog.askopenfilename(title="Select new image")
 
     old_width, old_height = Image.open(old_img).size
     new_width, new_height = Image.open(new_img).size

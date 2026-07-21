@@ -44,7 +44,7 @@ if __name__ == "__main__":
         root = tk.Tk()
         root.withdraw()
 
-        read_file_path = tk.filedialog.askdirectory()
+        read_file_path = tk.filedialog.askdirectory(title="select the Directory the pack should be created in")
     else:
         read_file_path = cmd_args.home
     if cmd_args.check:

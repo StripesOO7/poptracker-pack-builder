@@ -408,7 +408,7 @@ def load_new_base_image(window_ref:Any, img_path:str=""):
     # canvas.delete(canvas_img_id)
     new_img_path = img_path
     if img_path == "":
-        new_img_path = filedialog.askopenfilename()
+        new_img_path = filedialog.askopenfilename(title="Select the new image to be loaded")
     image = Image.open(fr"{new_img_path}")
     og_img_size = image.size
     og_img_width = og_img_size[0] # if og_img_size[0] < 1000 else 1000
