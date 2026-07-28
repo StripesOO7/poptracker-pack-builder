@@ -1,8 +1,7 @@
-import json
+import json5
 import os
 import tkinter as tk
 from tkinter import filedialog
-import argparse
 import re
 
 forbidden_chars = ["@", "#", "$", "%", "&", "(", ")", ".", "+", "–", "*", "?", "[", "^", "~", ":", "-", "'", "`",
@@ -10,7 +9,7 @@ forbidden_chars = ["@", "#", "$", "%", "&", "(", ")", ".", "+", "–", "*", "?",
 
 def create_lua_entrances(json_file_path, base_path):
     with open(fr"{base_path}/manifest.json") as manifest_file:
-        manifest = json.load(manifest_file)
+        manifest = json5.load(manifest_file)
         game_name = manifest["game_name"]
         game_name_lua = game_name.lower().replace(' ', '_')
         for char in forbidden_chars:
@@ -19,7 +18,7 @@ def create_lua_entrances(json_file_path, base_path):
     assert isinstance(game_name, str)
 
     with open(json_file_path) as json_file:
-        entrance_data = json.load(json_file)
+        entrance_data = json5.load(json_file)
 
     if not os.path.exists(fr"{base_path}/scripts/logic/graph_logic/er_connections.lua"):
         with open(fr"{base_path}/scripts/logic/graph_logic/er_connections.lua", "w", encoding="utf-8") as er_lua:

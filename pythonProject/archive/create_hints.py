@@ -1,4 +1,4 @@
-import json
+import json5
 import os
 import tkinter as tk
 from tkinter import filedialog
@@ -81,17 +81,17 @@ if __name__ == "__main__":
         with open(f'{path}/{file}','r', encoding="utf-8") as location_json:
             file_list = location_json.readlines()
             file_str = "".join(file_list)
-            file_json_list = json.loads(file_str)
+            file_json_list = json5.loads(file_str)
             for json_obj in file_json_list:
                 hint_json.append(traverse_json(json_obj, {"x":x_offset, "y":y_offset}, ""))
 
         with open(f'{path}/{file.replace(".json","_hints.json")}', 'w', encoding="utf-8") as new_location_json:
-            new_location_json.write(json.dumps(hint_json, indent=4))
+            new_location_json.write(json5.dumps(hint_json, indent=4, quote_keys=True, trailing_commas=False))
     with open(f'{path.replace(path.split("/")[-1], "items")}/hints_items.json', "w", encoding="utf-8") as hint_items_file:
         hint_item_json = []
         for hint_item in hint_item_list:
             hint_item_json.append(_item_toggle_preset(hint_item))
-        hint_items_file.write(json.dumps(hint_item_json, indent=4))
+        hint_items_file.write(json5.dumps(hint_item_json, indent=4, quote_keys=True, trailing_commas=False))
     with open(f'{path.replace(path.split("/")[-1], "scripts")}/autotracking/hints_mapping.lua', "w", encoding="utf-8") as hint_mapping:
         read_input = []
         location_list = []

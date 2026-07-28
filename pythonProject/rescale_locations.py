@@ -11,7 +11,7 @@ def key_lookup(json_dict):
     return json_dict
 
 if __name__ == '__main__':
-    import json
+    import json5
     import math
     import tkinter as tk
     from tkinter import filedialog
@@ -37,8 +37,8 @@ if __name__ == '__main__':
     with open(f"{save_file_name}", encoding="utf-8") as recalc_json_file:
         file_list = recalc_json_file.readlines()
         file_str = "".join(file_list)
-        file_json_list = json.loads(file_str)
+        file_json_list = json5.loads(file_str)
         for json_obj in file_json_list:
             json_obj = key_lookup(json_obj)
     with open(f"{save_file_name.replace('.json', '_recalc.json')}", "w") as new_file:
-        new_file.write(json.dumps(file_json_list, indent=4))
+        new_file.write(json5.dumps(file_json_list, indent=4, quote_keys=True, trailing_commas=False))

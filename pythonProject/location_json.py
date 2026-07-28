@@ -1,4 +1,4 @@
-import json
+import json5
 import random
 import tkinter as tk
 from tkinter import filedialog
@@ -257,7 +257,7 @@ def create_locations(path: str):  # , logic: dict[str, str]):
         for item_name, item_types in hosted_item_list:
             item_json_obj.append(_item_consumable_preset(item_name))
 
-        location_items.write(f"{json.dumps(item_json_obj, indent=4)}")
+        location_items.write(f"{json5.dumps(item_json_obj, indent=4, quote_keys=True, trailing_commas=False)}")
     for i, _ in enumerate(location_list):
         if len(location_list[i][0]) > 1:
             temp.append(location_list[i][0])
@@ -345,11 +345,11 @@ def create_locations(path: str):  # , logic: dict[str, str]):
                 )
 
                 locations_file.write(
-                    json.dumps(location_file_list, indent=4)
+                    json5.dumps(location_file_list, indent=4, quote_keys=True, trailing_commas=False)
                 )
 
         overworld_list.append(overworld_json)
-        overworld.write(json.dumps(overworld_list, indent=4))
+        overworld.write(json5.dumps(overworld_list, indent=4, quote_keys=True, trailing_commas=False))
 
         maps_names = ["Overworld"]
         for lvl in lvls:
@@ -375,7 +375,7 @@ def create_maps(path: str, maps_names: list):
         for map in maps_names:
             maps_json.append(_maps_json(map))
 
-        maps.write(json.dumps(maps_json, indent=4))
+        maps.write(json5.dumps(maps_json, indent=4, quote_keys=True, trailing_commas=False))
 
 
 # #

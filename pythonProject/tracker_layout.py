@@ -1,4 +1,4 @@
-import json
+import json5
 import math
 import tkinter as tk
 from tkinter import filedialog
@@ -32,7 +32,7 @@ def create_tracker_tabs(path: str, maps_names: list):
             "tabbed_maps_vertical": tabbed_maps_vertical,
         }
 
-        tabs.write(f"{json.dumps(tab_json_obj, indent=4)}")
+        tabs.write(f"{json5.dumps(tab_json_obj, indent=4, quote_keys=True, trailing_commas=False)}")
 
 
 # #
@@ -62,7 +62,7 @@ def create_broadcast_layout(path: str):
                 ],
             }
         }
-        broadcast.write(json.dumps(broadcast_json, indent=4))
+        broadcast.write(json5.dumps(broadcast_json, indent=4, quote_keys=True, trailing_commas=False))
 
 
 # #
@@ -192,7 +192,7 @@ def create_tracker_basic_layout(path: str):
             },
         }
 
-        tracker.write(json.dumps(track_data, indent=4))
+        tracker.write(json5.dumps(track_data, indent=4, quote_keys=True, trailing_commas=False))
     # #
     with open(path + "/layouts/settings_popup.json", "w", encoding="utf-8") as settings_popup:
         settings_popup_json = {
@@ -216,7 +216,7 @@ def create_tracker_basic_layout(path: str):
                 ],
             }
         }
-        settings_popup.write(json.dumps(settings_popup_json, indent=4))
+        settings_popup.write(json5.dumps(settings_popup_json, indent=4, quote_keys=True, trailing_commas=False))
 
 
 def create_item_layout(path: str):
@@ -228,7 +228,7 @@ def create_item_layout(path: str):
     """
     item_codes = []
     with open(path + "/items/items.json", encoding="utf-8") as items:
-        json_data = json.load(items)
+        json_data = json5.load(items)
         for data in json_data:
             if not data == {}:
                 if data["type"] in ["progressive", "progressive_toggle"]:
@@ -301,11 +301,11 @@ def create_item_layout(path: str):
                 "rows"
             ][i // divider].append(item)
 
-        item_layout.write(json.dumps(item_layout_json, indent=4))
+        item_layout.write(json5.dumps(item_layout_json, indent=4, quote_keys=True, trailing_commas=False))
 
 
 if __name__ == "__main__":
-    import json
+    import json5
     import math
     import tkinter as tk
     from tkinter import filedialog

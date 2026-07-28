@@ -5,7 +5,7 @@ from typing import Any, List, Literal, Optional, Tuple
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import filedialog, ttk
-import json
+import json5
 
 class fake_event:
     def __init__(self, width, height):
@@ -213,12 +213,12 @@ def write_json_partially(path, location_section_json, changed_part):
 def save_to_new_file():
     with open(f'{base_path}/locations/{locations_json_selected.replace(".json", "_new.json")}', "w") as new_json:
         save()
-        new_json.write(json.dumps(location_section_json, indent=4))
+        new_json.write(json5.dumps(location_section_json, indent=4, quote_keys=True, trailing_commas=False))
 
 def save_to_old_file():
     with open(f'{base_path}/locations/{locations_json_selected}', "w") as old_json:
         save()
-        old_json.write(json.dumps(location_section_json, indent=4))
+        old_json.write(json5.dumps(location_section_json, indent=4, quote_keys=True, trailing_commas=False))
 
 def save():
     global new_data
@@ -571,7 +571,7 @@ def get_entity(widget_ref:Any, entity_type:Any, name:str):
 
 
 def restore_default_markings():
-    base_json = json.load(open(f'{base_path}/locations/{locations_json_selected}'))
+    base_json = json5.load(open(f'{base_path}/locations/{locations_json_selected}'))
     canvas, _ = get_entity(window, tk.Canvas, "map image canvas")
 
     placed_locations_list, _ = get_entity(window, tk.Listbox, "placed_locations")
@@ -768,7 +768,7 @@ def write_new_map_json_entry():
     if not os.path.exists(maps_path):
         maps_path = map_json_path
     with open(maps_path, "r+") as maps_json_file:
-        tmp_dict = json.load(maps_json_file)
+        tmp_dict = json5.load(maps_json_file)
         maps_json_file.seek(0)
         maps_json_file.truncate()
         if new_map_window is None:
@@ -785,7 +785,7 @@ def write_new_map_json_entry():
                     "location_size": 6,
                 }
             )
-        maps_json_file.write(json.dumps(tmp_dict))
+        maps_json_file.write(json5.dumps(tmp_dict, indent=4, quote_keys=True, trailing_commas=False))
     selected_file_path = ""
     if new_map_window is None:
         pass
@@ -904,7 +904,7 @@ def load_list_of_maps(window_list_of_maps, maps_path):
     if not os.path.exists(maps_path):
         maps_path = map_json_path
     with open(maps_path) as maps_file:
-        for map_json in json.load(maps_file):
+        for map_json in json5.load(maps_file):
             tmp_map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
     # map_list = (sorted(tmp_map_list.keys()))
     for key in sorted(tmp_map_list.keys()):
@@ -983,7 +983,7 @@ def start_selection_screen(window_ref:Any, base_path:str):
     exit_loop_button.grid(row=4, columnspan=2, sticky="ew", padx=5, pady=5)
     # select image to open
     # map_list = {}
-    # json_maps = json.load(open(f"{base_path}/maps/maps.json"))
+    # json_maps = json5.load(open(f"{base_path}/maps/maps.json"))
     load_list_of_maps(window_list_of_maps, fr"{base_path}/maps/maps.json")
     # for map_json in json_maps:
     #     map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
@@ -1009,7 +1009,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
 
     img = load_new_base_image(window_ref=window_ref, img_path=map_list[map_json_selected])
     # map_image_path = map_list[map_json_selected]
-    # locations_json = json.load(open(f"{base_path}/locations/{map_json_selected}"))
+    # locations_json = json5.load(open(f"{base_path}/locations/{map_json_selected}"))
     # for map_name, map_image_path in map_list:
     # print(map_name, map_image_path)
 
@@ -1065,7 +1065,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list, selected_map, sel
     zoom_in_btn = create_button(widget_ref=frame_map_image, position=(2,0), sticky_direction="ew", command_ref=zoom_in, text="zoom in")
     zoom_out_btn = create_button(widget_ref=frame_map_image, position=(2,1), sticky_direction="ew", command_ref=zoom_out, text="zoom out")
     # location_section_json
-    location_section_json.extend( json.load( open(f'{base_path}/locations/{locations_json_selected}') ) )
+    location_section_json.extend( json5.load( open(f'{base_path}/locations/{locations_json_selected}') ) )
     for region in location_section_json:
         path = ""
         print(region["name"])

@@ -129,7 +129,7 @@ if __name__ == "__main__":
     """
     )
     print("Select a file to open")
-    text_to_image_filepath = filedialog.askopenfilename(title="Select a logic file to open")
+    text_to_image_filepath = filedialog.askopenfilename(title="Select an input text file to open")
     print("Filename: ", text_to_image_filepath)
     print("Select a folder to save the created images into:")
     save_to_path = filedialog.askdirectory(title="Select a folder to save the created images into")

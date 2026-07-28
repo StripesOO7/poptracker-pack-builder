@@ -1,5 +1,5 @@
 import os
-import json
+import json5
 import random
 import tkinter as tk
 from tkinter import filedialog
@@ -62,7 +62,7 @@ def create_base_structure(path: str, game_name: str, game_dict: dict, test_state
             }
             # manifest["platform"] = "snes"
             # manifest["versions_url"] = "https://raw.githubusercontent.com/<username>/<repo_name>/versions/versions.json"
-            manifest.write(json.dumps(manifest_json, indent=4))
+            manifest.write(json5.dumps(manifest_json, indent=4, quote_keys=True, trailing_commas=False))
     if not os.path.exists(path + "/LICENSE"):
         with open(path + "/LICENSE", "w", encoding="utf-8") as LICENSE:
             LICENSE.write(f"""
@@ -242,9 +242,9 @@ if __name__ == "__main__":
                 "url": f"{url}/datapackage",
                 "game_name": f"{game_name}"
             }
-            base_file.write(json.dumps(dp_json, indent=4))
+            base_file.write(json5.dumps(dp_json, indent=4, quote_keys=True, trailing_commas=False))
     with open(f"{read_file_path}/datapackage_url.json") as args_json:
-        dp_json = json.load(args_json)
+        dp_json = json5.load(args_json)
         datapackage_path = dp_json["url"]
         game_name = dp_json["game_name"]
 

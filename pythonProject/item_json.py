@@ -1,4 +1,4 @@
-import json
+import json5
 import tkinter as tk
 from tkinter import filedialog
 
@@ -210,7 +210,7 @@ def create_items(path: str):
                 case _:
                     item_json_obj.append(_item_toggle_preset(item_name, item_name))
 
-        items_file.write(f"{json.dumps(item_json_obj, indent=4)}")
+        items_file.write(f"{json5.dumps(item_json_obj, indent=4, quote_keys=True, trailing_commas=False)}")
 
 
 # #

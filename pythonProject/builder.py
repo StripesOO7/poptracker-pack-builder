@@ -1,6 +1,5 @@
-import json
+import json5
 import os
-import sys
 import tkinter as tk
 from sys import exception
 from tkinter import filedialog
@@ -78,7 +77,7 @@ if __name__ == "__main__":
                     "url" : f"{url}",
                     "game_name" : f"{game_name}"
                 }
-                base_file.write(json.dumps(dp_json, indent=4))
+                base_file.write(json5.dumps(dp_json, indent=4, quote_keys=True, trailing_commas=False))
         if cmd_args.source and cmd_args.game:
             datapackage_path = cmd_args.source
             if "http" in datapackage_path and not "/datapackage" in datapackage_path:
@@ -88,11 +87,11 @@ if __name__ == "__main__":
             game_name = cmd_args.game
         else:
             with open(f"{read_file_path}/datapackage_url.json") as args_json:
-                dp_json = json.load(args_json)
+                dp_json = json5.load(args_json)
                 datapackage_path = dp_json["url"]
                 game_name = dp_json["game_name"]
             # *other_options = (
-            #     dp_json = json.load(read_file_path + "/datapackage_url.txt")
+            #     dp_json = json5.load(read_file_path + "/datapackage_url.txt")
             #     # open(read_file_path + "/datapackage_url.txt").readline().split(", ")
             # )
         # if "http" in datapackage_path:
@@ -117,13 +116,13 @@ if __name__ == "__main__":
                     "workspace.library": ['/'.join([*poptracker_path_list, *static_api_path])],
                     "runtime.version": "Lua 5.4"
                 }
-                luarc_json.write(json.dumps(luarc_raw_json, indent=4))
+                luarc_json.write(json5.dumps(luarc_raw_json, indent=4, quote_keys=True, trailing_commas=False))
 
         try:
             games_dict = requests.get(datapackage_path).json()["games"]
         except:
             with open(rf"{datapackage_path}") as datapackage_export:
-                loaded_json = json.load(datapackage_export)
+                loaded_json = json5.load(datapackage_export)
                 games_dict = loaded_json["games"]
         finally:
             if games_dict is None:

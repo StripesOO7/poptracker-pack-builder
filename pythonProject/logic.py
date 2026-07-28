@@ -1,6 +1,4 @@
-import json
-import os
-import tkinter as tk
+import json5
 
 from typing import Literal
 
@@ -37,7 +35,7 @@ DEFAULT_OPERATORS = {
 
 def read_json_rules(path:str) -> dict:
     with open(path, "r") as rule_builder:
-        rules = json.load(rule_builder)
+        rules = json5.load(rule_builder)
     for rule in rules:
         rule["name"] = normalize_names(rule["name"], "location")
     return rules
