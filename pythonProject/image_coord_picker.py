@@ -203,10 +203,21 @@ def write_json_partially(path, location_section_json, changed_part):
         location_section_json[path[0]] = write_json_partially(path[1:], location_section_json[path[0]], changed_part)
         return location_section_json
     else:
-        if path[0] == len(location_section_json):
-            location_section_json.append(changed_part)
-        else:
-            location_section_json[path[0]] = changed_part
+        if type(path[0]) == str :
+            # last entry in path is a string. most likely 'map_locations' so we need to create a new list to append
+            # into if location_section_json is a dict. if not just append
+            if type(location_section_json) == dict:
+                location_section_json[path[0]] = []
+            location_section_json[path[0]].append(changed_part)
+        else: # either replace an existing entry or create a totally new list for map_locations
+            if path[0] >= len(location_section_json):
+                # == entry is new.
+                # > pre-existing list is empty.
+                # appending to preexisting list of map_locations
+                location_section_json.append(changed_part)
+            else:
+                # replace pre-existing entry
+                location_section_json[path[0]] = changed_part
         return location_section_json
     pass
 
