@@ -189,7 +189,7 @@ class Locations:
 
     def clear(self, canvas: Canvas):
         """Erase any drawn section"""
-        for location in self.placed_locations:
+        for location in self.locations:
             location.clear(canvas)
 
     def draw(self, map: str, canvas: Canvas, scale: float=1.0):
@@ -202,6 +202,9 @@ class Locations:
     def load(self, map: str, canvas: Canvas, base_path: str, filename: str):
         """Clear existing locations and load the selected location file"""
         self.clear(canvas=canvas)
+
+        self.placed_locations = []
+        self.unplaced_locations = []
 
         self.locations = []
         json_data = json5.load(open(f'{base_path}/locations/{filename}'))
@@ -319,8 +322,6 @@ def debug(message: str):
 
 locations: Locations = Locations()
 
-coords = (0, 0)
-location_section_json = []
 locations_json_selected = ""
 map_json_selected = ""
 og_img_size = (0, 0)
@@ -620,6 +621,7 @@ def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Li
 def restore_default_markings(canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
     global locations
 
+    locations.clear(canvas=canvas)
     locations.load(map=map_json_selected, canvas=canvas, base_path=base_path, filename=locations_json_selected)
     locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
     refresh_section_selectors(locations, placed_locations_list, unplaced_locations_list)
@@ -764,10 +766,6 @@ def add_new_map(map_listbox: tk.Listbox):
     except:
         pass
 
-def update_coords(x, y):
-    global coords
-    coords = (x, y)
-
 def dialog(list_of_locations: tk.Listbox, list_of_maps: tk.Listbox):
     global locations_json_selected, map_json_selected
 
@@ -877,7 +875,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
     create_button(frame_settings, text="Load new BaseImage", command_ref=lambda: load_new_base_image(window_ref=window_ref, img_path=map_list[map_json_selected]))
     create_button(frame_settings, text="Go back to selection", command_ref=go_back_to_selection)
     create_button(frame_settings, text="Exit", command_ref=exit_loop)
-    create_button(frame_settings, text="Restore Defaults", command_ref=restore_default_markings)
+    create_button(frame_settings, text="Restore Defaults", command_ref=lambda: restore_default_markings(canvas, placed_location_section_list, unplaced_location_section_list))
     for i, child in enumerate(frame_settings.winfo_children()):
         if isinstance(child, tk.Widget):
             child.grid(row=i, column=0, pady=5)
