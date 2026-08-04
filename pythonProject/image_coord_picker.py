@@ -1,7 +1,7 @@
 import os
 import shutil
 from typing import Any, List, Literal, Optional, Tuple, Self
-from enum import StrEnum
+from enum import StrEnum, IntEnum
 
 from PIL import Image, ImageTk
 import tkinter as tk
@@ -124,7 +124,7 @@ class Location:
     def place(self, map: str, x: int, y: int, size: int, shape: Shape):
         placed = False
         for map_position in self.map_locations:
-            if map_position.map == map:
+            if map_position.map != map:
                 continue
 
             map_position.place(map, x, y, size, shape)
@@ -214,7 +214,7 @@ class Locations:
         if name is None:
             raise ValidationException(f"Location has no name: {location_data}")
 
-        info(f"Loading {name}")
+        debug(f"Loading {name}")
 
         location = Location(name=name)
 
@@ -292,14 +292,30 @@ class Locations:
             location.to_json() for location in self.locations
         ]
 
+class LogLevel(IntEnum):
+    DEBUG = 0
+    INFO = 1
+    WARNING = 2
+    ERROR = 3
+    CRITICAL = 4
+
+LOGLEVEL = LogLevel.CRITICAL
+
+def _print(level: LogLevel, message: str):
+    if LOGLEVEL <= level:
+        print(message)
+
 def error(message: str):
-    print(f"Error: {message}")
+    _print(LogLevel.ERROR, f"Error: {message}")
 
 def warn(message: str):
-    print(f"Warning: {message}")
+    _print(LogLevel.WARNING, f"Warning: {message}")
 
 def info(message: str):
-    print(f"{message}")
+    _print(LogLevel.INFO, f"{message}")
+
+def debug(message: str):
+    _print(LogLevel.DEBUG, f"Debug: {message}")
 
 locations: Locations = Locations()
 
@@ -580,9 +596,9 @@ def restore_default_markings(canvas: Canvas, placed_locations_list: tk.Listbox, 
     refresh_section_selectors(locations, placed_locations_list, unplaced_locations_list)
 
 def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_selection: ttk.Combobox, placed_locations: tk.Listbox, unplaced_locations: tk.Listbox):
-    print("clicked at", event.x, event.y)
-    print("scaling factor", scaling_factor)
-    print("actual image coords", event.x //scaling_factor, event.y // scaling_factor)
+    debug(f"clicked at {event.x} {event.y}")
+    debug(f"scaling factor {scaling_factor}")
+    debug(f"actual image coords {event.x //scaling_factor} {event.y // scaling_factor}")
 
     if len(unplaced_locations.curselection()) > 0:
         selected_location = unplaced_locations.get(unplaced_locations.curselection()[0])
@@ -599,14 +615,11 @@ def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_se
     if location is None:
         error(f"Cannot find the section name {select_location}")
         return
-    
-    unplaced_locations.selection_clear(0, tk.END)
-    placed_locations.selection_clear(0, tk.END)
-    placed_locations.selection_set(tk.END)
         
     canvas_x = canvas.canvasx(event.x)
     canvas_y = canvas.canvasy(event.y)
 
+    location.clear(canvas=canvas)
     locations.place(
         location=location,
         map=map_json_selected,
@@ -616,8 +629,10 @@ def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_se
         shape=Shape(shape_selection['values'][shape_selection.current()]),
     )
 
-    location.draw(section_name=selected_location, map=map_json_selected, canvas=canvas, scale=scaling_factor, text_color="black")
+    locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
     refresh_section_selectors(locations, placed_locations, unplaced_locations)
+    
+    placed_locations.selection_set(tk.END)
 
 def remove_placed_location(_, canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
     for selection_index in placed_locations_list.curselection():
@@ -917,5 +932,5 @@ if __name__ == "__main__":
 
                 window.mainloop()
         except tk.TclError:
-            print("Program has stopped")
+            info("Program has stopped")
             break
