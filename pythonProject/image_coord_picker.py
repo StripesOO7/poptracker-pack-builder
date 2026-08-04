@@ -18,18 +18,22 @@ class Shape(StrEnum):
 
 class MapPosition:
     """Handles a position on the map"""
-    # Identifier for the related map
-    map: str
     x: int
     y: int
     shape: Shape
     size: int
     border_thickness: int
+    
+    # Identifier for the related map
+    map: str
 
-    shapes: list[int] = []
+    # List of Tk inter object IDs
+    shapes: list[int]
 
     def __init__(self, map: str, x: int, y: int, size: int=10, shape: Shape=Shape.RECT):
         self.place(map, x, y, size, shape)
+
+        self.shapes = []
 
     def __str__(self):
         return (
@@ -83,13 +87,18 @@ class Section:
         self.name = name
 
 class Location:
-    children: list[Self] = []
-    map_locations: list[MapPosition] = []
-    sections: list[Section] = []
+    """Handle one location object with one or several map position associated to sections"""
+    children: list[Self]
+    map_locations: list[MapPosition]
+    sections: list[Section]
     name: str
 
     def __init__(self, name: str):
         self.name = name
+
+        self.children = []
+        self.map_locations = []
+        self.sections = []
 
     def is_placed_on(self, map: str):
         """Indicate if at least one position of this location is on the selected map"""
@@ -157,11 +166,10 @@ class Locations:
 
     def draw(self, map: str, canvas: Canvas, scale: float=1.0):
         for location in self.placed_locations:
-            for map_position in location.map_locations:
-                map_position.clear(canvas)
+            location.clear(canvas=canvas)
 
-                for section in location.sections:
-                    map_position.draw(section.name, map, canvas, scale=scale)
+            for section in location.sections:
+                location.draw(section.name, map=map, canvas=canvas, scale=scale)
 
     def load(self, canvas: Canvas, base_path: str, filename: str):
         """Clear existing locations and load the selected location file"""
@@ -170,7 +178,50 @@ class Locations:
         self.locations = []
         json_data = json5.load(open(f'{base_path}/locations/{filename}'))
         for location_data in json_data:
-            self.locations.append(load_location(location_data))
+            self.locations.append(self._load_location(location_data))
+
+    def _load_location(self, location_data: dict, locations: list[Location]=[], path: str="") -> Location:
+        """Load one raw JSON location data entry"""
+        name = location_data.get("name", None)
+        if name is None:
+            raise ValidationException(f"Location has no name: {location_data}")
+
+        info(f"Loading {name}")
+
+        location = Location(name=name)
+
+        for section_data in location_data.get("sections", []):
+            name = section_data.get("name", None)
+            if name is None:
+                warn(f"Empty section: {section_data}")
+                continue
+
+            section = Section(name)
+            location.sections.append(section)
+            
+        for child_data in location_data.get("children", []):
+            location.children.append(
+                load_location(child_data, locations, path)
+            )
+
+        for map_position_data in location_data.get("map_locations", []):
+            map = map_position_data.get("map", None)
+            if map is None:
+                warn(f"Got an empty map position: {map}")
+                continue
+
+            try:
+                location.map_locations.append(MapPosition(
+                    map=map,
+                    x=location_data.get("x", 0),
+                    y=location_data.get("y", 0),
+                    size=location_data.get("size", 10),
+                    shape=Shape(location_data.get("shape", "rect"))
+                ))
+            except Exception:
+                error(f"Invalid map_locations entry: {map_position_data}")
+                    
+        return location
 
     def get_section_location(self, section_name: str, locations: list[Location] | None=None):
         """Get a location that contains a specific section"""
@@ -720,49 +771,6 @@ def select_location():
     focus = window.focus_get()
     if focus is not None:
         focus.selection_get()
-
-def load_location(location_data: dict, locations: list[Location]=[], path: str="") -> Location:
-    """Load one raw JSON location data entry"""
-    name = location_data.get("name", None)
-    if name is None:
-        raise ValidationException(f"Location has no name: {location_data}")
-
-    info(f"Loading {name}")
-
-    location = Location(name=name)
-
-    for section_data in location_data.get("sections", []):
-        name = section_data.get("name", None)
-        if name is None:
-            warn(f"Empty section: {section_data}")
-            continue
-
-        section = Section(name)
-        location.sections.append(section)
-        
-    for child_data in location_data.get("children", []):
-        location.children.append(
-            load_location(child_data, locations, path)
-        )
-
-    for map_position_data in location_data.get("map_locations", []):
-        map = map_position_data.get("map", None)
-        if map is None:
-            warn(f"Got an empty map position: {map}")
-            continue
-
-        try:
-            location.map_locations.append(MapPosition(
-                map=map,
-                x=location_data.get("x", 0),
-                y=location_data.get("y", 0),
-                size=location_data.get("size", 10),
-                shape=Shape(location_data.get("shape", "rect"))
-            ))
-        except Exception:
-            error(f"Invalid map_locations entry: {map_position_data}")
-                
-    return location
 
 def load_list_of_maps(window_list_of_maps, maps_path):
     tmp_map_list = {}
