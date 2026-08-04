@@ -479,15 +479,38 @@ def save_to_new_file():
 def save_to_old_file():
     save(locations_json_selected)
 
-def zoom_in(canvas: Canvas):
+def zoom_in(canvas: Canvas) -> float:
     global zoom_scale
     zoom_scale *= 1.2
     redraw_canvas(canvas)
+    return 1.2
 
 def zoom_out(canvas: Canvas):
     global zoom_scale
     zoom_scale *= 0.8
     redraw_canvas(canvas)
+    return 0.8
+
+def zoom_canvas(event, canvas: Canvas):
+    global zoom_scale
+
+    canvas_x = canvas.canvasx(event.x)
+    canvas_y = canvas.canvasy(event.y)
+
+    factor = 1.0
+    if event.delta > 0:
+        factor = zoom_in(canvas)
+    elif event.delta < 0:
+        factor = zoom_out(canvas)
+    
+    new_width = round(og_img_width * scaling_factor)
+    new_height = round(og_img_height * scaling_factor)
+
+    new_xview = (canvas_x * factor - event.x) / new_width
+    new_yview = (canvas_y * factor - event.y) / new_height
+
+    canvas.xview_moveto(new_xview)
+    canvas.yview_moveto(new_yview)
 
 def draw_rectangle(canvas_ref: Any, x: int, y: int, scaling_factor: float|int, fill_color: str, size:int):
     size_offset = round(size/2)
@@ -577,6 +600,9 @@ def redraw_canvas(canvas: Canvas):
 
 def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
     """Reload the content of the placed/unplaced section lists"""
+    placed_scroll = placed_locations_list.yview()
+    unplaced_scroll = unplaced_locations_list.yview()
+
     placed_locations_list.delete(0, tk.END)
     unplaced_locations_list.delete(0, tk.END)
 
@@ -587,6 +613,9 @@ def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Li
     for location in locations.unplaced_locations:
         for section in location.sections:
             unplaced_locations_list.insert(tk.END, section.name)
+
+    placed_locations_list.yview_moveto(placed_scroll[0])
+    unplaced_locations_list.yview_moveto(unplaced_scroll[0])
 
 def restore_default_markings(canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
     global locations
@@ -633,6 +662,7 @@ def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_se
     refresh_section_selectors(locations, placed_locations, unplaced_locations)
     
     placed_locations.selection_set(tk.END)
+    placed_locations.see(tk.END)
 
 def remove_placed_location(_, canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
     for selection_index in placed_locations_list.curselection():
@@ -769,6 +799,12 @@ def load_list_of_locations(window_list_of_locations, locations_dir):
     for filename in filenames:
         window_list_of_locations.insert(tk.END, filename)
 
+def start_pan(event, canvas: Canvas):
+    canvas.scan_mark(event.x, event.y)
+
+def pan_motion(event, canvas: Canvas):
+    canvas.scan_dragto(event.x, event.y, gain=1)
+
 def start_selection_screen(window_ref: tk.Tk, base_path:str) -> tuple[Frame, Frame, Frame]:
     window_ref.columnconfigure([0, 1], weight=1)
     window_ref.rowconfigure(0, weight=1)
@@ -829,6 +865,9 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
     frame_map_image = create_frame(window_ref, name="map_image", position=(0, 1), sticky_direction="nsew")
     frame_settings = create_frame(window_ref, name="settings", position=(0, 2), sticky_direction="nsew")
 
+    frame_location_selection.rowconfigure(1, weight=1)
+    frame_location_selection.rowconfigure(3, weight=1)
+
     # settings
     shape_selection_combobox = create_combobox(frame_settings, state="readonly", value_list=["rect", "diamond", "trapezoid"], default="rect", name="shape_selection")
     size_selection_combobox = create_combobox(frame_settings, state="readonly", value_list=[str(i) for i in range(6, 41, 2)], default="10", name="size_selection")
@@ -865,7 +904,6 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
                                   widget_command_ref=scrollbar_unplaced_location_section_y.set,
                                   widget_command_direction="yscrollcommand")
 
-
     create_label(frame_location_selection, text="placed locations", position=(2, 0), sticky_direction="ew")
     scrollbar_placed_location_section_y = create_scrollbar(frame_location_selection, position=(3, 1), orientation="vertical", sticky_direction="ns")
     placed_location_section_list = create_listbox(frame_location_selection, position=(3, 0), name="placed_locations", sticky_direction="nsew")
@@ -878,6 +916,10 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
 
     scrollbar_canvas_y = create_scrollbar(frame_map_image, position=(0, 1), orientation="vertical", sticky_direction="ns")
     scrollbar_canvas_x = create_scrollbar(frame_map_image, position=(1, 0), orientation="horizontal", sticky_direction="ew")
+
+    canvas.bind("<ButtonPress-3>", lambda event: start_pan(event, canvas))
+    canvas.bind("<B3-Motion>", lambda event: pan_motion(event, canvas))
+    canvas.bind("<MouseWheel>", lambda event: zoom_canvas(event, canvas))
 
     combine_scrollbar_with_widget(scrollbar_canvas_y,
                                   canvas,
