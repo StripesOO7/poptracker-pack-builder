@@ -102,43 +102,56 @@ function ForceUpdate()
 end
 
 
----resets a given item back to default or what's saved for the given seed in the pseuso-cache LuaItems
----@param item_type string table of the ItemCode and extra parameters from the Item_Mapping.lau
----@param item_obj JsonItem Tracker:FindObjectForCode(item) return object
----@param item_code string Reference for the custom LuaItem CachesItems
-local function ItemReset(item_type, item_obj, item_code)
-    if item_obj.Type == "toggle" then
-        item_obj.Active = false
-    elseif item_obj.Type == "progressive" then
-        item_obj.CurrentStage = 0
-    elseif item_obj.Type == "consumable" then
-        if item_obj.MinCount then
-            item_obj.AcquiredCount = item_obj.MinCount
-        else
-            item_obj.AcquiredCount = 0
-        end
-    elseif item_obj.Type == "progressive_toggle" then
-        item_obj.CurrentStage = 0
-        item_obj.Active = false
+---resets or updates a given item back to default or what's saved for the given seed in the pseudo-cache LuaItems
+---@param item_code JsonItem|string Tracker:FindObjectForCode(item) return object
+---@param item_type string|nil table of the ItemCode and extra parameters from the Item_Mapping.lau
+---@param consumable_multiplier integer|nil table of the ItemCode and extra parameters from the Item_Mapping.lua
+---@param reset boolean|nil flag to update or reset the item false=update, true=reset, nil=update
+local function ItemUpdate(item_code, item_type, consumable_multiplier, reset)
+    local item_obj = nil
+
+    if type(item_code) == "string" then
+        item_obj = Tracker:FindObjectForCode(item_code)
+    else
+        item_obj = item_code
+    end
+    if item_obj == nil then
+        print(string.format("ItemUpdate: could not find item_object for code %s", item_code))
+    end
+
+    if item_type == nil then
+        item_type = item_obj.Type
+    end
+
+    if item_type == "toggle" then
+        item_obj.Active = not reset --reset and false or true
+    elseif item_type == "progressive" then
+        item_obj.CurrentStage = reset and 0 or (item_obj.CurrentStage + 1)
+    elseif item_type == "consumable" then
+        item_obj.AcquiredCount = reset and (item_obj.MinCount or 0) or
+        (item_obj.AcquiredCount + item_obj.Increment * (consumable_multiplier or 1))
+    elseif item_type == "progressive_toggle" then
+        item_obj.CurrentStage = reset and 0 or (item_obj.CurrentStage + 1)
+        item_obj.Active = not reset -- reset and false or true
     end
 end
 
----resets a given location back to default or whats saved for the gives seed in the pseuso-cache LuaItems
----@param location string String of the Location or LocatioSection to reset
----@param location_obj JsonItem|LocationSection Tracker:FindObjectForCode(location) return object
+
+---resets or updates a given location back to default or whats saved for the gives seed in the pseudo-cache LuaItems
+---@param location_obj LocationSection Tracker:FindObjectForCode(location) return object
 ---@param custom_storage_item table Reference for the custom LuaItem CachesItems
-local function LocationReset(location, location_obj, custom_storage_item)
-    if location:sub(1, 1) == "@" then
-        ---@cast location_obj LocationSection
+---@param reset boolean flag to update or reset the item false=update, true=reset, nil=update
+local function LocationUpdate(location_obj, custom_storage_item, reset)
+    ---@cast location_obj LocationSection
+    if reset then --reset
         if custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID] then
             location_obj.AvailableChestCount = custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID]
         else
             location_obj.AvailableChestCount = location_obj.ChestCount
         end
         location_obj.Highlight = HIGHLIGHT_LEVEL[40]
-    else
-        ---@cast location_obj JsonItem
-        location_obj.Active = false
+    else --update
+        (location_obj --[[@as LocationSection]]).AvailableChestCount = location_obj.AvailableChestCount - 1
     end
 end
 
@@ -224,10 +237,20 @@ function OnClear(slot_data)
     for _, location_array in pairs(LOCATION_MAPPING) do
         for _, location in pairs(location_array) do
             if location then
-				---@type LocationSection
-                local location_obj = Tracker:FindObjectForCode(location)
-                if location_obj then
-                    LocationReset(location, location_obj, custom_storage_item)
+                if type(location) == "table" then
+                    item_code, item_type, consumable_multiplies = table.unpack(location)
+                    ItemUpdate(item_code, item_type, consumable_multiplies, true)
+                else
+                    if location:sub(1, 1) == "@" then
+                        ---@type LocationSection
+                        local location_obj = Tracker:FindObjectForCode(location)
+                        if location_obj then
+                            LocationUpdate(location_obj, custom_storage_item, true)
+                        end
+                    else
+                        ---@cast location_obj JsonItem
+                        ItemUpdate(location_obj, nil, nil, true)
+                    end
                 end
             end
         end
@@ -237,11 +260,12 @@ function OnClear(slot_data)
         for _, item_pair in pairs(item_array) do
             local item_code = item_pair[1]
             local item_type = item_pair[2]
+            local consumable_multiplier = tonumber(item_pair[3]) or 1
             -- print("on clear", item_code, item_type)
 			---@type JsonItem
             local item_obj = Tracker:FindObjectForCode(item_code)
             if item_obj then
-                ItemReset(item_type, item_obj, item_code)
+                ItemUpdate(item_obj, item_type, consumable_multiplier, true)
             end
         end
     end
@@ -295,27 +319,7 @@ function OnItem(index, item_id, item_name, player_number)
 
         local item_obj = Tracker:FindObjectForCode(item_code)
         if item_obj then
-            if item_obj.Type == "toggle" then
-                -- print("toggle")
-                item_obj.Active = true
-            elseif item_obj.Type == "progressive" then
-                -- print("progressive")
-                if item_obj.Active == true then
-                    item_obj.CurrentStage = item_obj.CurrentStage + 1
-                else
-                    item_obj.Active = true
-                end
-            elseif item_obj.Type == "consumable" then
-                -- print("consumable")
-                item_obj.AcquiredCount = item_obj.AcquiredCount + item_obj.Increment * consumable_multiplier
-            elseif item_obj.Type == "progressive_toggle" then
-                -- print("progressive_toggle")
-                if item_obj.Active then
-                    item_obj.CurrentStage = item_obj.CurrentStage + 1
-                else
-                    item_obj.Active = true
-                end
-            end
+            ItemUpdate(item_code, item_type, consumable_multiplier, false)
         else
             print(string.format("OnItem: could not find object for code %s", item_code))
         end
@@ -334,16 +338,25 @@ function OnLocation(location_id, location_name)
     end
 
     for _, location in pairs(location_array) do
-        local location_obj = Tracker:FindObjectForCode(location)
-        -- print(location, location_obj)
-        if location_obj then
-            if location:sub(1, 1) == "@" then
-                (location_obj --[[@as LocationSection]]).AvailableChestCount = location_obj.AvailableChestCount - 1
+        if location then
+            if type(location) == "table" then
+                item_code, item_type, consumable_multiplier = table.unpack(location)
+                ItemUpdate(item_code, item_type, consumable_multiplier, false)
             else
-                (location_obj --[[@as JsonItem]]).Active = true
+
+                if location:sub(1, 1) == "@" then
+                    ---@type LocationSection
+                    local location_obj = Tracker:FindObjectForCode(location)
+                    if location_obj then
+                        LocationUpdate(location_obj, custom_storage_item, false)
+                    else
+                        print(string.format("OnLocation: could not find location_object for code %s", location))
+                    end
+                else
+                    ---@cast location_obj JsonItem
+                    ItemUpdate(location_obj, nil, nil, false)
+                end
             end
-        else
-            print(string.format("OnLocation: could not find location_object for code %s", location))
         end
     end
     MANUAL_CHECKED = true
