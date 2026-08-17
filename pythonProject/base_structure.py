@@ -58,7 +58,7 @@ def create_base_structure(path: str, game_name: str, game_dict: dict, test_state
                     "Map Tracker": {"display_name": "Map Tracker", "flags": ["ap"]},
                     "Items Only": {"display_name": "Items Only", "flags": ["ap"]},
                 },
-                "min_poptracker_version": "0.31.0",
+                "min_poptracker_version": "0.35.4",
             }
             # manifest["platform"] = "snes"
             # manifest["versions_url"] = "https://raw.githubusercontent.com/<username>/<repo_name>/versions/versions.json"

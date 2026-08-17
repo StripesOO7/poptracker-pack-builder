@@ -109,7 +109,7 @@ function CreateLuaManualStorageItem(name)
         MANUAL_LOCATIONS_ORDER = {}
         -- you can add many more custom stuff in here
     }
-
+    self.PotentialCodes = {Code, Basename}
     self.CanProvideCodeFunc = CanProvideCodeFunc
     self.OnLeftClickFunc = OnLeftClickFunc -- your_custom_leftclick_function_here
     self.OnRightClickFunc = OnRightClickFunc -- your_custom_rightclick_function_here
