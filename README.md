@@ -6,8 +6,8 @@ Its builds the base file- and folder-structure expected from PopTracker from scr
 
 ## Getting started
 
-This script is still work in progress but already creates packs working with PopTracker version from 0.27.0 onwards (as
-of Aug 2024)
+This script is still work in progress but already creates packs working with PopTracker version from 0.35.4 onwards (as
+of Aug 2026). 
 
 To use this script you need to have [Python](https://www.python.org/downloads/) installed. tested with 3.11+ earlier
 versions should also work but at least 3.11 is recommended for sake of not having an outdated version anyway
@@ -17,6 +17,8 @@ From here on i assume you know how to run scripts with Python.
 
 On the very first run the Script will install some needed Python packages listed in the requirements.txt. Mainly the
 requests package to load the needed Archipelago-Datapackage and PIL for creating images for textbased Settings if needed. 
+To install these packages you need to open the commandline inside the directory of the builder script (next to the `requirements.txt`)
+and use the command `pip install -r requirements.txt`
 
 ## How to build a Pack
 
@@ -31,7 +33,7 @@ For the URL part this can be `https://archipelago.gg/datapackage` for supported 
 `http://localhost/datapackage` if you are locally hosting a copy of the Archipelago Webhost with custom
 (unsupported/in-development) apworlds.
 
-For the File Path you need to first to have the apworld for the game you want to make a pack installed and export the
+For the File Path you first need to have the apworld for the game you want to make a pack installed and export the
 Datapackage locally via the AP Launcher and clicking "Export Datapackage".
 Next you provide the Script with the full path to the exported .json file inclduing the filename.
 
@@ -55,12 +57,14 @@ or later on to reset/redo parts of the pack.
 
 #### item_mapping.lua
 each line in `item_mapping.lua` looks like this:
-```[<AP_item_ID>] = {{"<itemcode/-name>"}, "<item_type>"},```
+```[<AP_item_ID>] = {{"<itemcode/-name>", "<item_type>", <consumable increment-multiplier> }, {...}},```
 - AP_item_ID --> the ID send out by Archipelago for this specific item
 - itemcode/-name --> the code used to reference the item inside of PopTracker
 - item_type --> the type you want to classify the item as inside PopTracker. Possible types are:
 `"progressive", "toggle, "progressive_toggle", "static", "consumable" , "composite_toggle", and "composite_toggle"`
 although the last 2 (`"composite_toggle", and "composite_toggle"`) are ignored for the sake of simplicity in this script
+- consumable increment-multiplier --> `consumables` have the option `.increment` and this multiplier is used to grand a multiple of the default increment value.
+most usefull for if you have different instances of basically the same item but with different values like `money(5)`, `money (50)`, `money(500)`.
 
 ##### To-Do's for Manual editing:
 - change the itemname/-code to something readable but ommit annotations like an amount. i.e from `money(500)` to just
@@ -88,6 +92,24 @@ without grouping them all the locations would either be in 1 single sqaure if yo
 `@region/<location_name>` or the will be all in their own square on the map when you are too granular. The last one also
 happens if you dont group them at all. 
 
+__items inside LOCATION MAPPING__:
+You are also able to put items inside the table for a specific locationID to update them along side the location update. 
+Most useful for event tracking or unrandomized upgrades. This will look like this:
+```[<AP_location_ID>] = {"<AP_location_name>", {"<itemcode/-name>", "<item_type>", <consumable increment-multiplier> }, "<itemcode/-name>", ...},```
+and supports both naming just the `<item_code>` or the same syntax as the `ITEM_MAPPING`.
+
+__exmple for groouping of locations__:
+Iff you want to group locations it woudl look like this:
+```
+[1] = {"@A/C/1"},
+[2] = {"@A/C/2"},
+[3] = {"@A/3"},
+[4] = {"@B/4"},
+[5] = {"@B/D/5"},
+```
+This would result in 1 and 2 being 1 Square in the map under A/C, while being 3 its own Square.
+Same for 4 and 5 being 2 individual squares on the map.
+
 ##### To-Do's for Manual editing:
 
 - change the `AP_location_name` to a path you think best describes the location of the path inside your games world.
@@ -111,11 +133,11 @@ real world examples:
 ```
 Items:
 OOT
-[66128] = {{"ProgressiveHookshot"}, "progressive"},
+[66128] = {{"ProgressiveHookshot", "progressive"}},
 Pokemon red/blue
-[172000073] = {{"pokeflute"}, "toggle"},
+[172000073] = {{"pokeflute", "toggle"}},
 Super Metroid
-[83000] = {{"etank"}, "consumable"},
+[83000] = {{"etank", "consumable", 3}},
 
 Locations:
 OOT
@@ -183,7 +205,18 @@ locations json file.
 
 ## Generate images for textbased settings
 
+`gimp_impages.py` is a small script that can create text-based images from an input txt file.
+These images have a unified look to them and can currently be used to create 2 Line images.
 
+the input file needs the text to be formatted in the following way:
+```txt
+"1 line text"
+"first line text", sub text 1, sub text 2, 
+```
+this will result in 3 images:
+1. Just the image having the text "1 line text"
+2. "first line text"on the upper line, "sub text 1" on the lower line
+3. "first line text"on the upper line, "sub text 2" on the lower line
 
 ## Partial rerun/restore
 - to restore the everything inside of `items/` rerun `item_json.py`
