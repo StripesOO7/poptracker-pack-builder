@@ -410,6 +410,13 @@ local function UpdateHints(locationID, status) -->
     if Highlight then
         -- print(locationID, status)
         local location_table = LOCATION_MAPPING[locationID]
+        
+        -- Safetly stop if the location ID returns nil in location_mapping.lua
+        if not location_table then
+            print(string.format("UpdateHints: Location ID %s not found in LOCATION_MAPPING. Skipping highlight.", locationID))
+            return
+        end
+
         for _, location in ipairs(location_table) do
             if location:sub(1, 1) == "@" then
 				---@type LocationSection
