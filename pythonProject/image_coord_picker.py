@@ -1,5 +1,6 @@
 import os
 import shutil
+from os import name
 from typing import Any, List, Literal, Optional, Tuple, Self
 from enum import StrEnum, IntEnum
 
@@ -7,6 +8,8 @@ from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import filedialog, ttk, Canvas, Frame
 import json5
+from zope.interface.common import optional
+
 
 class ValidationException(Exception):
     pass
@@ -22,24 +25,31 @@ class MapPosition:
     y: int
     shape: Shape
     size: int
-    border_thickness: int
-    
+    border_thickness: Optional[float] # > -1
+
+    restrict_visibility_rules: Optional[str|list[str]]
+    force_invisibility_rules: Optional[str|list[str]]
     # Identifier for the related map
     map: str
 
     # List of Tk inter object IDs
     shapes: list[int]
 
-    def __init__(self, map: str, x: int, y: int, size: int=10, shape: Shape=Shape.RECT):
+    def __init__(self, map: str, x: int, y: int, size: int=10, shape: Shape=Shape.RECT, border_thickness:Optional[float] = None,
+              restrict_visibility_rules: Optional[str|list[str]] = None, force_invisibility_rules: Optional[str|list[str]] = None):
         self.place(map, x, y, size, shape)
 
+        self.border_thickness = border_thickness
+        self.restrict_visibility_rules = restrict_visibility_rules
+        self.force_invisibility_rules = force_invisibility_rules
         self.shapes = []
 
     def __str__(self):
         return (
             f"x:{self.x}, y: {self.y}\n"
             f"shape:{self.shape}\n"
-            f"size:{self.size}"
+            f"size:{self.size}\n"
+            f"map:{self.map}"
         )
 
     def is_placed_on(self, map: str):
@@ -81,24 +91,76 @@ class MapPosition:
         self.shapes = []
 
     def to_json(self):
-        return {
+        map_position_json_dict: dict[str, object] = {
             "map": self.map,
             "x": self.x,
             "y": self.y,
             "size": self.size,
-            "shape": str(self.shape),
+            "shape": str(self.shape)
         }
+        for optional_key in ["border_thickness", "restrict_visibility_rules", "force_invisibility_rules"]:
+            if getattr(self, optional_key) is not None:
+                map_position_json_dict[optional_key] = getattr(self, optional_key)
+
+        return map_position_json_dict
 
 class Section:
     name: str
+# section
+    # name,
+    shortname: Optional[str]
+    access_rules: Optional[str|List[str]]
+    visibility_rules: Optional[str|List[str]]
+    chest_unopened_img: Optional[str]
+    chest_opened_img: Optional[str]
+    clear_as_group: Optional[bool]
+    item_count: Optional[int]
+    hosted_item: Optional[str]
+    item_size: Optional[int]
+    item_height: Optional[int]
+    item_width: Optional[int]
+    inspectable_sequence_break: Optional[bool]
+    ref: Optional[str]
 
-    def __init__(self, name: str):
+    def __init__(self, name: str,
+                 shortname: Optional[str] = None,
+                 access_rules: Optional[str|List[str]] = None,
+                 visibility_rules: Optional[str|List[str]] = None,
+                 chest_unopened_img: Optional[str] = None,
+                 chest_opened_img: Optional[str] = None,
+                 clear_as_group: Optional[bool] = None,
+                 item_count: Optional[int] = None,
+                 hosted_item: Optional[str] =  None,
+                 item_size: Optional[int] = None,
+                 item_height: Optional[int] = None,
+                 item_width: Optional[int] = None,
+                 inspectable_sequence_break: Optional[bool] = None,
+                 ref: Optional[str] = None):
         self.name = name
+        self.shortname = shortname
+        self.access_rules = access_rules
+        self.visibility_rules = visibility_rules
+        self.chest_unopened_img = chest_unopened_img
+        self.chest_opened_img = chest_opened_img
+        self.clear_as_group = clear_as_group
+        self.item_count = item_count
+        self.hosted_item = hosted_item
+        self.item_size = item_size
+        self.item_height = item_height
+        self.item_width = item_width
+        self.inspectable_sequence_break = inspectable_sequence_break
+        self.ref = ref
 
     def to_json(self):
-        return {
-            "name": self.name
+        section_json_dict = {
+            "name": name,
         }
+        for optional_key in ["shortname", "access_rules", "visibility_rules", "chest_unopened_img",
+                             "chest_opened_img", "clear_as_group", "item_count", "hosted_item", "item_size",
+                             "item_height", "item_width", "inspectable_sequence_break", "ref"]:
+            if getattr(self, optional_key) is not None:
+                section_json_dict[optional_key] = getattr(self, optional_key)
+        return section_json_dict
 
 class Location:
     """Handle one location object with one or several map position associated to sections"""
@@ -106,13 +168,42 @@ class Location:
     map_locations: list[MapPosition]
     sections: list[Section]
     name: str
+# location
+    shortname: Optional[str]
+    access_rules: Optional[str|List[str]]
+    visibility_rules: Optional[str|List[str]]
+    chest_unopened_img: Optional[str]
+    chest_opened_img: Optional[str]
+    inspectable_sequence_break: Optional[bool]
+    overlay_background: Optional[str]
+    color: Optional[str]
+    parent: Optional[str]
 
-    def __init__(self, name: str):
+    def __init__(self, name: str,
+                 shortname: Optional[str] = None,
+                 access_rules: Optional[str|List[str]] = None,
+                 visibility_rules: Optional[str|List[str]] = None,
+                 chest_unopened_img: Optional[str] = None,
+                 chest_opened_img: Optional[str] = None,
+                 inspectable_sequence_break: Optional[bool] = None,
+                 overlay_background: Optional[str] = None,
+                 color: Optional[str] = None,
+                 parent: Optional[str] = None
+    ):
         self.name = name
 
         self.children = []
         self.map_locations = []
         self.sections = []
+        self.shortname = shortname
+        self.access_rules = access_rules
+        self.visibility_rules = visibility_rules
+        self.chest_unopened_img = chest_unopened_img
+        self.chest_opened_img = chest_opened_img
+        self.inspectable_sequence_break = inspectable_sequence_break
+        self.overlay_background = overlay_background
+        self.color = color
+        self.parent = parent
 
     def is_placed_on(self, map: str):
         """Indicate if at least one position of this location is on the selected map"""
@@ -147,18 +238,22 @@ class Location:
             map_position.clear(canvas)
 
     def to_json(self):
-        json: dict[str, Any] = {
+        location_json_dict: dict[str, Any] = {
             "name": self.name,
         }
 
         if len(self.children) > 0:
-            json["children"] = [ location.to_json() for location in self.children ]
-        if len(self.map_locations) > 0:
-            json["map_locations"] = [ map_position.to_json() for map_position in self.map_locations ]
+            location_json_dict["children"] = [ location.to_json() for location in self.children ]
         if len(self.sections) > 0:
-            json["sections"] = [ section.to_json() for section in self.sections ]
+            location_json_dict["sections"] = [ section.to_json() for section in self.sections ]
+        if len(self.map_locations) > 0:
+            location_json_dict["map_locations"] = [ map_position.to_json() for map_position in self.map_locations ]
 
-        return json
+        for optional_key in ["shortname", "access_rules", "visibility_rules", "chest_unopened_img",
+                            "chest_opened_img", "inspectable_sequence_break", "overlay_background", "color", "parent"]:
+            if getattr(self, optional_key) is not None:
+                location_json_dict[optional_key] = getattr(self, optional_key)
+        return location_json_dict
 
 class Locations:
     """Handle the list of all locations"""
@@ -214,20 +309,65 @@ class Locations:
     def _load_location(self, map: str, location_data: dict, locations: list[Location]=[], path: str="") -> Location:
         """Load one raw JSON location data entry"""
         name = location_data.get("name", None)
+        shortname = location_data.get("shortname", None)
+        access_rules = location_data.get("access_rules", None)
+        visibility_rules = location_data.get("visibility_rules", None)
+        chest_unopened_img = location_data.get("chest_unopened_img", None)
+        chest_opened_img = location_data.get("chest_opened_img", None)
+        inspectable_sequence_break = location_data.get("inspectable_sequence_break", None)
+        overlay_background = location_data.get("overlay_background", None)
+        color = location_data.get("color", None)
+        parent = location_data.get("parent", None)
         if name is None:
             raise ValidationException(f"Location has no name: {location_data}")
 
         debug(f"Loading {name}")
 
-        location = Location(name=name)
+        location = Location(name=name,
+                            shortname=shortname,
+                            access_rules=access_rules,
+                            visibility_rules=visibility_rules,
+                            chest_unopened_img=chest_unopened_img,
+                            chest_opened_img=chest_opened_img,
+                            inspectable_sequence_break=inspectable_sequence_break,
+                            overlay_background=overlay_background,
+                            color=color,
+                            parent=parent
+        )
 
         for section_data in location_data.get("sections", []):
-            name = section_data.get("name", None)
-            if name is None:
+            section_name = section_data.get("name", None)
+            if section_name is None:
                 warn(f"Empty section: {section_data}")
                 continue
+            shortname = section_data.get("shortname", None)
+            access_rules = section_data.get("access_rules", None)
+            visibility_rules = section_data.get("visibility_rules", None)
+            chest_unopened_img = section_data.get("chest_unopened_img", None)
+            chest_opened_img = section_data.get("chest_opened_img", None)
+            clear_as_group = section_data.get("clear_as_group", None)
+            item_count = section_data.get("item_count", None)
+            hosted_item = section_data.get("hosted_item", None)
+            item_size = section_data.get("item_size", None)
+            item_height = section_data.get("item_height", None)
+            item_width = section_data.get("item_width", None)
+            inspectable_sequence_break = section_data.get("inspectable_sequence_break", None)
+            ref = section_data.get("ref", None)
 
-            section = Section(name)
+            section = Section(name=section_name,
+                              shortname=shortname,
+                              access_rules=access_rules,
+                              visibility_rules=visibility_rules,
+                              chest_unopened_img=chest_unopened_img,
+                              chest_opened_img=chest_opened_img,
+                              clear_as_group=clear_as_group,
+                              item_count=item_count,
+                              hosted_item=hosted_item,
+                              item_size=item_size,
+                              item_height=item_height,
+                              item_width=item_width,
+                              inspectable_sequence_break=inspectable_sequence_break,
+                              ref=ref)
             location.sections.append(section)
             
         for child_data in location_data.get("children", []):
@@ -242,13 +382,20 @@ class Locations:
                 warn(f"Got an empty map position: {map}")
                 continue
 
+            border_thickness = map_position_data.get("border_thickness", None)
+            restrict_visibility_rules = map_position_data.get("restrict_visibility_rules", None)
+            force_invisibility_rules = map_position_data.get("force_invisibility_rules", None)
+
             try:
                 location.map_locations.append(MapPosition(
                     map=map,
                     x=map_position_data.get("x", 0),
                     y=map_position_data.get("y", 0),
                     size=map_position_data.get("size", 10),
-                    shape=Shape(map_position_data.get("shape", "rect"))
+                    shape=Shape(map_position_data.get("shape", "rect")),
+                    border_thickness=border_thickness,
+                    restrict_visibility_rules=restrict_visibility_rules,
+                    force_invisibility_rules=force_invisibility_rules,
                 ))
 
                 if map == map_json_selected:
