@@ -196,8 +196,8 @@ class Locations:
         for location in self.placed_locations:
             location.clear(canvas=canvas)
 
-            for section in location.sections:
-                location.draw(section.name, map=map, canvas=canvas, scale=scale)
+            # for section in location.sections:
+            location.draw(location.name, map=map, canvas=canvas, scale=scale)
 
     def load(self, map: str, canvas: Canvas, base_path: str, filename: str):
         """Clear existing locations and load the selected location file"""
@@ -259,22 +259,23 @@ class Locations:
         if placed:
             self.placed_locations.append(location)
         else:
-            self.unplaced_locations.append(location)
+            if len(location.sections) > 0:
+                self.unplaced_locations.append(location)
                     
         return location
 
-    def get_section_location(self, section_name: str, locations: list[Location] | None=None):
+    def get_section_location(self, child_name: str, locations: list[Location] | None=None):
         """Get a location that contains a specific section"""
         if locations is None:
             locations = self.locations
         
         needle = None
         for location in locations:
-            for section in location.sections:
-                if section.name == section_name:
-                    return location
+            for child in location.children:
+                if child.name == child_name:
+                    return child
 
-            needle = self.get_section_location(section_name, location.children)
+            needle = self.get_section_location(child_name, location.children)
             if needle is not None:
                 return needle
 
@@ -608,12 +609,12 @@ def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Li
     unplaced_locations_list.delete(0, tk.END)
 
     for location in locations.placed_locations:
-        for section in location.sections:
-            placed_locations_list.insert(tk.END, section.name)
+        # for child in location.children:
+        placed_locations_list.insert(tk.END, location.name)
     
     for location in locations.unplaced_locations:
-        for section in location.sections:
-            unplaced_locations_list.insert(tk.END, section.name)
+        # for child in location.children:
+        unplaced_locations_list.insert(tk.END, location.name)
 
     placed_locations_list.yview_moveto(placed_scroll[0])
     unplaced_locations_list.yview_moveto(unplaced_scroll[0])
