@@ -106,8 +106,9 @@ end
 ---@param item_code JsonItem|string Tracker:FindObjectForCode(item) return object
 ---@param item_type string|nil table of the ItemCode and extra parameters from the Item_Mapping.lau
 ---@param consumable_multiplier integer|nil table of the ItemCode and extra parameters from the Item_Mapping.lua
+---@param item_id integer AP-ID of the item from ITEM_MAPPING
 ---@param reset boolean|nil flag to update or reset the item false=update, true=reset, nil=update
-local function ItemUpdate(item_code, item_type, consumable_multiplier, reset)
+local function ItemUpdate(item_code, item_type, consumable_multiplier, item_id, reset)
     local item_obj = nil
 
     if type(item_code) == "string" then
@@ -117,6 +118,7 @@ local function ItemUpdate(item_code, item_type, consumable_multiplier, reset)
     end
     if item_obj == nil then
         print(string.format("ItemUpdate: could not find item_object for code %s", item_code))
+        return
     end
 
     if item_type == nil then
@@ -140,11 +142,13 @@ end
 ---resets or updates a given location back to default or whats saved for the gives seed in the pseudo-cache LuaItems
 ---@param location_obj LocationSection Tracker:FindObjectForCode(location) return object
 ---@param custom_storage_item table Reference for the custom LuaItem CachesItems
+---@param location_id integer AP-ID of the location from LOCATION_MAPPING
 ---@param reset boolean flag to update or reset the item false=update, true=reset, nil=update
-local function LocationUpdate(location_obj, custom_storage_item, reset)
+local function LocationUpdate(location_obj, custom_storage_item, location_id, reset)
     ---@cast location_obj LocationSection
+
     if reset then --reset
-        if custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID] then
+        if custom_storage_item and custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID] then
             location_obj.AvailableChestCount = custom_storage_item.MANUAL_LOCATIONS[ROOM_SEED][location_obj.FullID]
         else
             location_obj.AvailableChestCount = location_obj.ChestCount
@@ -234,38 +238,41 @@ function OnClear(slot_data)
     --SLOT_DATA = slot_data
     CUR_INDEX = -1
     -- reset locations
-    for _, location_array in pairs(LOCATION_MAPPING) do
+    for location_ID, location_array in pairs(LOCATION_MAPPING) do
         for _, location in pairs(location_array) do
             if location then
                 if type(location) == "table" then
-                    item_code, item_type, consumable_multiplies = table.unpack(location)
-                    ItemUpdate(item_code, item_type, consumable_multiplies, true)
+                    local item_code, item_type, consumable_multiplies = table.unpack(location)
+                    ItemUpdate(item_code, item_type, consumable_multiplies, location_ID, true)
                 else
                     if location:sub(1, 1) == "@" then
                         ---@type LocationSection
-                        local location_obj = Tracker:FindObjectForCode(location)
+                        local location_obj = Tracker:FindObjectForCode(location) --[[@as LocationSection]]
+                        local custom_storage_item = (Tracker:FindObjectForCode("manual_location_storage") --[[@as LuaItem]])
+                        .ItemState
+
                         if location_obj then
-                            LocationUpdate(location_obj, custom_storage_item, true)
+                            LocationUpdate(location_obj, custom_storage_item, location_ID, true)
                         end
                     else
-                        ---@cast location_obj JsonItem
-                        ItemUpdate(location_obj, nil, nil, true)
+                        ---@cast location JsonItem
+                        ItemUpdate(location, nil, nil, location_ID, true)
                     end
                 end
             end
         end
     end
     -- reset items
-    for _, item_array in pairs(ITEM_MAPPING) do
+    for item_ID, item_array in pairs(ITEM_MAPPING) do
         for _, item_pair in pairs(item_array) do
             local item_code = item_pair[1]
             local item_type = item_pair[2]
             local consumable_multiplier = tonumber(item_pair[3]) or 1
             -- print("on clear", item_code, item_type)
 			---@type JsonItem
-            local item_obj = Tracker:FindObjectForCode(item_code)
+            local item_obj = Tracker:FindObjectForCode(item_code) --[[@as JsonItem]]
             if item_obj then
-                ItemUpdate(item_obj, item_type, consumable_multiplier, true)
+                ItemUpdate(item_obj, item_type, consumable_multiplier, item_ID, true)
             end
         end
     end
@@ -319,7 +326,7 @@ function OnItem(index, item_id, item_name, player_number)
 
         local item_obj = Tracker:FindObjectForCode(item_code)
         if item_obj then
-            ItemUpdate(item_code, item_type, consumable_multiplier, false)
+            ItemUpdate(item_code, item_type, consumable_multiplier, item_id, false)
         else
             print(string.format("OnItem: could not find object for code %s", item_code))
         end
@@ -340,21 +347,20 @@ function OnLocation(location_id, location_name)
     for _, location in pairs(location_array) do
         if location then
             if type(location) == "table" then
-                item_code, item_type, consumable_multiplier = table.unpack(location)
-                ItemUpdate(item_code, item_type, consumable_multiplier, false)
+                local item_code, item_type, consumable_multiplier = table.unpack(location)
+                ItemUpdate(item_code, item_type, consumable_multiplier, location_id, false)
             else
 
                 if location:sub(1, 1) == "@" then
                     ---@type LocationSection
-                    local location_obj = Tracker:FindObjectForCode(location)
+                    local location_obj = Tracker:FindObjectForCode(location) --[[@as LocationSection]]
                     if location_obj then
-                        LocationUpdate(location_obj, custom_storage_item, false)
+                        LocationUpdate(location_obj, custom_storage_item, location_id, false)
                     else
                         print(string.format("OnLocation: could not find location_object for code %s", location))
                     end
                 else
-                    ---@cast location_obj JsonItem
-                    ItemUpdate(location_obj, nil, nil, false)
+                    ItemUpdate(location, nil, nil, location_id, false)
                 end
             end
         end
