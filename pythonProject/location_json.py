@@ -255,7 +255,7 @@ def create_locations(path: str):  # , logic: dict[str, str]):
         item_json_obj = []
 
         for item_name, item_types in hosted_item_list:
-            item_json_obj.append(_item_consumable_preset(item_name))
+            item_json_obj.append(_item_consumable_preset(item_name, item_name))
 
         location_items.write(f"{json5.dumps(item_json_obj, indent=4, quote_keys=True, trailing_commas=False)}")
     for i, _ in enumerate(location_list):
