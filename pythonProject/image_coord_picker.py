@@ -8,7 +8,6 @@ from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import filedialog, ttk, Canvas, Frame
 import json5
-from zope.interface.common import optional
 
 
 class ValidationException(Exception):
