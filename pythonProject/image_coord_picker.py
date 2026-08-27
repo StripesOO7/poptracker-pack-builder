@@ -152,7 +152,7 @@ class Section:
 
     def to_json(self):
         section_json_dict = {
-            "name": name,
+            "name": self.name,
         }
         for optional_key in ["shortname", "access_rules", "visibility_rules", "chest_unopened_img",
                              "chest_opened_img", "clear_as_group", "item_count", "hosted_item", "item_size",
