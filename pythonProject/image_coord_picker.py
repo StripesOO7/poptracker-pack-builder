@@ -241,6 +241,11 @@ class Location:
             "name": self.name,
         }
 
+        for optional_key in ["shortname","chest_unopened_img", "chest_opened_img", "overlay_background", "color",
+                             "access_rules", "visibility_rules", "inspectable_sequence_break", "parent"]:
+            if getattr(self, optional_key) is not None:
+                location_json_dict[optional_key] = getattr(self, optional_key)
+
         if len(self.children) > 0:
             location_json_dict["children"] = [ location.to_json() for location in self.children ]
         if len(self.sections) > 0:
@@ -248,10 +253,6 @@ class Location:
         if len(self.map_locations) > 0:
             location_json_dict["map_locations"] = [ map_position.to_json() for map_position in self.map_locations ]
 
-        for optional_key in ["shortname", "access_rules", "visibility_rules", "chest_unopened_img",
-                            "chest_opened_img", "inspectable_sequence_break", "overlay_background", "color", "parent"]:
-            if getattr(self, optional_key) is not None:
-                location_json_dict[optional_key] = getattr(self, optional_key)
         return location_json_dict
 
 class Locations:
@@ -883,7 +884,7 @@ def write_new_map_json_entry(map_listbox: tk.Listbox | None, name_input: tk.Entr
 
 def reload_map_list(map_listbox: tk.Listbox):
     map_listbox.delete(0, tk.END)
-    load_list_of_maps(map_listbox, fr"{base_path}/maps/maps.json")
+    load_list_of_maps(map_listbox, map_json_paths)
 
 def remove_map(map_listbox: tk.Listbox, name_input: tk.Entry | None):
     write_new_map_json_entry(map_listbox, name_input)
@@ -927,13 +928,14 @@ def select_location():
     if focus is not None:
         focus.selection_get()
 
-def load_list_of_maps(window_list_of_maps, maps_path):
+def load_list_of_maps(window_list_of_maps, maps_path:tuple[str]):
     tmp_map_list = {}
-    if not os.path.exists(maps_path):
-        maps_path = map_json_path
-    with open(maps_path) as maps_file:
-        for map_json in json5.load(maps_file):
-            tmp_map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
+    for map_path in maps_path:
+        if not os.path.exists(map_path):
+            continue
+        with open(map_path) as maps_file:
+            for map_json in json5.load(maps_file):
+                tmp_map_list[map_json["name"]] = f'{base_path}/{map_json["img"]}'
     for key in sorted(tmp_map_list.keys()):
         map_list[key] = tmp_map_list[key]
     for map_name in map_list.keys():
@@ -950,7 +952,8 @@ def start_pan(event, canvas: Canvas):
 def pan_motion(event, canvas: Canvas):
     canvas.scan_dragto(event.x, event.y, gain=1)
 
-def start_selection_screen(window_ref: tk.Tk, base_path:str) -> tuple[Frame, Frame, Frame]:
+def start_selection_screen(window_ref: tk.Tk, base_path:str, maps_paths:tuple[str]) -> tuple[Frame, Frame,
+Frame]:
     window_ref.columnconfigure([0, 1], weight=1)
     window_ref.rowconfigure(0, weight=1)
 
@@ -993,7 +996,7 @@ def start_selection_screen(window_ref: tk.Tk, base_path:str) -> tuple[Frame, Fra
     exit_loop_button = create_button(button_frame, text="Exit", command_ref=exit_loop, sticky_direction="ew")
     exit_loop_button.grid(row=4, columnspan=2, sticky="ew", padx=5, pady=5)
     
-    load_list_of_maps(window_list_of_maps, fr"{base_path}/maps/maps.json")
+    load_list_of_maps(window_list_of_maps, maps_paths)
     load_list_of_locations(window_list_of_locations, fr'{base_path}/locations')
 
     return frame_map_selection, frame_location_selection, button_frame
@@ -1099,13 +1102,16 @@ if __name__ == "__main__":
     window.rowconfigure(0, weight=1)
 
     base_path = filedialog.askdirectory(title="select the base folder for the pack")
-    map_json_path = filedialog.askopenfilename(title="select the map json file", initialdir=base_path+"/maps/")
+    map_json_paths = filedialog.askopenfilenames(title="select the map json file", initialdir=base_path+"/maps/")
     if base_path == "":
         exit()
-    
+    if map_json_paths == "":
+        exit()
+
     while loop:
         try:
-            frame_map_selection, frame_location_selection, button_frame_ref = start_selection_screen(window, base_path)
+            frame_map_selection, frame_location_selection, button_frame_ref = start_selection_screen(window,
+                                                                                     base_path, map_json_paths)
             window.deiconify()
             window.geometry(f"{int(window.winfo_screenwidth()/1.4)}x{int(window.winfo_screenheight()/2)}")
             window.mainloop()
