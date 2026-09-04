@@ -337,9 +337,7 @@ class Locations:
 
         for section_data in location_data.get("sections", []):
             section_name = section_data.get("name", None)
-            if section_name is None:
-                warn(f"Empty section: {section_data}")
-                continue
+
             shortname = section_data.get("shortname", None)
             access_rules = section_data.get("access_rules", None)
             visibility_rules = section_data.get("visibility_rules", None)
@@ -354,7 +352,16 @@ class Locations:
             inspectable_sequence_break = section_data.get("inspectable_sequence_break", None)
             ref = section_data.get("ref", None)
 
-            section = Section(name=section_name,
+            if ref is not None:
+                section = Section(name=section_name,
+                              shortname=shortname,
+                              ref=ref)
+                location.sections.append(section)
+            else:
+                if section_name is None:
+                    warn(f"Empty section: {section_data}")
+                    continue
+                section = Section(name=section_name,
                               shortname=shortname,
                               access_rules=access_rules,
                               visibility_rules=visibility_rules,
@@ -368,7 +375,7 @@ class Locations:
                               item_width=item_width,
                               inspectable_sequence_break=inspectable_sequence_break,
                               ref=ref)
-            location.sections.append(section)
+                location.sections.append(section)
             
         for child_data in location_data.get("children", []):
             location.children.append(
@@ -411,20 +418,19 @@ class Locations:
                     
         return location
 
-    def get_section_location(self, child_name: str, locations: list[Location] | None=None):
+    def get_section_location(self, target_name: str, locations: list[Location] | None=None):
         """Get a location that contains a specific section"""
         if locations is None:
             locations = self.locations
         
         needle = None
         for location in locations:
-            for child in location.children:
-                if child.name == child_name:
-                    return child
-
-            needle = self.get_section_location(child_name, location.children)
+            if location.name == target_name:
+                return location
+            needle = self.get_section_location(target_name, location.children)
             if needle is not None:
                 return needle
+
 
         return needle
 
