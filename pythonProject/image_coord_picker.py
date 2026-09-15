@@ -753,7 +753,16 @@ def redraw_canvas(canvas: Canvas):
     locations.clear(canvas=canvas)
     locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
 
-def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
+def filter_section_names(section_names: list[str], search_text: str):
+    if search_text == "":
+        return section_names
+
+    search_text = search_text.lower()
+    return [section_name for section_name in section_names if search_text in section_name.lower()]
+
+
+def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
+                              placed_search_text: str = "", unplaced_search_text: str = ""):
     """Reload the content of the placed/unplaced section lists"""
     placed_scroll = placed_locations_list.yview()
     unplaced_scroll = unplaced_locations_list.yview()
@@ -761,26 +770,39 @@ def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Li
     placed_locations_list.delete(0, tk.END)
     unplaced_locations_list.delete(0, tk.END)
 
-    for location in locations.placed_locations:
+    for location_name in filter_section_names([location.name for location in locations.placed_locations], placed_search_text):
         # for child in location.children:
-        placed_locations_list.insert(tk.END, location.name)
+        placed_locations_list.insert(tk.END, location_name)
     
-    for location in locations.unplaced_locations:
+    for location_name in filter_section_names([location.name for location in locations.unplaced_locations], unplaced_search_text):
         # for child in location.children:
-        unplaced_locations_list.insert(tk.END, location.name)
+        unplaced_locations_list.insert(tk.END, location_name)
 
     placed_locations_list.yview_moveto(placed_scroll[0])
     unplaced_locations_list.yview_moveto(unplaced_scroll[0])
 
-def restore_default_markings(canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
+
+def refresh_section_selectors_from_search(locations: Locations, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
+                                         placed_search_input: tk.Entry, unplaced_search_input: tk.Entry):
+    refresh_section_selectors(
+        locations,
+        placed_locations_list,
+        unplaced_locations_list,
+        placed_search_text=placed_search_input.get(),
+        unplaced_search_text=unplaced_search_input.get(),
+    )
+
+def restore_default_markings(canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
+                             placed_search_input: tk.Entry, unplaced_search_input: tk.Entry):
     global locations
 
     locations.clear(canvas=canvas)
     locations.load(map=map_json_selected, canvas=canvas, base_path=base_path, filename=locations_json_selected)
     locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
-    refresh_section_selectors(locations, placed_locations_list, unplaced_locations_list)
+    refresh_section_selectors_from_search(locations, placed_locations_list, unplaced_locations_list, placed_search_input, unplaced_search_input)
 
-def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_selection: ttk.Combobox, placed_locations: tk.Listbox, unplaced_locations: tk.Listbox):
+def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_selection: ttk.Combobox, placed_locations: tk.Listbox, unplaced_locations: tk.Listbox,
+                   placed_search_input: tk.Entry, unplaced_search_input: tk.Entry):
     debug(f"clicked at {event.x} {event.y}")
     debug(f"scaling factor {scaling_factor}")
     debug(f"actual image coords {event.x //scaling_factor} {event.y // scaling_factor}")
@@ -815,12 +837,13 @@ def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_se
     )
 
     locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
-    refresh_section_selectors(locations, placed_locations, unplaced_locations)
+    refresh_section_selectors_from_search(locations, placed_locations, unplaced_locations, placed_search_input, unplaced_search_input)
     
     placed_locations.selection_set(tk.END)
     placed_locations.see(tk.END)
 
-def remove_placed_location(_, canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
+def remove_placed_location(_, canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
+                           placed_search_input: tk.Entry, unplaced_search_input: tk.Entry):
     for selection_index in placed_locations_list.curselection():
         section_name = placed_locations_list.get(selection_index)
         location = locations.get_section_location(section_name)
@@ -831,7 +854,7 @@ def remove_placed_location(_, canvas: Canvas, placed_locations_list: tk.Listbox,
         
         locations.remove(location=location, canvas=canvas, map=map_json_selected)
 
-    refresh_section_selectors(locations, placed_locations_list, unplaced_locations_list)
+    refresh_section_selectors_from_search(locations, placed_locations_list, unplaced_locations_list, placed_search_input, unplaced_search_input)
 
 def choose_file_path():
     global selected_file_path
@@ -1019,8 +1042,8 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
     frame_map_image = create_frame(window_ref, name="map_image", position=(0, 1), sticky_direction="nsew")
     frame_settings = create_frame(window_ref, name="settings", position=(0, 2), sticky_direction="nsew")
 
-    frame_location_selection.rowconfigure(1, weight=1)
-    frame_location_selection.rowconfigure(3, weight=1)
+    frame_location_selection.rowconfigure(2, weight=1)
+    frame_location_selection.rowconfigure(5, weight=1)
 
     # settings
     shape_selection_combobox = create_combobox(frame_settings, state="readonly", value_list=["rect", "diamond", "trapezoid"], default="rect", name="shape_selection")
@@ -1031,7 +1054,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
     create_button(frame_settings, text="Load new BaseImage", command_ref=lambda: load_new_base_image(window_ref=window_ref, img_path=map_list[map_json_selected]))
     create_button(frame_settings, text="Go back to selection", command_ref=go_back_to_selection)
     create_button(frame_settings, text="Exit", command_ref=exit_loop)
-    create_button(frame_settings, text="Restore Defaults", command_ref=lambda: restore_default_markings(canvas, placed_location_section_list, unplaced_location_section_list))
+    create_button(frame_settings, text="Restore Defaults", command_ref=lambda: restore_default_markings(canvas, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search))
     for i, child in enumerate(frame_settings.winfo_children()):
         if isinstance(child, tk.Widget):
             child.grid(row=i, column=0, pady=5)
@@ -1045,11 +1068,12 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
 
     canvas.grid(row=0, column=0, sticky="nsew")
     canvas.bind("<Configure>", lambda event: resize_image(event, canvas))
-    canvas.bind("<ButtonRelease-1>", lambda event: place_location(event, canvas, shape_selection_combobox, size_selection_combobox, placed_location_section_list, unplaced_location_section_list))
+    canvas.bind("<ButtonRelease-1>", lambda event: place_location(event, canvas, shape_selection_combobox, size_selection_combobox, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search))
 
     create_label(frame_location_selection, text="unplaced locations", position=(0, 0), sticky_direction="ew")
-    scrollbar_unplaced_location_section_y = create_scrollbar(frame_location_selection, position=(1, 1), orientation="vertical", sticky_direction="ns")
-    unplaced_location_section_list = create_listbox(frame_location_selection, position=(1, 0), name="unplaced_locations", sticky_direction="nsew")
+    unplaced_location_search = create_input_field(frame_location_selection, name="unplaced_location_search", position=(1, 0), sticky_direction="ew")
+    scrollbar_unplaced_location_section_y = create_scrollbar(frame_location_selection, position=(2, 1), orientation="vertical", sticky_direction="ns")
+    unplaced_location_section_list = create_listbox(frame_location_selection, position=(2, 0), name="unplaced_locations", sticky_direction="nsew")
     
     unplaced_location_section_list.configure(exportselection=False, )
     combine_scrollbar_with_widget(scrollbar_unplaced_location_section_y,
@@ -1058,9 +1082,10 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
                                   widget_command_ref=scrollbar_unplaced_location_section_y.set,
                                   widget_command_direction="yscrollcommand")
 
-    create_label(frame_location_selection, text="placed locations", position=(2, 0), sticky_direction="ew")
-    scrollbar_placed_location_section_y = create_scrollbar(frame_location_selection, position=(3, 1), orientation="vertical", sticky_direction="ns")
-    placed_location_section_list = create_listbox(frame_location_selection, position=(3, 0), name="placed_locations", sticky_direction="nsew")
+    create_label(frame_location_selection, text="placed locations", position=(3, 0), sticky_direction="ew")
+    placed_location_search = create_input_field(frame_location_selection, name="placed_location_search", position=(4, 0), sticky_direction="ew")
+    scrollbar_placed_location_section_y = create_scrollbar(frame_location_selection, position=(5, 1), orientation="vertical", sticky_direction="ns")
+    placed_location_section_list = create_listbox(frame_location_selection, position=(5, 0), name="placed_locations", sticky_direction="nsew")
     placed_location_section_list.configure(exportselection=False)
     combine_scrollbar_with_widget(scrollbar_placed_location_section_y,
                                   placed_location_section_list,
@@ -1087,13 +1112,15 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
                                   widget_command_direction="xscrollcommand")
     canvas.configure(scrollregion=(0, 0, img.width(), img.height()))
 
-    placed_location_section_list.bind("<Button-3>", lambda event: remove_placed_location(event, canvas, placed_location_section_list, unplaced_location_section_list))
+    placed_location_section_list.bind("<Button-3>", lambda event: remove_placed_location(event, canvas, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search))
+    unplaced_location_search.bind("<KeyRelease>", lambda event: refresh_section_selectors_from_search(locations, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search))
+    placed_location_search.bind("<KeyRelease>", lambda event: refresh_section_selectors_from_search(locations, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search))
 
     load_new_base_image(window_ref=window_ref, img_path=map_list[map_json_selected])
     
     locations.load(map=map_json_selected, canvas=canvas, base_path=base_path, filename=locations_json_selected)
     locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
-    refresh_section_selectors(locations, placed_location_section_list, unplaced_location_section_list)
+    refresh_section_selectors_from_search(locations, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search)
 
 if __name__ == "__main__":
     locations_json_selected=""
