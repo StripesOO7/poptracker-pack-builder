@@ -597,13 +597,39 @@ def create_combobox(widget_ref, state:str, value_list:List[str], default:str, na
 
 def create_input_field(widget_ref, name:str,
                        position:Optional[Tuple[int, int] | None] = None,
-                       sticky_direction:str="nswe"):
+                       sticky_direction:str="nswe",
+                       placeholder_text:Optional[str] = None):
     input_field = tk.Entry(widget_ref, name=name)
     if position:
         input_field.grid_configure(row=position[0], column=position[1])
     if sticky_direction:
         input_field.grid_configure(sticky=sticky_direction)
+    if placeholder_text:
+        input_field._placeholder_text = placeholder_text
+        input_field._placeholder_active = True
+        input_field.insert(0, placeholder_text)
+        input_field.configure(fg="grey")
+
+        def clear_placeholder(event, entry=input_field):
+            if getattr(entry, "_placeholder_active", False):
+                entry.delete(0, tk.END)
+                entry.configure(fg="black")
+                entry._placeholder_active = False
+
+        def restore_placeholder(event, entry=input_field):
+            if not entry.get():
+                entry.insert(0, entry._placeholder_text)
+                entry.configure(fg="grey")
+                entry._placeholder_active = True
+
+        input_field.bind("<FocusIn>", clear_placeholder)
+        input_field.bind("<FocusOut>", restore_placeholder)
     return input_field
+
+def get_input_field_text(input_field: tk.Entry):
+    if getattr(input_field, "_placeholder_active", False):
+        return ""
+    return input_field.get()
 
 def combine_scrollbar_with_widget(scrollbar_ref:Any , widget_ref:Any , scrollbar_command_ref:Any, 
                                   widget_command_ref:Any, widget_command_direction:str):
@@ -788,8 +814,8 @@ def refresh_section_selectors_from_search(locations: Locations, placed_locations
         locations,
         placed_locations_list,
         unplaced_locations_list,
-        placed_search_text=placed_search_input.get(),
-        unplaced_search_text=unplaced_search_input.get(),
+        placed_search_text=get_input_field_text(placed_search_input),
+        unplaced_search_text=get_input_field_text(unplaced_search_input),
     )
 
 def restore_default_markings(canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
@@ -1071,7 +1097,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
     canvas.bind("<ButtonRelease-1>", lambda event: place_location(event, canvas, shape_selection_combobox, size_selection_combobox, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search))
 
     create_label(frame_location_selection, text="unplaced locations", position=(0, 0), sticky_direction="ew")
-    unplaced_location_search = create_input_field(frame_location_selection, name="unplaced_location_search", position=(1, 0), sticky_direction="ew")
+    unplaced_location_search = create_input_field(frame_location_selection, name="unplaced_location_search", position=(1, 0), sticky_direction="ew", placeholder_text="Search")
     scrollbar_unplaced_location_section_y = create_scrollbar(frame_location_selection, position=(2, 1), orientation="vertical", sticky_direction="ns")
     unplaced_location_section_list = create_listbox(frame_location_selection, position=(2, 0), name="unplaced_locations", sticky_direction="nsew")
     
@@ -1083,7 +1109,7 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
                                   widget_command_direction="yscrollcommand")
 
     create_label(frame_location_selection, text="placed locations", position=(3, 0), sticky_direction="ew")
-    placed_location_search = create_input_field(frame_location_selection, name="placed_location_search", position=(4, 0), sticky_direction="ew")
+    placed_location_search = create_input_field(frame_location_selection, name="placed_location_search", position=(4, 0), sticky_direction="ew", placeholder_text="Search")
     scrollbar_placed_location_section_y = create_scrollbar(frame_location_selection, position=(5, 1), orientation="vertical", sticky_direction="ns")
     placed_location_section_list = create_listbox(frame_location_selection, position=(5, 0), name="placed_locations", sticky_direction="nsew")
     placed_location_section_list.configure(exportselection=False)
