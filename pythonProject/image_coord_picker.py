@@ -1,5 +1,6 @@
 import os
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 from os import name
 from typing import Any, List, Literal, Optional, Tuple, Self
 from enum import StrEnum, IntEnum
@@ -8,6 +9,9 @@ from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import filedialog, ttk, Canvas, Frame
 import json5
+
+
+selected_placed_location_name: Optional[str] = None
 
 
 class ValidationException(Exception):
@@ -61,7 +65,9 @@ class MapPosition:
         self.size = size
         self.shape = shape
 
-    def draw(self, section_name: str, map: str, canvas: Canvas, scale: float=1.0, text_color: str="black"):
+    def draw(self, section_name: str, map: str, canvas: Canvas, scale: float=1.0,
+             text_color: str="black", fill_color: str="red", outline_color: str="", outline_width: int=1,
+             canvas_tag: Optional[str] = None):
         if self.map != map:
             # Not the correct map, skip rendering
             return
@@ -72,14 +78,16 @@ class MapPosition:
         elif self.shape is Shape.TRAPEZOID:
             method = draw_trapezoid
         
-        self.shapes.append(method(canvas_ref=canvas, x=self.x, y=self.y, scaling_factor=scale, fill_color="red", size=self.size))
+        polygon_options = {"tags": canvas_tag} if canvas_tag is not None else {}
+        self.shapes.append(method(canvas_ref=canvas, x=self.x, y=self.y, scaling_factor=scale, fill_color=fill_color, size=self.size, outline_color=outline_color, outline_width=outline_width, **polygon_options))
         self.shapes.append(canvas.create_text(
             self.x * scale,
             self.y * scale,
             fill=text_color,
             font=("Purisa", 10),
             width=200,
-            text=f"{section_name}\n{str(self)}"
+            text=f"{section_name}\n{str(self)}",
+            tags=canvas_tag,
         ))
 
     def clear(self, canvas: Canvas):
@@ -228,9 +236,14 @@ class Location:
         self.clear(canvas)
         self.map_locations = [map_position for map_position in self.map_locations if map_position.map != map]
 
-    def draw(self, section_name: str, map: str, canvas: Canvas, scale: float=1.0, text_color: str="black"):
+    def draw(self, section_name: str, map: str, canvas: Canvas, scale: float=1.0,
+             text_color: str="black", fill_color: str="red", outline_color: str="", outline_width: int=1,
+             canvas_tag: Optional[str] = None):
         for map_position in self.map_locations:
-            map_position.draw(section_name=section_name, map=map, canvas=canvas, scale=scale, text_color=text_color)
+            map_position.draw(section_name=section_name, map=map, canvas=canvas, scale=scale,
+                              text_color=text_color, fill_color=fill_color,
+                              outline_color=outline_color, outline_width=outline_width,
+                              canvas_tag=canvas_tag)
 
     def clear(self, canvas: Canvas):
         for map_position in self.map_locations:
@@ -287,12 +300,24 @@ class Locations:
         for location in self.locations:
             location.clear(canvas)
 
-    def draw(self, map: str, canvas: Canvas, scale: float=1.0):
+    def draw(self, map: str, canvas: Canvas, scale: float=1.0, selected_location_name: Optional[str]=None,
+             canvas_tag: Optional[str] = None, text_color: str = "black"):
         for location in self.placed_locations:
             location.clear(canvas=canvas)
 
             # for section in location.sections:
-            location.draw(location.name, map=map, canvas=canvas, scale=scale)
+            is_selected = selected_location_name is not None and location.name == selected_location_name
+            location.draw(
+                location.name,
+                map=map,
+                canvas=canvas,
+                scale=scale,
+                text_color=text_color,
+                fill_color="red" if not is_selected else "gold",
+                outline_color="" if not is_selected else "black",
+                outline_width=1 if not is_selected else 2,
+                canvas_tag=canvas_tag,
+            )
 
     def load(self, map: str, canvas: Canvas, base_path: str, filename: str):
         """Clear existing locations and load the selected location file"""
@@ -486,7 +511,82 @@ canvas_img_id = 0
 loop = True
 selected_file_path = ""
 new_map_window = None
+base_scale = 1.0
 zoom_scale = 1.0
+background_photo_cache: dict[tuple[int, int], ImageTk.PhotoImage] = {}
+overlay_canvas_tag = "map_overlay"
+background_resize_executor = ThreadPoolExecutor(max_workers=1)
+background_resize_generation = 0
+background_resize_running = False
+background_resize_pending_target: Optional[tuple[int, int]] = None
+
+def get_scaled_background_photo(new_width: int, new_height: int) -> ImageTk.PhotoImage:
+    cached_photo = background_photo_cache.get((new_width, new_height))
+    if cached_photo is not None:
+        return cached_photo
+
+    resized_image = copy_of_image.resize((new_width, new_height), resample=Image.NEAREST)
+    photo = ImageTk.PhotoImage(resized_image)
+    background_photo_cache[(new_width, new_height)] = photo
+    return photo
+
+def _resize_background_image(new_width: int, new_height: int):
+    return copy_of_image.resize((new_width, new_height), resample=Image.NEAREST)
+
+def _finish_background_resize(canvas: Canvas):
+    global background_resize_running
+
+    background_resize_running = False
+    if background_resize_pending_target is not None:
+        start_background_resize(canvas)
+
+def start_background_resize(canvas: Canvas):
+    global background_resize_running, background_resize_pending_target, background_resize_generation
+
+    if background_resize_running or background_resize_pending_target is None:
+        return
+
+    target_width, target_height = background_resize_pending_target
+    background_resize_pending_target = None
+    background_resize_running = True
+    current_generation = background_resize_generation
+
+    future = background_resize_executor.submit(_resize_background_image, target_width, target_height)
+
+    def on_complete(completed_future):
+        try:
+            resized_image = completed_future.result()
+        except Exception:
+            if "window" in globals():
+                window.after(0, lambda: _finish_background_resize(canvas))
+            return
+
+        def apply_result():
+            global canvas_img_id
+
+            if current_generation != background_resize_generation:
+                _finish_background_resize(canvas)
+                return
+
+            photo = ImageTk.PhotoImage(resized_image)
+            if canvas_img_id:
+                canvas.itemconfig(canvas_img_id, image=photo)
+            else:
+                canvas_img_id = canvas.create_image(0, 0, image=photo, anchor="nw")
+            canvas.image = photo
+            _finish_background_resize(canvas)
+
+        if "window" in globals():
+            window.after(0, apply_result)
+
+    future.add_done_callback(on_complete)
+
+def request_background_resize(canvas: Canvas, new_width: int, new_height: int):
+    global background_resize_generation, background_resize_pending_target
+
+    background_resize_generation += 1
+    background_resize_pending_target = (new_width, new_height)
+    start_background_resize(canvas)
 
 def create_frame(window_ref:Any,
                  name:str,
@@ -597,13 +697,39 @@ def create_combobox(widget_ref, state:str, value_list:List[str], default:str, na
 
 def create_input_field(widget_ref, name:str,
                        position:Optional[Tuple[int, int] | None] = None,
-                       sticky_direction:str="nswe"):
+                       sticky_direction:str="nswe",
+                       placeholder_text:Optional[str] = None):
     input_field = tk.Entry(widget_ref, name=name)
     if position:
         input_field.grid_configure(row=position[0], column=position[1])
     if sticky_direction:
         input_field.grid_configure(sticky=sticky_direction)
+    if placeholder_text:
+        input_field._placeholder_text = placeholder_text
+        input_field._placeholder_active = True
+        input_field.insert(0, placeholder_text)
+        input_field.configure(fg="grey")
+
+        def clear_placeholder(event, entry=input_field):
+            if getattr(entry, "_placeholder_active", False):
+                entry.delete(0, tk.END)
+                entry.configure(fg="black")
+                entry._placeholder_active = False
+
+        def restore_placeholder(event, entry=input_field):
+            if not entry.get():
+                entry.insert(0, entry._placeholder_text)
+                entry.configure(fg="grey")
+                entry._placeholder_active = True
+
+        input_field.bind("<FocusIn>", clear_placeholder)
+        input_field.bind("<FocusOut>", restore_placeholder)
     return input_field
+
+def get_input_field_text(input_field: tk.Entry):
+    if getattr(input_field, "_placeholder_active", False):
+        return ""
+    return input_field.get()
 
 def combine_scrollbar_with_widget(scrollbar_ref:Any , widget_ref:Any , scrollbar_command_ref:Any, 
                                   widget_command_ref:Any, widget_command_direction:str):
@@ -622,6 +748,7 @@ def go_back_to_selection():
 def exit_loop():
     global loop
     loop=False
+    background_resize_executor.shutdown(wait=False, cancel_futures=True)
     window.quit()
 
 def save(filename: str):
@@ -636,38 +763,62 @@ def save_to_old_file():
 
 def zoom_in(canvas: Canvas) -> float:
     global zoom_scale
+    anchor_x = canvas.canvasx(canvas.winfo_width() / 2)
+    anchor_y = canvas.canvasy(canvas.winfo_height() / 2)
     zoom_scale *= 1.2
-    redraw_canvas(canvas)
+    zoom_canvas_by_factor(canvas, 1.2, anchor_x, anchor_y, canvas.winfo_width() / 2, canvas.winfo_height() / 2)
     return 1.2
 
 def zoom_out(canvas: Canvas):
     global zoom_scale
+    anchor_x = canvas.canvasx(canvas.winfo_width() / 2)
+    anchor_y = canvas.canvasy(canvas.winfo_height() / 2)
     zoom_scale *= 0.8
-    redraw_canvas(canvas)
+    zoom_canvas_by_factor(canvas, 0.8, anchor_x, anchor_y, canvas.winfo_width() / 2, canvas.winfo_height() / 2)
     return 0.8
 
 def zoom_canvas(event, canvas: Canvas):
-    global zoom_scale
-
-    canvas_x = canvas.canvasx(event.x)
-    canvas_y = canvas.canvasy(event.y)
+    anchor_x = canvas.canvasx(event.x)
+    anchor_y = canvas.canvasy(event.y)
 
     factor = 1.0
     if event.delta > 0:
-        factor = zoom_in(canvas)
+        factor = 1.2
     elif event.delta < 0:
-        factor = zoom_out(canvas)
-    
+        factor = 0.8
+
+    if factor == 1.0:
+        return
+
+    global zoom_scale
+    zoom_scale *= factor
+
+    zoom_canvas_by_factor(canvas, factor, anchor_x, anchor_y, event.x, event.y)
+
+def zoom_canvas_by_factor(canvas: Canvas, factor: float, anchor_x: float, anchor_y: float, anchor_screen_x: float, anchor_screen_y: float):
+    global scaling_factor
+
+    scaling_factor = base_scale * zoom_scale
     new_width = round(og_img_width * scaling_factor)
     new_height = round(og_img_height * scaling_factor)
 
-    new_xview = (canvas_x * factor - event.x) / new_width
-    new_yview = (canvas_y * factor - event.y) / new_height
+    canvas.configure(scrollregion=(0, 0, new_width, new_height))
+
+    canvas.scale(overlay_canvas_tag, 0, 0, factor, factor)
+
+    scaled_anchor_x = anchor_x * factor
+    scaled_anchor_y = anchor_y * factor
+
+    new_xview = (scaled_anchor_x - anchor_screen_x) / new_width
+    new_yview = (scaled_anchor_y - anchor_screen_y) / new_height
 
     canvas.xview_moveto(new_xview)
     canvas.yview_moveto(new_yview)
 
-def draw_rectangle(canvas_ref: Any, x: int, y: int, scaling_factor: float|int, fill_color: str, size:int):
+    request_background_resize(canvas, new_width, new_height)
+
+def draw_rectangle(canvas_ref: Any, x: int, y: int, scaling_factor: float|int, fill_color: str, size:int,
+                   outline_color: str = "", outline_width: int = 1, tags: Optional[str] = None):
     size_offset = round(size/2)
     adjusted_x = x * scaling_factor
     adjusted_y = y * scaling_factor
@@ -678,9 +829,13 @@ def draw_rectangle(canvas_ref: Any, x: int, y: int, scaling_factor: float|int, f
         adjusted_x + adjusted_offset, adjusted_y + adjusted_offset,
         adjusted_x - adjusted_offset, adjusted_y + adjusted_offset,
         fill=fill_color,
+        outline=outline_color,
+        width=outline_width,
+        tags=tags,
     )
 
-def draw_diamond(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str, size:int):
+def draw_diamond(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str, size:int,
+                 outline_color: str = "", outline_width: int = 1, tags: Optional[str] = None):
     size_offset = round(size / 2)
     adjusted_x = x * scaling_factor
     adjusted_y = y * scaling_factor
@@ -691,9 +846,13 @@ def draw_diamond(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_co
         adjusted_x + adjusted_offset , adjusted_y,
         adjusted_x, adjusted_y + adjusted_offset ,
         fill=fill_color,
+        outline=outline_color,
+        width=outline_width,
+        tags=tags,
     )
 
-def draw_trapezoid(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str, size:int):
+def draw_trapezoid(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_color:str, size:int,
+                   outline_color: str = "", outline_width: int = 1, tags: Optional[str] = None):
     size_offset = round(size / 2)
     adjusted_x = x * scaling_factor
     adjusted_y = y * scaling_factor
@@ -704,10 +863,14 @@ def draw_trapezoid(canvas_ref:Any, x:int, y:int, scaling_factor:float|int, fill_
         adjusted_x + adjusted_offset, adjusted_y + adjusted_offset,
         adjusted_x - adjusted_offset, adjusted_y + adjusted_offset,
         fill=fill_color,
+        outline=outline_color,
+        width=outline_width,
+        tags=tags,
     )
 
 def load_new_base_image(window_ref:Any, img_path:str=""):
-    global og_img_size, og_img_width, og_img_height, image, copy_of_image
+    global og_img_size, og_img_width, og_img_height, image, copy_of_image, background_photo_cache
+    global background_resize_generation, background_resize_pending_target
     new_img_path = img_path
     if img_path == "":
         new_img_path = filedialog.askopenfilename(title="Select the new image to be loaded")
@@ -716,6 +879,9 @@ def load_new_base_image(window_ref:Any, img_path:str=""):
     og_img_width = og_img_size[0] # if og_img_size[0] < 1000 else 1000
     og_img_height = og_img_size[1] # if og_img_size[1] < 700 else 700
     copy_of_image = image.copy()
+    background_photo_cache.clear()
+    background_resize_generation += 1
+    background_resize_pending_target = None
     if img_path == "":
         window_ref.geometry(f"{og_img_width}x{og_img_height}")
     return ImageTk.PhotoImage(image=image, name="map image")
@@ -734,26 +900,31 @@ def resize_image(event, canvas: Canvas):
     redraw_canvas(canvas)
 
 def redraw_canvas(canvas: Canvas):
-    global locations, image, canvas_img_id, scaling_factor
+    global locations, canvas_img_id, scaling_factor, placed_location_text_color
 
     scaling_factor = base_scale * zoom_scale
 
     new_width = round(og_img_width * scaling_factor)
     new_height = round(og_img_height * scaling_factor)
 
-    image = copy_of_image.resize((new_width, new_height))
-    photo = ImageTk.PhotoImage(image)
-
-    canvas.delete(canvas_img_id)
-    canvas_img_id = canvas.create_image(0, 0, image=photo, anchor="nw")
-    canvas.image = photo
-
     canvas.configure(scrollregion=(0, 0, new_width, new_height))
 
-    locations.clear(canvas=canvas)
-    locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
+    request_background_resize(canvas, new_width, new_height)
 
-def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
+    locations.clear(canvas=canvas)
+    locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor, selected_location_name=selected_placed_location_name,
+                   canvas_tag=overlay_canvas_tag, text_color=get_placed_location_text_color_value())
+
+def filter_section_names(section_names: list[str], search_text: str):
+    if search_text == "":
+        return section_names
+
+    search_text = search_text.lower()
+    return [section_name for section_name in section_names if search_text in section_name.lower()]
+
+
+def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
+                              placed_search_text: str = "", unplaced_search_text: str = ""):
     """Reload the content of the placed/unplaced section lists"""
     placed_scroll = placed_locations_list.yview()
     unplaced_scroll = unplaced_locations_list.yview()
@@ -761,26 +932,201 @@ def refresh_section_selectors(locations: Locations, placed_locations_list: tk.Li
     placed_locations_list.delete(0, tk.END)
     unplaced_locations_list.delete(0, tk.END)
 
-    for location in locations.placed_locations:
+    for location_name in filter_section_names([location.name for location in locations.placed_locations], placed_search_text):
         # for child in location.children:
-        placed_locations_list.insert(tk.END, location.name)
+        placed_locations_list.insert(tk.END, location_name)
     
-    for location in locations.unplaced_locations:
+    for location_name in filter_section_names([location.name for location in locations.unplaced_locations], unplaced_search_text):
         # for child in location.children:
-        unplaced_locations_list.insert(tk.END, location.name)
+        unplaced_locations_list.insert(tk.END, location_name)
 
     placed_locations_list.yview_moveto(placed_scroll[0])
     unplaced_locations_list.yview_moveto(unplaced_scroll[0])
 
-def restore_default_markings(canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
-    global locations
 
+def refresh_section_selectors_from_search(locations: Locations, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
+                                          placed_search_input: tk.Entry, unplaced_search_input: tk.Entry, canvas: Canvas):
+    global selected_placed_location_name
+
+    previously_selected = selected_placed_location_name
+    refresh_section_selectors(
+        locations,
+        placed_locations_list,
+        unplaced_locations_list,
+        placed_search_text=get_input_field_text(placed_search_input),
+        unplaced_search_text=get_input_field_text(unplaced_search_input),
+    )
+
+    if previously_selected is not None and previously_selected in placed_locations_list.get(0, tk.END):
+        selected_placed_location_name = previously_selected
+        select_listbox_item_by_text(placed_locations_list, previously_selected)
+    else:
+        selected_placed_location_name = None
+
+    redraw_canvas(canvas)
+
+def select_listbox_item_by_text(listbox: tk.Listbox, item_text: str):
+    for index in range(listbox.size()):
+        if listbox.get(index) == item_text:
+            listbox.selection_clear(0, tk.END)
+            listbox.selection_set(index)
+            listbox.activate(index)
+            listbox.see(index)
+            return
+
+def set_combobox_value(combobox: ttk.Combobox, value: str):
+    values = tuple(combobox["values"])
+    if value in values:
+        combobox.set(value)
+
+placed_location_text_color = "black"
+
+PLACED_LOCATION_TEXT_COLOR_OPTIONS: dict[str, str] = {
+    "black": "#000000",
+    "white": "#FFFFFF",
+    "orange": "#E69F00",
+    "sky blue": "#56B4E9",
+    "bluish green": "#009E73",
+    "yellow": "#F0E442",
+    "blue": "#0072B2",
+    "vermillion": "#D55E00",
+    "reddish purple": "#CC79A7",
+}
+
+def get_placed_location_text_color_value() -> str:
+    return PLACED_LOCATION_TEXT_COLOR_OPTIONS.get(placed_location_text_color, placed_location_text_color)
+
+def get_current_map_position(location: Location) -> Optional[MapPosition]:
+    return next((position for position in location.map_locations if position.map == map_json_selected), None)
+
+def apply_selected_placed_location_style(canvas: Canvas, placed_locations_list: tk.Listbox,
+                                         shape_selection: ttk.Combobox, size_selection: ttk.Combobox):
+    global selected_placed_location_name
+
+    if len(placed_locations_list.curselection()) == 0:
+        return
+
+    section_name = placed_locations_list.get(placed_locations_list.curselection()[0])
+    location = locations.get_section_location(section_name)
+    if location is None:
+        return
+
+    map_position = get_current_map_position(location)
+    if map_position is None:
+        return
+
+    try:
+        set_combobox_value(size_selection, str(map_position.size))
+        set_combobox_value(shape_selection, str(map_position.shape))
+    except Exception:
+        return
+
+    selected_placed_location_name = section_name
+    redraw_canvas(canvas)
+
+def set_placed_location_text_color(color: str, canvas: Canvas):
+    global placed_location_text_color
+
+    if color not in PLACED_LOCATION_TEXT_COLOR_OPTIONS:
+        return
+
+    placed_location_text_color = color
+    redraw_canvas(canvas)
+
+def update_selected_placed_location_style(canvas: Canvas, placed_locations_list: tk.Listbox,
+                                          shape_selection: ttk.Combobox, size_selection: ttk.Combobox):
+    if len(placed_locations_list.curselection()) == 0:
+        return
+
+    section_name = placed_locations_list.get(placed_locations_list.curselection()[0])
+    location = locations.get_section_location(section_name)
+    if location is None:
+        return
+
+    map_position = get_current_map_position(location)
+    if map_position is None:
+        return
+
+    current_shape = Shape(shape_selection.get())
+    current_size = int(size_selection.get())
+
+    map_position.place(
+        map=map_position.map,
+        x=map_position.x,
+        y=map_position.y,
+        size=current_size,
+        shape=current_shape,
+    )
+
+    redraw_canvas(canvas)
+
+def on_placed_location_selected(_, canvas: Canvas, placed_locations_list: tk.Listbox,
+                                shape_selection: ttk.Combobox, size_selection: ttk.Combobox):
+    global selected_placed_location_name
+
+    selection = placed_locations_list.curselection()
+    if len(selection) == 0:
+        selected_placed_location_name = None
+    else:
+        selected_placed_location_name = placed_locations_list.get(selection[0])
+
+    apply_selected_placed_location_style(canvas, placed_locations_list, shape_selection, size_selection)
+
+def move_selected_placed_location(event, canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
+                                  placed_search_input: tk.Entry, unplaced_search_input: tk.Entry, delta_x: int, delta_y: int):
+    global selected_placed_location_name
+
+    if len(placed_locations_list.curselection()) == 0:
+        return "break"
+
+    selection_index = placed_locations_list.curselection()[0]
+    section_name = placed_locations_list.get(selection_index)
+    location = locations.get_section_location(section_name)
+    if location is None:
+        warn(f"Unable to find selected section {section_name}")
+        return "break"
+
+    map_position = next((position for position in location.map_locations if position.map == map_json_selected), None)
+    if map_position is None:
+        return "break"
+
+    map_position.place(
+        map=map_position.map,
+        x=map_position.x + delta_x,
+        y=map_position.y + delta_y,
+        size=map_position.size,
+        shape=map_position.shape,
+    )
+
+    selected_placed_location_name = section_name
+    location.clear(canvas=canvas)
+    location.draw(
+        section_name=location.name,
+        map=map_json_selected,
+        canvas=canvas,
+        scale=scaling_factor,
+        text_color=get_placed_location_text_color_value(),
+        fill_color="gold",
+        outline_color="black",
+        outline_width=2,
+        canvas_tag=overlay_canvas_tag,
+    )
+    select_listbox_item_by_text(placed_locations_list, section_name)
+    return "break"
+
+def restore_default_markings(canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
+                             placed_search_input: tk.Entry, unplaced_search_input: tk.Entry):
+    global locations, selected_placed_location_name
+
+    selected_placed_location_name = None
     locations.clear(canvas=canvas)
     locations.load(map=map_json_selected, canvas=canvas, base_path=base_path, filename=locations_json_selected)
-    locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
-    refresh_section_selectors(locations, placed_locations_list, unplaced_locations_list)
+    refresh_section_selectors_from_search(locations, placed_locations_list, unplaced_locations_list, placed_search_input, unplaced_search_input, canvas)
 
-def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_selection: ttk.Combobox, placed_locations: tk.Listbox, unplaced_locations: tk.Listbox):
+def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_selection: ttk.Combobox, placed_locations: tk.Listbox, unplaced_locations: tk.Listbox,
+                   placed_search_input: tk.Entry, unplaced_search_input: tk.Entry):
+    global selected_placed_location_name
+
     debug(f"clicked at {event.x} {event.y}")
     debug(f"scaling factor {scaling_factor}")
     debug(f"actual image coords {event.x //scaling_factor} {event.y // scaling_factor}")
@@ -814,13 +1160,21 @@ def place_location(event, canvas: Canvas, shape_selection: ttk.Combobox, size_se
         shape=Shape(shape_selection['values'][shape_selection.current()]),
     )
 
-    locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
-    refresh_section_selectors(locations, placed_locations, unplaced_locations)
-    
-    placed_locations.selection_set(tk.END)
-    placed_locations.see(tk.END)
+    selected_placed_location_name = selected_location
+    refresh_section_selectors_from_search(locations, placed_locations, unplaced_locations, placed_search_input, unplaced_search_input, canvas)
+    select_listbox_item_by_text(placed_locations, selected_location)
 
-def remove_placed_location(_, canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox):
+    location = locations.get_section_location(selected_location)
+    if location is not None:
+        map_position = get_current_map_position(location)
+        if map_position is not None:
+            set_combobox_value(size_selection, str(map_position.size))
+            set_combobox_value(shape_selection, str(map_position.shape))
+
+def remove_placed_location(_, canvas: Canvas, placed_locations_list: tk.Listbox, unplaced_locations_list: tk.Listbox,
+                           placed_search_input: tk.Entry, unplaced_search_input: tk.Entry):
+    global selected_placed_location_name
+
     for selection_index in placed_locations_list.curselection():
         section_name = placed_locations_list.get(selection_index)
         location = locations.get_section_location(section_name)
@@ -831,7 +1185,8 @@ def remove_placed_location(_, canvas: Canvas, placed_locations_list: tk.Listbox,
         
         locations.remove(location=location, canvas=canvas, map=map_json_selected)
 
-    refresh_section_selectors(locations, placed_locations_list, unplaced_locations_list)
+    selected_placed_location_name = None
+    refresh_section_selectors_from_search(locations, placed_locations_list, unplaced_locations_list, placed_search_input, unplaced_search_input, canvas)
 
 def choose_file_path():
     global selected_file_path
@@ -1008,7 +1363,7 @@ Frame]:
     return frame_map_selection, frame_location_selection, button_frame
 
 def start_edit_screen(window_ref:Any, base_path:str, map_list):
-    global locations
+    global locations, canvas_img_id, placed_location_text_color
     img = load_new_base_image(window_ref=window_ref, img_path=map_list[map_json_selected])
 
     window_ref.columnconfigure(0, weight=1, minsize=300)
@@ -1019,19 +1374,29 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
     frame_map_image = create_frame(window_ref, name="map_image", position=(0, 1), sticky_direction="nsew")
     frame_settings = create_frame(window_ref, name="settings", position=(0, 2), sticky_direction="nsew")
 
-    frame_location_selection.rowconfigure(1, weight=1)
-    frame_location_selection.rowconfigure(3, weight=1)
+    frame_location_selection.rowconfigure(2, weight=1)
+    frame_location_selection.rowconfigure(5, weight=1)
 
     # settings
     shape_selection_combobox = create_combobox(frame_settings, state="readonly", value_list=["rect", "diamond", "trapezoid"], default="rect", name="shape_selection")
     size_selection_combobox = create_combobox(frame_settings, state="readonly", value_list=[str(i) for i in range(6, 41, 2)], default="10", name="size_selection")
+    text_color_var = tk.StringVar(value=placed_location_text_color)
 
     create_button(frame_settings, text="Save to new file", command_ref=save_to_new_file)
     create_button(frame_settings, text="Overwrite existing file", command_ref=save_to_old_file)
     create_button(frame_settings, text="Load new BaseImage", command_ref=lambda: load_new_base_image(window_ref=window_ref, img_path=map_list[map_json_selected]))
     create_button(frame_settings, text="Go back to selection", command_ref=go_back_to_selection)
     create_button(frame_settings, text="Exit", command_ref=exit_loop)
-    create_button(frame_settings, text="Restore Defaults", command_ref=lambda: restore_default_markings(canvas, placed_location_section_list, unplaced_location_section_list))
+    create_button(frame_settings, text="Restore Defaults", command_ref=lambda: restore_default_markings(canvas, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search))
+    create_label(frame_settings, text="Placed location text color", sticky_direction="ew")
+    text_color_selection_combobox = create_combobox(
+        frame_settings,
+        state="readonly",
+        value_list=list(PLACED_LOCATION_TEXT_COLOR_OPTIONS.keys()),
+        default=placed_location_text_color,
+        name="placed_location_text_color",
+    )
+    text_color_selection_combobox.configure(textvariable=text_color_var)
     for i, child in enumerate(frame_settings.winfo_children()):
         if isinstance(child, tk.Widget):
             child.grid(row=i, column=0, pady=5)
@@ -1039,17 +1404,22 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
 
     frame_map_image.columnconfigure(0, weight=1)
     frame_map_image.rowconfigure(0, weight=1)
-    canvas, _ = create_canvas(frame_map_image, name="map image canvas", img_ref=img, anchor="nw", position=(0,0))
+    canvas, canvas_img_id = create_canvas(frame_map_image, name="map image canvas", img_ref=img, anchor="nw", position=(0,0))
     create_button(widget_ref=frame_map_image, position=(2,0), sticky_direction="ew", command_ref=lambda: zoom_in(canvas), text="zoom in")
     create_button(widget_ref=frame_map_image, position=(2,1), sticky_direction="ew", command_ref=lambda: zoom_out(canvas), text="zoom out")
 
     canvas.grid(row=0, column=0, sticky="nsew")
     canvas.bind("<Configure>", lambda event: resize_image(event, canvas))
-    canvas.bind("<ButtonRelease-1>", lambda event: place_location(event, canvas, shape_selection_combobox, size_selection_combobox, placed_location_section_list, unplaced_location_section_list))
+    canvas.bind("<ButtonRelease-1>", lambda event: place_location(event, canvas, shape_selection_combobox, size_selection_combobox, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search))
+    shape_selection_combobox.bind("<<ComboboxSelected>>", lambda event: update_selected_placed_location_style(canvas, placed_location_section_list, shape_selection_combobox, size_selection_combobox))
+    size_selection_combobox.bind("<<ComboboxSelected>>", lambda event: update_selected_placed_location_style(canvas, placed_location_section_list, shape_selection_combobox, size_selection_combobox))
+    text_color_selection_combobox.bind("<<ComboboxSelected>>", lambda event: set_placed_location_text_color(text_color_selection_combobox.get(), canvas))
+    text_color_var.trace_add("write", lambda *args: set_placed_location_text_color(text_color_var.get(), canvas))
 
     create_label(frame_location_selection, text="unplaced locations", position=(0, 0), sticky_direction="ew")
-    scrollbar_unplaced_location_section_y = create_scrollbar(frame_location_selection, position=(1, 1), orientation="vertical", sticky_direction="ns")
-    unplaced_location_section_list = create_listbox(frame_location_selection, position=(1, 0), name="unplaced_locations", sticky_direction="nsew")
+    unplaced_location_search = create_input_field(frame_location_selection, name="unplaced_location_search", position=(1, 0), sticky_direction="ew", placeholder_text="Search")
+    scrollbar_unplaced_location_section_y = create_scrollbar(frame_location_selection, position=(2, 1), orientation="vertical", sticky_direction="ns")
+    unplaced_location_section_list = create_listbox(frame_location_selection, position=(2, 0), name="unplaced_locations", sticky_direction="nsew")
     
     unplaced_location_section_list.configure(exportselection=False, )
     combine_scrollbar_with_widget(scrollbar_unplaced_location_section_y,
@@ -1058,9 +1428,10 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
                                   widget_command_ref=scrollbar_unplaced_location_section_y.set,
                                   widget_command_direction="yscrollcommand")
 
-    create_label(frame_location_selection, text="placed locations", position=(2, 0), sticky_direction="ew")
-    scrollbar_placed_location_section_y = create_scrollbar(frame_location_selection, position=(3, 1), orientation="vertical", sticky_direction="ns")
-    placed_location_section_list = create_listbox(frame_location_selection, position=(3, 0), name="placed_locations", sticky_direction="nsew")
+    create_label(frame_location_selection, text="placed locations", position=(3, 0), sticky_direction="ew")
+    placed_location_search = create_input_field(frame_location_selection, name="placed_location_search", position=(4, 0), sticky_direction="ew", placeholder_text="Search")
+    scrollbar_placed_location_section_y = create_scrollbar(frame_location_selection, position=(5, 1), orientation="vertical", sticky_direction="ns")
+    placed_location_section_list = create_listbox(frame_location_selection, position=(5, 0), name="placed_locations", sticky_direction="nsew")
     placed_location_section_list.configure(exportselection=False)
     combine_scrollbar_with_widget(scrollbar_placed_location_section_y,
                                   placed_location_section_list,
@@ -1087,13 +1458,19 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
                                   widget_command_direction="xscrollcommand")
     canvas.configure(scrollregion=(0, 0, img.width(), img.height()))
 
-    placed_location_section_list.bind("<Button-3>", lambda event: remove_placed_location(event, canvas, placed_location_section_list, unplaced_location_section_list))
+    placed_location_section_list.bind("<Button-3>", lambda event: remove_placed_location(event, canvas, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search))
+    placed_location_section_list.bind("<Left>", lambda event: move_selected_placed_location(event, canvas, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search, -1, 0))
+    placed_location_section_list.bind("<Right>", lambda event: move_selected_placed_location(event, canvas, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search, 1, 0))
+    placed_location_section_list.bind("<Up>", lambda event: move_selected_placed_location(event, canvas, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search, 0, -1))
+    placed_location_section_list.bind("<Down>", lambda event: move_selected_placed_location(event, canvas, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search, 0, 1))
+    placed_location_section_list.bind("<<ListboxSelect>>", lambda event: on_placed_location_selected(event, canvas, placed_location_section_list, shape_selection_combobox, size_selection_combobox))
+    unplaced_location_search.bind("<KeyRelease>", lambda event: refresh_section_selectors_from_search(locations, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search, canvas))
+    placed_location_search.bind("<KeyRelease>", lambda event: refresh_section_selectors_from_search(locations, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search, canvas))
 
     load_new_base_image(window_ref=window_ref, img_path=map_list[map_json_selected])
     
     locations.load(map=map_json_selected, canvas=canvas, base_path=base_path, filename=locations_json_selected)
-    locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor)
-    refresh_section_selectors(locations, placed_location_section_list, unplaced_location_section_list)
+    refresh_section_selectors_from_search(locations, placed_location_section_list, unplaced_location_section_list, placed_location_search, unplaced_location_search, canvas)
 
 if __name__ == "__main__":
     locations_json_selected=""
