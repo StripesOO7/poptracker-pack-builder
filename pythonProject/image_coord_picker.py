@@ -67,7 +67,7 @@ class MapPosition:
 
     def draw(self, section_name: str, map: str, canvas: Canvas, scale: float=1.0,
              text_color: str="black", fill_color: str="red", outline_color: str="", outline_width: int=1,
-             canvas_tag: Optional[str] = None):
+             canvas_tag: Optional[str] = None, hide_label: bool=False):
         if self.map != map:
             # Not the correct map, skip rendering
             return
@@ -80,6 +80,8 @@ class MapPosition:
         
         polygon_options = {"tags": canvas_tag} if canvas_tag is not None else {}
         self.shapes.append(method(canvas_ref=canvas, x=self.x, y=self.y, scaling_factor=scale, fill_color=fill_color, size=self.size, outline_color=outline_color, outline_width=outline_width, **polygon_options))
+        if hide_label:
+            return
         self.shapes.append(canvas.create_text(
             self.x * scale,
             self.y * scale,
@@ -238,12 +240,12 @@ class Location:
 
     def draw(self, section_name: str, map: str, canvas: Canvas, scale: float=1.0,
              text_color: str="black", fill_color: str="red", outline_color: str="", outline_width: int=1,
-             canvas_tag: Optional[str] = None):
+             canvas_tag: Optional[str] = None, hide_label: bool=False):
         for map_position in self.map_locations:
             map_position.draw(section_name=section_name, map=map, canvas=canvas, scale=scale,
                               text_color=text_color, fill_color=fill_color,
                               outline_color=outline_color, outline_width=outline_width,
-                              canvas_tag=canvas_tag)
+                              canvas_tag=canvas_tag, hide_label=hide_label)
 
     def clear(self, canvas: Canvas):
         for map_position in self.map_locations:
@@ -301,7 +303,7 @@ class Locations:
             location.clear(canvas)
 
     def draw(self, map: str, canvas: Canvas, scale: float=1.0, selected_location_name: Optional[str]=None,
-             canvas_tag: Optional[str] = None, text_color: str = "black"):
+             canvas_tag: Optional[str] = None, text_color: str = "black", hide_labels: bool = False):
         for location in self.placed_locations:
             location.clear(canvas=canvas)
 
@@ -317,6 +319,7 @@ class Locations:
                 outline_color="" if not is_selected else "black",
                 outline_width=1 if not is_selected else 2,
                 canvas_tag=canvas_tag,
+                hide_label=hide_labels,
             )
 
     def load(self, map: str, canvas: Canvas, base_path: str, filename: str):
@@ -913,7 +916,8 @@ def redraw_canvas(canvas: Canvas):
 
     locations.clear(canvas=canvas)
     locations.draw(map=map_json_selected, canvas=canvas, scale=scaling_factor, selected_location_name=selected_placed_location_name,
-                   canvas_tag=overlay_canvas_tag, text_color=get_placed_location_text_color_value())
+                   canvas_tag=overlay_canvas_tag, text_color=get_placed_location_text_color_value(),
+                   hide_labels=hide_plotted_location_labels)
 
 def filter_section_names(section_names: list[str], search_text: str):
     if search_text == "":
@@ -980,6 +984,7 @@ def set_combobox_value(combobox: ttk.Combobox, value: str):
         combobox.set(value)
 
 placed_location_text_color = "black"
+hide_plotted_location_labels = False
 
 PLACED_LOCATION_TEXT_COLOR_OPTIONS: dict[str, str] = {
     "black": "#000000",
@@ -1031,6 +1036,12 @@ def set_placed_location_text_color(color: str, canvas: Canvas):
         return
 
     placed_location_text_color = color
+    redraw_canvas(canvas)
+
+def set_hide_plotted_location_labels(hide: bool, canvas: Canvas):
+    global hide_plotted_location_labels
+
+    hide_plotted_location_labels = bool(hide)
     redraw_canvas(canvas)
 
 def update_selected_placed_location_style(canvas: Canvas, placed_locations_list: tk.Listbox,
@@ -1110,6 +1121,7 @@ def move_selected_placed_location(event, canvas: Canvas, placed_locations_list: 
         outline_color="black",
         outline_width=2,
         canvas_tag=overlay_canvas_tag,
+        hide_label=hide_plotted_location_labels,
     )
     select_listbox_item_by_text(placed_locations_list, section_name)
     return "break"
@@ -1363,7 +1375,7 @@ Frame]:
     return frame_map_selection, frame_location_selection, button_frame
 
 def start_edit_screen(window_ref:Any, base_path:str, map_list):
-    global locations, canvas_img_id, placed_location_text_color
+    global locations, canvas_img_id, placed_location_text_color, hide_plotted_location_labels
     img = load_new_base_image(window_ref=window_ref, img_path=map_list[map_json_selected])
 
     window_ref.columnconfigure(0, weight=1, minsize=300)
@@ -1397,6 +1409,13 @@ def start_edit_screen(window_ref:Any, base_path:str, map_list):
         name="placed_location_text_color",
     )
     text_color_selection_combobox.configure(textvariable=text_color_var)
+    hide_labels_var = tk.BooleanVar(value=hide_plotted_location_labels)
+    tk.Checkbutton(
+        frame_settings,
+        text="Hide placed location labels",
+        variable=hide_labels_var,
+        command=lambda: set_hide_plotted_location_labels(hide_labels_var.get(), canvas),
+    )
     for i, child in enumerate(frame_settings.winfo_children()):
         if isinstance(child, tk.Widget):
             child.grid(row=i, column=0, pady=5)
