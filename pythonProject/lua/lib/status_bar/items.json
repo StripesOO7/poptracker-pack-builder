@@ -1,0 +1,10 @@
+[
+	{
+		"name": "Status Bar",
+		"type": "static",
+		"img": "scripts/lib/status_bar/empty.png",
+		"codes": "status_bar",
+		"overlay_align": "left",
+		"overlay_font_size": 11
+	}
+]

@@ -1,0 +1,38 @@
+[
+    {
+        "name": "Recent Item",
+        "type": "static",
+        "img": "scripts/lib/recent_items/empty.png",
+        "codes": "recent-item-1"
+    },
+    {
+        "name": "Recent Item",
+        "type": "static",
+        "img": "scripts/lib/recent_items/empty.png",
+        "codes": "recent-item-2"
+    },
+    {
+        "name": "Recent Item",
+        "type": "static",
+        "img": "scripts/lib/recent_items/empty.png",
+        "codes": "recent-item-3"
+    },
+    {
+        "name": "Recent Item",
+        "type": "static",
+        "img": "scripts/lib/recent_items/empty.png",
+        "codes": "recent-item-4"
+    },
+    {
+        "name": "Recent Item",
+        "type": "static",
+        "img": "scripts/lib/recent_items/empty.png",
+        "codes": "recent-item-5"
+    },
+    {
+        "name": "Recent Item",
+        "type": "static",
+        "img": "scripts/lib/recent_items/empty.png",
+        "codes": "recent-item-6"
+    }
+]

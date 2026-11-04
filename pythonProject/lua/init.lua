@@ -1,5 +1,9 @@
 local variant = Tracker.ActiveVariantUID
 
+-- Libs
+require("scripts.lib.recent_items.init")
+require("scripts.lib.status_bar.init")
+
 -- Items
 require("scripts.items_import")
 
