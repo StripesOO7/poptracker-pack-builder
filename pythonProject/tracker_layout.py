@@ -52,6 +52,10 @@ def create_broadcast_layout(path: str):
                 "margin": "0,0",
                 "content": [
                     {
+                        "type": "layout",
+                        "key": "recent_items"
+                    },
+                    {
                         "type": "array",
                         "orientation": "vertical",
                         "margin": "0,0",
@@ -82,53 +86,68 @@ def create_tracker_basic_layout(path: str):
                 "background": "#00000000",
                 "content": {
                     "type": "dock",
-                    "dropshadow": True,
                     "content": [
                         {
-                            "type": "dock",
-                            "dock": "left",
-                            "v_alignment": "stretch",
-                            "content": [
-                                {
-                                    "type": "group",
-                                    "header": "Items",
-                                    "dock": "top",
-                                    "content": {
-                                        "type": "layout",
-                                        "key": "shared_item_grid_vertical",
-                                    },
-                                },
-                                {
-                                    "type": "group",
-                                    "header": "Settings",
-                                    "dock": "top",
-                                    "content": {
-                                        "type": "layout",
-                                        "key": "setting_grid",
-                                    },
-                                },
-                                {
-                                    "type": "group",
-                                    "header": "Pinned Locations",
-                                    "content": {
-                                        "style": "wrap",
-                                        "type": "recentpins",
-                                        "orientation": "vertical",
-                                        "compact": True,
-                                    },
-                                },
-                            ],
+                            "type": "container",
+                            "background": "#101010",
+                            "dock": "top",
+                            "content": {
+                                "type": "item",
+                                "item": "status_bar",
+                                "max_height": 16
+                            }
                         },
                         {
                             "type": "dock",
+                            "dropshadow": True,
                             "content": [
                                 {
-                                    "type": "layout",
-                                    "key": "tabbed_maps_vertical",
+                                    "type": "dock",
+                                    "dock": "left",
+                                    "v_alignment": "stretch",
+                                    "content": [
+                                        {
+                                            "type": "group",
+                                            "header": "Items",
+                                            "dock": "top",
+                                            "content": {
+                                                "type": "layout",
+                                                "key": "shared_item_grid_vertical",
+                                            },
+                                        },
+                                        {
+                                            "type": "group",
+                                            "header": "Settings",
+                                            "dock": "top",
+                                            "content": {
+                                                "type": "layout",
+                                                "key": "setting_grid",
+                                            },
+                                        },
+                                        {
+                                            "type": "group",
+                                            "header": "Pinned Locations",
+                                            "content": {
+                                                "style": "wrap",
+                                                "type": "recentpins",
+                                                "orientation": "vertical",
+                                                "compact": True,
+                                            },
+                                        },
+                                    ],
                                 },
-                            ]
-                        },
-                    ],
+                                {
+                                    "type": "dock",
+                                    "content": [
+                                        {
+                                            "type": "layout",
+                                            "key": "tabbed_maps_vertical",
+                                        },
+                                    ]
+                                },
+                            ],
+                        }
+                    ]
                 },
             },
             "tracker_horizontal": {
@@ -136,56 +155,71 @@ def create_tracker_basic_layout(path: str):
                 "background": "#00000000",
                 "content": {
                     "type": "dock",
-                    "dropshadow": True,
                     "content": [
                         {
-                            "type": "dock",
-                            "dock": "bottom",
-                            "content": [
-                                {
-                                    "type": "group",
-                                    "header": "Items",
-                                    "dock": "left",
-                                    "margin": "0,0,3,0",
-                                    "content": {
-                                        "type": "layout",
-                                        "h_alignment": "center",
-                                        "v_alignment": "center",
-                                        "key": "shared_item_grid_horizontal",
-                                    },
-                                },
-                                {
-                                    "type": "group",
-                                    "header": "Settings",
-                                    "dock": "left",
-                                    "margin": "0,0,3,0",
-                                    "content": {
-                                        "type": "layout",
-                                        "h_alignment": "center",
-                                        "v_alignment": "center",
-                                        "key": "setting_grid",
-                                    },
-                                },
-                                {
-                                    "type": "group",
-                                    "header": "Pinned Locations",
-                                    "content": {
-                                        "style": "wrap",
-                                        "type": "recentpins",
-                                        "orientation": "horizontal",
-                                        "compact": True,
-                                    },
-                                },
-                            ],
+                            "type": "container",
+                            "background": "#101010",
+                            "dock": "top",
+                            "content": {
+                                "type": "item",
+                                "item": "status_bar",
+                                "max_height": 16
+                            }
                         },
                         {
                             "type": "dock",
+                            "dropshadow": True,
                             "content": [
                                 {
-                                    "type": "layout",
-                                    "key": "tabbed_maps_horizontal",
+                                    "type": "dock",
+                                    "dock": "bottom",
+                                    "content": [
+                                        {
+                                            "type": "group",
+                                            "header": "Items",
+                                            "dock": "left",
+                                            "margin": "0,0,3,0",
+                                            "content": {
+                                                "type": "layout",
+                                                "h_alignment": "center",
+                                                "v_alignment": "center",
+                                                "key": "shared_item_grid_horizontal",
+                                            },
+                                        },
+                                        {
+                                            "type": "group",
+                                            "header": "Settings",
+                                            "dock": "left",
+                                            "margin": "0,0,3,0",
+                                            "content": {
+                                                "type": "layout",
+                                                "h_alignment": "center",
+                                                "v_alignment": "center",
+                                                "key": "setting_grid",
+                                            },
+                                        },
+                                        {
+                                            "type": "group",
+                                            "header": "Pinned Locations",
+                                            "content": {
+                                                "style": "wrap",
+                                                "type": "recentpins",
+                                                "orientation": "horizontal",
+                                                "compact": True,
+                                            },
+                                        },
+                                    ],
                                 },
-                            ]
+                                {
+                                    "type": "dock",
+                                    "content": [
+                                        {
+                                            "type": "layout",
+                                            "key": "tabbed_maps_horizontal",
+                                        },
+                                    ]
+                                },
+                            ],
                         },
                     ],
                 },

@@ -42,6 +42,33 @@ def create_base_structure(path: str, game_name: str, game_dict: dict, test_state
         shutil.copy2(f'{internal_cwd}/lua/autotracking.lua', f'{path}/scripts/autotracking.lua')
     if not os.path.exists(path + "/scripts/watches.lua"):
         shutil.copy2(f'{internal_cwd}/lua/watches.lua', f'{path}/scripts/watches.lua')
+
+    if not os.path.exists(path + "/scripts/lib"):
+        os.mkdir(path + "/scripts/lib")
+
+    if not os.path.exists(path + "/scripts/lib/recent_items"):
+        os.mkdir(path + "/scripts/lib/recent_items")
+    if not os.path.exists(path + "/scripts/lib/recent_items/init.lua"):
+        shutil.copy2(f'{internal_cwd}/lua/lib/recent_items/init.lua', f'{path}/scripts/lib/recent_items/init.lua')
+    if not os.path.exists(path + "/scripts/lib/recent_items/items.json"):
+        shutil.copy2(f'{internal_cwd}/lua/lib/recent_items/items.json', f'{path}/scripts/lib/recent_items/items.json')
+    if not os.path.exists(path + "/scripts/lib/recent_items/layout.json"):
+        shutil.copy2(f'{internal_cwd}/lua/lib/recent_items/layout.json', f'{path}/scripts/lib/recent_items/layout.json')
+    if not os.path.exists(path + "/scripts/lib/recent_items/empty.png"):
+        shutil.copy2(f'{internal_cwd}/lua/lib/recent_items/empty.png', f'{path}/scripts/lib/recent_items/empty.png')
+
+    if not os.path.exists(path + "/scripts/lib/status_bar"):
+        os.mkdir(path + "/scripts/lib/status_bar")
+    if not os.path.exists(path + "/scripts/lib/status_bar/init.lua"):
+        with open(internal_cwd + "/lua/lib/status_bar/init.lua", "r", encoding="utf-8") as status_bar_lua:
+            status_bar_lua_content = status_bar_lua.read().replace('{game_name}', game_name)
+        with open(path + "/scripts/lib/status_bar/init.lua", "w", encoding="utf-8") as status_bar_lua:
+            status_bar_lua.write(status_bar_lua_content)
+    if not os.path.exists(path + "/scripts/lib/status_bar/items.json"):
+        shutil.copy2(f'{internal_cwd}/lua/lib/status_bar/items.json', f'{path}/scripts/lib/status_bar/items.json')
+    if not os.path.exists(path + "/scripts/lib/status_bar/empty.png"):
+        shutil.copy2(f'{internal_cwd}/lua/lib/status_bar/empty.png', f'{path}/scripts/lib/status_bar/empty.png')
+
     if not os.path.exists(path + "/manifest.json"):
         game_name_lua = game_name.lower().replace(' ', '_')
         for char in ("@", "#", "$", "%", "&", "(", ")", ".", "+", "–", "*", "?", "[", "^", "~", ":", "-", "\\", "/"):

@@ -276,6 +276,7 @@ function OnClear(slot_data)
             end
         end
     end
+    ResetRecentItemFeed()
     PLAYER_ID = Archipelago.PlayerNumber or -1
     TEAM_NUMBER = Archipelago.TeamNumber or 0
     SLOT_DATA = slot_data
@@ -327,6 +328,7 @@ function OnItem(index, item_id, item_name, player_number)
         local item_obj = Tracker:FindObjectForCode(item_code)
         if item_obj then
             ItemUpdate(item_code, item_type, consumable_multiplier, item_id, false)
+            AddToRecentItemFeed(item_code, item_id, item_name)
         else
             print(string.format("OnItem: could not find object for code %s", item_code))
         end
